@@ -1,0 +1,35 @@
+{
+  "performedAt": "2026-08-13T19:12:00+08:00",
+  "source": "legacy-qoder-read-only",
+  "sourceSchema": "qoder-current",
+  "sourceTimeZone": "Asia/Shanghai",
+  "originalSha256Before": "ae8e79700fe53bec0557720c1c00d68e5b60795694495202364d49dad4517b7e",
+  "originalSha256After": "ae8e79700fe53bec0557720c1c00d68e5b60795694495202364d49dad4517b7e",
+  "sanitizedCredentialsDetected": false,
+  "firstApply": {
+    "status": "succeeded",
+    "counts": {
+      "series": { "read": 1, "add": 1, "unchanged": 0, "conflict": 0, "reject": 0 },
+      "video": { "read": 2, "add": 2, "unchanged": 0, "conflict": 0, "reject": 0 },
+      "setting": { "read": 1, "add": 1, "unchanged": 0, "conflict": 0, "reject": 0 }
+    },
+    "credentials": { "detected": false, "migrated": false }
+  },
+  "secondApply": {
+    "status": "succeeded",
+    "counts": {
+      "series": { "read": 1, "add": 0, "unchanged": 1, "conflict": 0, "reject": 0 },
+      "video": { "read": 2, "add": 0, "unchanged": 2, "conflict": 0, "reject": 0 },
+      "setting": { "read": 1, "add": 0, "unchanged": 1, "conflict": 0, "reject": 0 }
+    },
+    "credentials": { "detected": false, "migrated": false }
+  },
+  "target": {
+    "integrityCheck": "ok",
+    "foreignKeyViolations": 0,
+    "learningResources": 2,
+    "learningSeries": 1
+  },
+  "temporaryFilesRemoved": true,
+  "containsTitlesOrContent": false
+}

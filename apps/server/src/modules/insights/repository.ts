@@ -98,14 +98,19 @@ export class InsightRepository {
   public nextLearning(): ResumableLearning | null {
     const row = this.database
       .prepare(
-        `SELECT r.id, r.title, r.source_url, r.cover_url,
+        `WITH next_progress AS (
+           SELECT resource_id, resume_part_id, resume_seconds
+           FROM learning_resource_progress
+           WHERE completed = 0 AND resume_part_id IS NOT NULL
+           ORDER BY COALESCE(last_observed_at_ms, updated_at_ms) DESC, resource_id
+           LIMIT 1
+         )
+         SELECT r.id, r.title, r.source_url, r.cover_url,
                 p.resume_part_id, part.title AS resume_part_title, p.resume_seconds
-         FROM learning_resource_progress p
+         FROM next_progress p
          JOIN learning_resources r ON r.id = p.resource_id
          JOIN learning_parts part ON part.id = p.resume_part_id
-         WHERE p.completed = 0 AND r.deleted_at_ms IS NULL AND part.deleted_at_ms IS NULL
-         ORDER BY COALESCE(p.last_observed_at_ms, p.updated_at_ms) DESC, r.id
-         LIMIT 1`,
+         WHERE r.deleted_at_ms IS NULL AND part.deleted_at_ms IS NULL`,
       )
       .get() as LearningRow | undefined;
     return row === undefined ? null : learning(row);
@@ -117,8 +122,10 @@ export class InsightRepository {
         `SELECT strftime('%Y-%m-%d', last_observed_at_ms / 1000, 'unixepoch', '+8 hours') AS date,
                 count(*) AS count
          FROM learning_part_progress
-         WHERE last_observed_at_ms IS NOT NULL
-           AND date(last_observed_at_ms / 1000, 'unixepoch', '+8 hours') BETWEEN ? AND ?
+         WHERE last_observed_at_ms >=
+           CAST(strftime('%s', ? || ' 00:00:00', '-8 hours') AS INTEGER) * 1000
+           AND last_observed_at_ms <
+           CAST(strftime('%s', date(?, '+1 day') || ' 00:00:00', '-8 hours') AS INTEGER) * 1000
          GROUP BY date`,
       )
       .all(from, to) as unknown as Array<{ date: string; count: number }>;

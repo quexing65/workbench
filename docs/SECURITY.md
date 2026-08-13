@@ -1,6 +1,6 @@
 # vNext 安全基线
 
-- 状态：阶段 7 已实施（备份与恢复条款将在阶段 8 验收）
+- 状态：阶段 8 备份与恢复条款已实现并通过自动验收，最终切换门槛待真实运行确认
 - 日期：2026-08-13
 
 ## 资产与信任边界
@@ -67,6 +67,10 @@ read-only/query_only、`trusted_schema=OFF`、table/column allowlist、integrity
   确保没有 stale sidecar 后再同卷原子替换。
 - 任一步失败自动回退，诊断信息保持脱敏。
 - 重开后验证 integrity、foreign keys、app ID、migration checksums 和逻辑校验和。
+
+阶段 8 已实现受控 ZIP、流式/比例/大小/条目校验、`VACUUM INTO`、停服锁、pre-restore
+快照、同卷数据库集合替换和故障自动回退；测试覆盖额外条目、大小写重复、遍历、symlink、
+zip bomb、manifest/hash 不匹配、秘密残页、5 个恢复故障点以及跨进程 CLI。恢复仍不恢复凭据。
 
 ## 浏览器控制
 

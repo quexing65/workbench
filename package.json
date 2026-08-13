@@ -33,7 +33,9 @@
     "import:personal": "npm run import:personal -w @workbench/server --",
     "import:qoder": "npm run import:qoder -w @workbench/server --",
     "import:apply": "npm run import:apply -w @workbench/server --",
-    "data:restore": "npm run data:restore -w @workbench/server --"
+    "data:restore": "npm run data:restore -w @workbench/server --",
+    "performance:audit": "npm run performance:audit -w @workbench/server --",
+    "qoder:sanitize": "npm run qoder:sanitize -w @workbench/server --"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
@@ -45,6 +47,8 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^24.10.0",
     "@types/supertest": "^6.0.3",
+    "@types/yauzl": "^3.4.0",
+    "@types/yazl": "^3.3.1",
     "@vitest/coverage-v8": "^3.2.4",
     "concurrently": "^9.2.1",
     "eslint": "^9.39.1",

@@ -6,6 +6,14 @@
   align-items: start;
 }
 
+.backup-card {
+  grid-column: 1 / -1;
+}
+
+.backup-card code {
+  overflow-wrap: anywhere;
+}
+
 .import-form select,
 .import-form input[type='file'] {
   width: 100%;

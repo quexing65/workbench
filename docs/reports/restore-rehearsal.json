@@ -1,0 +1,12 @@
+{
+  "performedAt": "2026-08-13T19:07:22+08:00",
+  "kind": "cross-process-stopped-service-cli",
+  "steps": ["backup", "mutate", "stop", "restore", "reopen", "logical-verify"],
+  "schemaVersion": 3,
+  "preRestoreBackupRetained": true,
+  "restoredLogicalChecksumMatched": true,
+  "absolutePathExposed": false,
+  "integrityCheck": "ok",
+  "foreignKeyViolations": 0,
+  "result": "passed"
+}

@@ -1,7 +1,7 @@
 # vNext 数据模型基线
 
-- 状态：阶段 7 已实施
-- 当前 schema version：2
+- 状态：阶段 8 已实施，最终切换门槛待真实运行确认
+- 当前 schema version：3
 - 日期：2026-08-13
 
 SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态等非业务偏好；凭据不属于
@@ -109,6 +109,11 @@ SHA-256 为 `103858fe38bbdfdc4ed2af86fa5894b71b0203aa2ab756ded9c859eabbfd08ac`�
 `53b63690deffce1fed6a4276bd5690e4d28efc13db59aaf6f72a02575f192965`：新增
 `source_contributions`，将 deletion marker 主键扩展为来源 ID + canonical key，并给成功 apply
 记录逻辑校验和。schema version 升至 2；`0001` 未修改。
+
+阶段 8 新增 `0003-performance-indexes.sql`：为按日任务、逾期任务、笔记分页/最近笔记、
+学习库更新时间、继续学习和学习活动时间区间补充部分/表达式索引。学习活动查询改用
+Asia/Shanghai 日界对应的 UTC epoch 毫秒范围，避免在索引列上逐行执行 `date()`。该迁移只新增
+索引，不改变业务字段或数据语义；schema version 升至 3，`0001`/`0002` 未修改。
 
 ## B站同步
 

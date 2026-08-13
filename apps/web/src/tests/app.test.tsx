@@ -7,7 +7,7 @@ const healthPayload = {
   status: 'ok',
   version: '0.1.0',
   database: 'ok',
-  schemaVersion: 2,
+  schemaVersion: 3,
   timeZone: 'Asia/Shanghai',
 };
 

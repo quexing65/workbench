@@ -3,6 +3,7 @@ import type { ImportPreflightResponse, ImportReport, ImportSourceType } from '@w
 import { useState, type FormEvent } from 'react';
 
 import { applyImport, preflightImport } from '../../shared/api/imports';
+import { downloadBackup } from '../../shared/api/backups';
 
 export function DataPage() {
   const [sourceType, setSourceType] = useState<ImportSourceType>('personal-json');
@@ -10,6 +11,7 @@ export function DataPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ImportPreflightResponse | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const backup = useMutation({ mutationFn: downloadBackup });
   const preflight = useMutation({
     mutationFn: preflightImport,
     onSuccess: (result) => {
@@ -51,6 +53,31 @@ export function DataPage() {
       </header>
 
       <div className="data-layout">
+        <section className="editor-card backup-card" aria-labelledby="backup-title">
+          <p className="eyebrow">一致快照</p>
+          <h2 id="backup-title">创建普通备份</h2>
+          <p>
+            下载受控 <code>.pwbk</code>，仅含 manifest 和一致 SQLite 快照；登录凭据不进入备份。
+          </p>
+          <button disabled={backup.isPending} onClick={() => backup.mutate()}>
+            {backup.isPending ? '正在校验并打包…' : '创建并下载备份'}
+          </button>
+          {backup.isSuccess && (
+            <p className="form-success" role="status">
+              备份已通过浏览器下载，请妥善保存。
+            </p>
+          )}
+          {backup.error instanceof Error && (
+            <p className="form-error" role="alert">
+              {backup.error.message}
+            </p>
+          )}
+          <p className="credential-note">
+            整库时间点恢复不是迁移或合并。请停止服务后运行
+            <code> npm run data:restore -- --file &lt;backup.pwbk&gt;</code>；页面不接受服务器路径。
+          </p>
+        </section>
+
         <form className="editor-card import-form" onSubmit={submit}>
           <h2>导入旧数据</h2>
           <label>

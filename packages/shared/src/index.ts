@@ -1,5 +1,7 @@
 export { healthResponseSchema } from './contracts/health.js';
 export type { HealthResponse } from './contracts/health.js';
+export { BACKUP_APP_ID, BACKUP_FORMAT_VERSION, backupManifestSchema } from './contracts/backups.js';
+export type { BackupManifest } from './contracts/backups.js';
 export {
   applyImportSchema,
   importConflictSchema,

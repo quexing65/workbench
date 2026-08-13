@@ -45,6 +45,8 @@ import { TaskService } from './modules/tasks/service.js';
 import { SyncRunRepository } from './modules/sync/repository.js';
 import { createLearningSyncRouter } from './modules/sync/route.js';
 import { LearningSyncService } from './modules/sync/service.js';
+import { BackupService } from './modules/backups/service.js';
+import { createBackupRouter } from './modules/backups/route.js';
 
 export interface CreateAppOptions {
   readonly config: ServerConfig;
@@ -57,6 +59,8 @@ export interface CreateAppOptions {
   readonly credentialStore?: BiliCredentialStore;
   readonly browserCredentialAdapter?: BrowserCredentialAdapter;
   readonly mountImports?: boolean;
+  readonly mountBackups?: boolean;
+  readonly backupService?: Pick<BackupService, 'create'>;
   readonly serveWeb?: boolean;
   readonly webDistDirectory?: string;
 }
@@ -116,6 +120,15 @@ export function createApp(options: CreateAppOptions): Express {
       api.use(
         '/data/imports',
         createImportRouter(importService, join(config.dataDirectory, 'tmp', 'imports', 'uploads')),
+      );
+    }
+    if (options.mountBackups ?? true) {
+      api.use(
+        '/data/backups',
+        createBackupRouter(
+          options.backupService ??
+            new BackupService(options.database.connection, join(config.dataDirectory, 'backups')),
+        ),
       );
     }
     const learningService = new LearningService(

@@ -8,6 +8,7 @@ import type { BiliClient } from '../src/modules/learning/bili-client.js';
 import type { BiliSessionClient } from '../src/modules/bili/session-client.js';
 import type { BrowserCredentialAdapter } from '../src/modules/credentials/cdp-adapter.js';
 import type { BiliCredentialStore } from '../src/modules/credentials/store.js';
+import type { BackupService } from '../src/modules/backups/service.js';
 
 export const testConfig: ServerConfig = {
   nodeEnv: 'test',
@@ -31,6 +32,8 @@ export function makeApp(
     credentialStore?: BiliCredentialStore;
     browserCredentialAdapter?: BrowserCredentialAdapter;
     mountImports?: boolean;
+    mountBackups?: boolean;
+    backupService?: Pick<BackupService, 'create'>;
     dataDirectory?: string;
   } = {},
 ) {
@@ -40,7 +43,7 @@ export function makeApp(
       ...(options.dataDirectory === undefined ? {} : { dataDirectory: options.dataDirectory }),
     },
     database: {
-      schemaVersion: 2,
+      schemaVersion: 3,
       ...(options.database === undefined ? {} : { connection: options.database }),
     },
     logger: options.logger ?? createLogger(testConfig),
@@ -53,6 +56,8 @@ export function makeApp(
       ? {}
       : { browserCredentialAdapter: options.browserCredentialAdapter }),
     mountImports: options.mountImports ?? false,
+    mountBackups: options.mountBackups ?? false,
+    ...(options.backupService === undefined ? {} : { backupService: options.backupService }),
     ...(options.serveWeb === undefined ? {} : { serveWeb: options.serveWeb }),
     ...(options.webDistDirectory === undefined
       ? {}

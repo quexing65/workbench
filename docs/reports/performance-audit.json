@@ -1,0 +1,70 @@
+{
+  "generatedAt": "2026-08-13T11:02:53.140Z",
+  "fixture": {
+    "tasks": 10000,
+    "notes": 10000,
+    "learningResources": 1000
+  },
+  "sqliteVersion": "3.53.1",
+  "fixtureBuildMs": 266.3741,
+  "queries": [
+    {
+      "name": "tasks-for-day",
+      "elapsedMs": 0.38049999999998363,
+      "resultRows": 13,
+      "plan": ["SEARCH tasks USING INDEX tasks_day_order (task_date=?)"],
+      "fullTableScans": []
+    },
+    {
+      "name": "overdue-active-tasks",
+      "elapsedMs": 16.09730000000002,
+      "resultRows": 5936,
+      "plan": ["SEARCH tasks USING INDEX tasks_active_overdue (task_date<?)"],
+      "fullTableScans": []
+    },
+    {
+      "name": "notes-page",
+      "elapsedMs": 1.0121000000000322,
+      "resultRows": 51,
+      "plan": ["SCAN notes USING INDEX notes_list_order"],
+      "fullTableScans": []
+    },
+    {
+      "name": "recent-notes",
+      "elapsedMs": 0.2218000000000302,
+      "resultRows": 3,
+      "plan": ["SCAN notes USING INDEX notes_recent"],
+      "fullTableScans": []
+    },
+    {
+      "name": "learning-library",
+      "elapsedMs": 124.39030000000002,
+      "resultRows": 1000,
+      "plan": ["SCAN learning_resources USING INDEX learning_resources_recent"],
+      "fullTableScans": []
+    },
+    {
+      "name": "next-learning",
+      "elapsedMs": 0.3645000000000209,
+      "resultRows": 1,
+      "plan": [
+        "CO-ROUTINE next_progress",
+        "SCAN learning_resource_progress USING INDEX learning_progress_resumable",
+        "SCAN p",
+        "SEARCH part USING INDEX sqlite_autoindex_learning_parts_1 (id=?)",
+        "SEARCH r USING INDEX sqlite_autoindex_learning_resources_1 (id=?)"
+      ],
+      "fullTableScans": []
+    },
+    {
+      "name": "learning-activity-range",
+      "elapsedMs": 1.595199999999977,
+      "resultRows": 587,
+      "plan": [
+        "SEARCH learning_part_progress USING COVERING INDEX learning_part_progress_observed (last_observed_at_ms>? AND last_observed_at_ms<?)"
+      ],
+      "fullTableScans": []
+    }
+  ],
+  "passed": true
+}
