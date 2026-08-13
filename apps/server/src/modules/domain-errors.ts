@@ -24,3 +24,24 @@ export class DomainValidationError extends Error {
     this.name = 'DomainValidationError';
   }
 }
+
+export class ExternalServiceError extends Error {
+  public constructor(
+    public readonly code: string,
+    message: string,
+    public readonly status = 502,
+  ) {
+    super(message);
+    this.name = 'ExternalServiceError';
+  }
+}
+
+export class DomainConflictError extends Error {
+  public constructor(
+    public readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'DomainConflictError';
+  }
+}

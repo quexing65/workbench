@@ -1,0 +1,12 @@
+{
+  "code": 0,
+  "data": {
+    "bvid": "BV1ab411c7de",
+    "cid": 101,
+    "title": "单P课程",
+    "pic": "//i0.hdslb.com/bfs/archive/cover.jpg",
+    "duration": 600,
+    "owner": { "name": "讲师" },
+    "pages": [{ "cid": 101, "page": 1, "part": "正片", "duration": 600 }]
+  }
+}

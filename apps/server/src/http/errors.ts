@@ -1,7 +1,9 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 
 import {
+  DomainConflictError,
   DomainValidationError,
+  ExternalServiceError,
   ResourceNotFoundError,
   RevisionConflictError,
 } from '../modules/domain-errors.js';
@@ -47,6 +49,14 @@ function normalizeError(error: unknown): AppError {
     return new AppError(400, 'VALIDATION_ERROR', '请求参数无效', [
       { field: error.field, message: error.message },
     ]);
+  }
+
+  if (error instanceof ExternalServiceError) {
+    return new AppError(error.status, error.code, error.message);
+  }
+
+  if (error instanceof DomainConflictError) {
+    return new AppError(409, error.code, error.message);
   }
 
   if (hasProperty(error, 'type') && error['type'] === 'entity.parse.failed') {

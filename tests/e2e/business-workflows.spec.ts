@@ -38,6 +38,14 @@ test('persists a daily task, recurring task and note through page refreshes', as
   await expect(page.getByText(noteContent)).toBeVisible();
   await page.reload();
   await expect(page.getByText(noteContent)).toBeVisible();
+
+  await page.goto('/learning');
+  const seriesName = `端到端学习系列 ${suffix}`;
+  await page.getByLabel('新系列名称').fill(seriesName);
+  await page.getByRole('button', { name: '创建系列' }).click();
+  await expect(page.locator(`input[value="${seriesName}"]`)).toBeVisible();
+  await page.reload();
+  await expect(page.locator(`input[value="${seriesName}"]`)).toBeVisible();
 });
 
 test('business pages fit a 360px viewport without page-level horizontal overflow', async ({
@@ -45,7 +53,7 @@ test('business pages fit a 360px viewport without page-level horizontal overflow
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
 
-  for (const path of ['/overview', '/tasks', '/recurring', '/notes', '/review']) {
+  for (const path of ['/overview', '/tasks', '/recurring', '/notes', '/learning', '/review']) {
     await page.goto(path);
     await expect(page.locator('h1')).toBeVisible();
     const dimensions = await page.evaluate(() => ({

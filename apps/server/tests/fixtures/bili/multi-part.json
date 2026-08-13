@@ -1,0 +1,13 @@
+{
+  "code": 0,
+  "data": {
+    "bvid": "BV1xy411c7fg",
+    "title": "多P课程",
+    "duration": 900,
+    "owner": { "name": "脱敏讲师" },
+    "pages": [
+      { "cid": "201", "page": 2, "part": "第二讲", "duration": 500 },
+      { "cid": "200", "page": 1, "part": "第一讲", "duration": 400 }
+    ]
+  }
+}

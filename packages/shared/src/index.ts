@@ -1,6 +1,38 @@
 export { healthResponseSchema } from './contracts/health.js';
 export type { HealthResponse } from './contracts/health.js';
 export {
+  completeLearningProgressSchema,
+  createLearningSeriesSchema,
+  importLearningResourceSchema,
+  learningImportResultSchema,
+  learningPartProgressSchema,
+  learningPartSchema,
+  learningProgressSchema,
+  learningResourceListResponseSchema,
+  learningResourceSchema,
+  learningSeriesListResponseSchema,
+  learningSeriesSchema,
+  observeLearningProgressSchema,
+  replaceLearningSeriesItemsSchema,
+  resetLearningProgressSchema,
+  unresolvedLearningLinkSchema,
+  updateLearningSeriesSchema,
+} from './contracts/learning.js';
+export type {
+  CreateLearningSeriesInput,
+  ImportLearningResourceInput,
+  LearningImportResult,
+  LearningPart,
+  LearningPartProgress,
+  LearningProgress,
+  LearningResource,
+  LearningSeries,
+  ObserveLearningProgressInput,
+  ReplaceLearningSeriesItemsInput,
+  UnresolvedLearningLink,
+  UpdateLearningSeriesInput,
+} from './contracts/learning.js';
+export {
   createNoteSchema,
   noteListQuerySchema,
   noteListResponseSchema,
@@ -62,6 +94,19 @@ export {
   parseBusinessDate,
 } from './domain/business-date.js';
 export type { BusinessDateParts } from './domain/business-date.js';
+export { isAllowedBiliHostname, normalizeBiliUrl } from './domain/bili-url.js';
+export type { NormalizedBiliUrl } from './domain/bili-url.js';
+export {
+  LearningObservationConflictError,
+  mergeLearningObservation,
+} from './domain/learning-progress.js';
+export type {
+  LearningMergeResult,
+  LearningObservation,
+  LearningPartProgressState,
+  LearningProgressPart,
+  LearningProgressState,
+} from './domain/learning-progress.js';
 export {
   epochMillisecondsToIso,
   isoToEpochMilliseconds,

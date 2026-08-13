@@ -4,6 +4,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { createApp } from '../src/app.js';
 import type { ServerConfig } from '../src/config.js';
 import { createLogger } from '../src/http/logger.js';
+import type { BiliClient } from '../src/modules/learning/bili-client.js';
 
 export const testConfig: ServerConfig = {
   nodeEnv: 'test',
@@ -21,6 +22,7 @@ export function makeApp(
     serveWeb?: boolean;
     webDistDirectory?: string;
     database?: DatabaseSync;
+    biliClient?: BiliClient;
   } = {},
 ) {
   return createApp({
@@ -30,6 +32,7 @@ export function makeApp(
       ...(options.database === undefined ? {} : { connection: options.database }),
     },
     logger: options.logger ?? createLogger(testConfig),
+    ...(options.biliClient === undefined ? {} : { biliClient: options.biliClient }),
     ...(options.serveWeb === undefined ? {} : { serveWeb: options.serveWeb }),
     ...(options.webDistDirectory === undefined
       ? {}

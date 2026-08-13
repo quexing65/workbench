@@ -15,6 +15,12 @@ import type { HealthDatabaseState } from './modules/health/route.js';
 import { InsightRepository } from './modules/insights/repository.js';
 import { createInsightRouter } from './modules/insights/route.js';
 import { InsightService } from './modules/insights/service.js';
+import { BiliHttpClient, type BiliClient } from './modules/learning/bili-client.js';
+import { LearningResourceRepository } from './modules/learning/resource-repository.js';
+import { createLearningRouter } from './modules/learning/route.js';
+import { LearningSeriesRepository } from './modules/learning/series-repository.js';
+import { LearningSeriesService } from './modules/learning/series-service.js';
+import { LearningService } from './modules/learning/service.js';
 import { NoteRepository } from './modules/notes/repository.js';
 import { createNoteRouter } from './modules/notes/route.js';
 import { NoteService } from './modules/notes/service.js';
@@ -31,6 +37,7 @@ export interface CreateAppOptions {
     readonly connection?: DatabaseSync;
   };
   readonly logger?: Logger;
+  readonly biliClient?: BiliClient;
   readonly serveWeb?: boolean;
   readonly webDistDirectory?: string;
 }
@@ -53,6 +60,8 @@ export function createApp(options: CreateAppOptions): Express {
   api.use('/health', createHealthRouter(config, options.database));
   if (options.database.connection !== undefined) {
     const tasks = new TaskRepository(options.database.connection);
+    const learningResources = new LearningResourceRepository(options.database.connection);
+    const learningSeries = new LearningSeriesRepository(options.database.connection);
     api.use(
       '/',
       createInsightRouter(
@@ -69,6 +78,17 @@ export function createApp(options: CreateAppOptions): Express {
     api.use(
       '/notes',
       createNoteRouter(new NoteService(new NoteRepository(options.database.connection))),
+    );
+    api.use(
+      '/learning',
+      createLearningRouter(
+        new LearningService(
+          learningResources,
+          learningSeries,
+          options.biliClient ?? new BiliHttpClient(),
+        ),
+        new LearningSeriesService(learningSeries, learningResources),
+      ),
     );
   }
   api.use(notFound('API_NOT_FOUND', 'API 路由不存在'));
