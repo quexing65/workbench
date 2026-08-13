@@ -103,6 +103,14 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 checksum 不一致时拒绝启动。`0001-initial.sql` 已在阶段 2 落地完整 STRICT schema；
 SHA-256 为 `103858fe38bbdfdc4ed2af86fa5894b71b0203aa2ab756ded9c859eabbfd08ac`。
 
+## B站同步
+
+阶段 6 没有改变 schema。`sync_runs` 保存 queued/running/succeeded/failed 状态、开始与结束时间、
+处理计数和脱敏错误码；不得保存 Cookie、请求体或浏览器返回内容。单进程内同一时间只允许一个
+同步运行，服务重启时遗留 queued/running 记录会确定性转为 `SYNC_INTERRUPTED`。历史观察按
+页读取并逐条调用 `mergeLearningObservation`，只更新已经导入且身份有效的资源；重复观察幂等，
+reset 门槛继续阻止旧历史复活进度。
+
 ## 只读聚合
 
 阶段 4 没有改变 schema。`GET /api/v1/overview` 和 `GET /api/v1/review` 仅对已有表做

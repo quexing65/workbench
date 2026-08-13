@@ -5,6 +5,9 @@ import { createApp } from '../src/app.js';
 import type { ServerConfig } from '../src/config.js';
 import { createLogger } from '../src/http/logger.js';
 import type { BiliClient } from '../src/modules/learning/bili-client.js';
+import type { BiliSessionClient } from '../src/modules/bili/session-client.js';
+import type { BrowserCredentialAdapter } from '../src/modules/credentials/cdp-adapter.js';
+import type { BiliCredentialStore } from '../src/modules/credentials/store.js';
 
 export const testConfig: ServerConfig = {
   nodeEnv: 'test',
@@ -14,6 +17,7 @@ export const testConfig: ServerConfig = {
   timeZone: 'Asia/Shanghai',
   dataDirectory: 'unused-in-unit-tests',
   logLevel: 'silent',
+  biliSyncEnabled: false,
 };
 
 export function makeApp(
@@ -23,6 +27,9 @@ export function makeApp(
     webDistDirectory?: string;
     database?: DatabaseSync;
     biliClient?: BiliClient;
+    biliSessionClient?: BiliSessionClient;
+    credentialStore?: BiliCredentialStore;
+    browserCredentialAdapter?: BrowserCredentialAdapter;
   } = {},
 ) {
   return createApp({
@@ -33,6 +40,13 @@ export function makeApp(
     },
     logger: options.logger ?? createLogger(testConfig),
     ...(options.biliClient === undefined ? {} : { biliClient: options.biliClient }),
+    ...(options.biliSessionClient === undefined
+      ? {}
+      : { biliSessionClient: options.biliSessionClient }),
+    ...(options.credentialStore === undefined ? {} : { credentialStore: options.credentialStore }),
+    ...(options.browserCredentialAdapter === undefined
+      ? {}
+      : { browserCredentialAdapter: options.browserCredentialAdapter }),
     ...(options.serveWeb === undefined ? {} : { serveWeb: options.serveWeb }),
     ...(options.webDistDirectory === undefined
       ? {}

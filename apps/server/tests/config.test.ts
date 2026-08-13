@@ -9,6 +9,7 @@ describe('loadConfig', () => {
       port: 8790,
       timeZone: 'Asia/Shanghai',
       dataDirectory: expect.stringMatching(/[\\/]\.local$/u),
+      biliSyncEnabled: false,
     });
   });
 
@@ -20,5 +21,10 @@ describe('loadConfig', () => {
 
   it('rejects a non-loopback bind', () => {
     expect(() => loadConfig({ HOST: '0.0.0.0' })).toThrow();
+  });
+
+  it('accepts only an explicit true value for automatic Bili sync', () => {
+    expect(loadConfig({ BILI_SYNC_ENABLED: 'true' }).biliSyncEnabled).toBe(true);
+    expect(() => loadConfig({ BILI_SYNC_ENABLED: '1' })).toThrow();
   });
 });

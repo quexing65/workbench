@@ -10,6 +10,7 @@ const serverConfigSchema = z.object({
   APP_TIME_ZONE: z.string().min(1).default('Asia/Shanghai'),
   WORKBENCH_DATA_DIR: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+  BILI_SYNC_ENABLED: z.enum(['true', 'false']).default('false'),
 });
 
 export interface ServerConfig {
@@ -20,6 +21,7 @@ export interface ServerConfig {
   readonly timeZone: string;
   readonly dataDirectory: string;
   readonly logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
+  readonly biliSyncEnabled: boolean;
 }
 
 function parseOrigin(value: string): string {
@@ -73,6 +75,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Server
         ? defaultDataDirectory
         : resolve(parsed.WORKBENCH_DATA_DIR),
     logLevel: parsed.LOG_LEVEL,
+    biliSyncEnabled: parsed.BILI_SYNC_ENABLED === 'true',
   };
 }
 

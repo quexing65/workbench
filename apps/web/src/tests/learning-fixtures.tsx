@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { LearningResource, LearningSeries } from '@workbench/shared';
 import { render } from '@testing-library/react';
+import { vi } from 'vitest';
 
 import { LearningPage } from '../pages/learning/LearningPage';
 
@@ -66,6 +67,16 @@ export function json(value: unknown, status = 200): Response {
 }
 
 export function renderLearningPage() {
+  const fetcher = globalThis.fetch;
+  vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => {
+    if (
+      requestPath(input).endsWith('/bili/credential/status') &&
+      (init?.method === undefined || init.method === 'GET')
+    ) {
+      return Promise.resolve(json({ present: false, valid: false, userLabel: '未连接' }));
+    }
+    return fetcher(input, init);
+  });
   return render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}

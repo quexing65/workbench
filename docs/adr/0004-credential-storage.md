@@ -1,6 +1,6 @@
 # ADR 0004：使用 CurrentUser DPAPI 独立保存 B站凭据
 
-- Status: Accepted
+- Status: Accepted, implemented in phase 6
 - Date: 2026-08-13
 
 ## Context

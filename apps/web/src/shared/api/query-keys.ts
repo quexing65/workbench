@@ -6,4 +6,6 @@ export const queryKeys = {
   notes: (query: string) => ['notes', { query }] as const,
   learningResources: ['learningResources'] as const,
   learningSeries: ['learningSeries'] as const,
+  biliCredential: ['biliCredential'] as const,
+  learningSync: (runId: string) => ['learningSync', { runId }] as const,
 };

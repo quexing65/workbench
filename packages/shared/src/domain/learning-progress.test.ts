@@ -107,6 +107,49 @@ describe('mergeLearningObservation', () => {
     expect(replay.partProgress).toMatchObject({ furthestSeconds: 100, completed: true });
   });
 
+  it('does not regress resource or part progress for an older observation', () => {
+    const progress: LearningProgressState = {
+      ...empty,
+      furthestPartId: 'part-a',
+      furthestSeconds: 50,
+      resumePartId: 'part-a',
+      resumeSeconds: 50,
+      lastObservedAt: '2026-08-13T13:00:00.000Z',
+    };
+    const partProgress = {
+      furthestSeconds: 50,
+      completed: false,
+      completedAt: null,
+      lastObservedAt: '2026-08-13T13:00:00.000Z',
+    };
+    const result = mergeLearningObservation(parts, progress, partProgress, {
+      partId: 'part-a',
+      seconds: 20,
+      observedAt: '2026-08-13T12:00:00.000Z',
+    });
+
+    expect(result).toEqual({
+      progress,
+      partProgress,
+      changed: false,
+      ignored: false,
+    });
+  });
+
+  it('does not infer completion for a zero-duration part', () => {
+    const result = mergeLearningObservation(
+      [{ id: 'zero', partNumber: 1, durationSeconds: 0 }],
+      empty,
+      null,
+      {
+        partId: 'zero',
+        seconds: 0,
+        observedAt: '2026-08-13T12:00:00.000Z',
+      },
+    );
+    expect(result.partProgress.completed).toBe(false);
+  });
+
   it.each([
     ['unknown part', parts, 'missing', 1],
     ['negative seconds', parts, 'part-a', -1],

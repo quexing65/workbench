@@ -1,6 +1,24 @@
 export { healthResponseSchema } from './contracts/health.js';
 export type { HealthResponse } from './contracts/health.js';
 export {
+  biliBrowserSchema,
+  biliCredentialStatusSchema,
+  fetchBiliCredentialSchema,
+  learningSyncRunSchema,
+  learningSyncStartResponseSchema,
+  saveBiliCredentialSchema,
+  startLearningSyncSchema,
+} from './contracts/bili-sync.js';
+export type {
+  BiliBrowser,
+  BiliCredentialStatus,
+  FetchBiliCredentialInput,
+  LearningSyncRun,
+  LearningSyncStartResponse,
+  SaveBiliCredentialInput,
+  StartLearningSyncInput,
+} from './contracts/bili-sync.js';
+export {
   completeLearningProgressSchema,
   createLearningSeriesSchema,
   importLearningResourceSchema,

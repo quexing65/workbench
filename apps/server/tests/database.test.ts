@@ -101,6 +101,42 @@ describe('Workbench SQLite foundation', () => {
     ).toThrow('checksum mismatch');
   });
 
+  it('rejects unavailable, empty, and incomplete migration directories', () => {
+    const missingRoot = temporaryDirectory('workbench-missing-migrations-');
+    expect(() =>
+      openWorkbenchDatabase({
+        dataDirectory: missingRoot,
+        migrationDirectory: join(missingRoot, 'missing'),
+      }),
+    ).toThrow('Migration directory is unavailable');
+
+    const emptyRoot = temporaryDirectory('workbench-empty-migrations-');
+    const emptyMigrations = temporaryDirectory('workbench-empty-sql-');
+    expect(() =>
+      openWorkbenchDatabase({
+        dataDirectory: emptyRoot,
+        migrationDirectory: emptyMigrations,
+      }),
+    ).toThrow('No migration files were found');
+
+    const incompleteRoot = temporaryDirectory('workbench-incomplete-migrations-');
+    const incompleteMigrations = temporaryDirectory('workbench-incomplete-sql-');
+    cpSync(sourceMigrations, incompleteMigrations, { recursive: true });
+    const first = openWorkbenchDatabase({
+      dataDirectory: incompleteRoot,
+      migrationDirectory: incompleteMigrations,
+    });
+    first.close();
+    rmSync(join(incompleteMigrations, '0001-initial.sql'));
+    writeFileSync(join(incompleteMigrations, '0002-placeholder.sql'), '-- placeholder\n');
+    expect(() =>
+      openWorkbenchDatabase({
+        dataDirectory: incompleteRoot,
+        migrationDirectory: incompleteMigrations,
+      }),
+    ).toThrow('Applied migration file is missing: 0001-initial');
+  });
+
   it('enforces foreign keys and rolls back failed repository transactions', () => {
     const root = temporaryDirectory('workbench-transaction-');
     const database = openWorkbenchDatabase({ dataDirectory: root });

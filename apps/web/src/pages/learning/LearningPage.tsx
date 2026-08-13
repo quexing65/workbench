@@ -9,6 +9,7 @@ import {
 import { queryKeys } from '../../shared/api/query-keys';
 import { LearningResourceCard } from './LearningResourceCard';
 import { LearningSeriesPanel } from './LearningSeriesPanel';
+import { BiliSyncPanel } from './BiliSyncPanel';
 
 export function LearningPage() {
   const [url, setUrl] = useState('');
@@ -54,6 +55,8 @@ export function LearningPage() {
         <h1>学习</h1>
         <p className="page-lead">整理 B站课程、分P与真实观看进度，随时从上次的位置继续。</p>
       </header>
+
+      <BiliSyncPanel />
 
       <form className="learning-import" onSubmit={submit}>
         <div>

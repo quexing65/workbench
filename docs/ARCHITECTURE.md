@@ -1,6 +1,6 @@
 # vNext 架构基线
 
-- 状态：阶段 0 实施基线
+- 状态：阶段 6 已实施
 - 日期：2026-08-13
 - 默认时区：Asia/Shanghai
 
@@ -74,6 +74,12 @@ Express 在 `127.0.0.1:8790` 同源托管静态页面和 `/api/v1`。
 - Backup：SQLite 一致快照、manifest、hash、integrity；不含 credential。
 - Restore：停服 CLI、pre-restore 快照、原子替换和失败回退。
 - Background jobs：B站同步互斥，状态写 sync_runs，不记录敏感内容。
+- Credential：正式环境使用 CurrentUser DPAPI 独立文件；API 只返回通用状态，秘密只通过
+  PowerShell 子进程 stdin 传递。
+- Browser：默认仅被动发现固定 loopback CDP 端口；只有 Edge 在用户二次确认后可按固定路径和
+  参数重启，Chrome 136+ 仅提供安全说明。
+- Bili sync：单进程互斥、持久化运行状态、启动恢复中断任务；历史观察继续使用统一进度纯函数，
+  不直接覆盖学习进度。
 
 ## 质量门槛
 
