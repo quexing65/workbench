@@ -1,0 +1,180 @@
+.page {
+  width: min(100%, 76rem);
+  margin: 0 auto;
+}
+
+.page-header {
+  max-width: 48rem;
+}
+
+.page-header--overview {
+  display: flex;
+  max-width: none;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+h1 {
+  max-width: 14em;
+  margin-bottom: 1rem;
+  font-size: clamp(2.25rem, 5vw, 4.75rem);
+  line-height: 1.07;
+  letter-spacing: -0.035em;
+}
+
+.page--placeholder h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+}
+
+.page-lead {
+  max-width: 38rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.5vw, 1.18rem);
+  line-height: 1.75;
+}
+
+.date-card {
+  display: grid;
+  min-width: 8.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgb(248 246 239 / 60%);
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.date-card span,
+.date-card small {
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+.date-card strong {
+  margin: -0.1rem 0;
+  color: var(--ink);
+  font-family: Georgia, serif;
+  font-size: 2.75rem;
+  font-weight: 500;
+}
+
+.overview-grid {
+  display: grid;
+  margin-top: clamp(2.5rem, 6vw, 5rem);
+  grid-template-columns: 1.35fr 1fr;
+  gap: 1rem;
+}
+
+.surface {
+  min-height: 13.5rem;
+  padding: clamp(1.4rem, 3vw, 2.4rem);
+  border: 1px solid var(--line);
+  border-radius: 1.1rem;
+  background: var(--paper);
+  box-shadow: 0 8px 30px rgb(42 44 39 / 4%);
+}
+
+.surface--primary {
+  display: flex;
+  min-height: 28rem;
+  color: white;
+  background:
+    radial-gradient(circle at 85% 15%, rgb(210 231 218 / 16%), transparent 32%),
+    var(--accent-strong);
+  grid-row: span 2;
+  flex-direction: column;
+}
+
+.surface__label {
+  margin: 0 0 2rem;
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+}
+
+.surface--primary .surface__label {
+  color: #b5ccbf;
+}
+
+.surface h2 {
+  margin-bottom: 0.8rem;
+  font-size: clamp(1.45rem, 2.5vw, 2.1rem);
+}
+
+.surface--primary h2 {
+  max-width: 10em;
+  color: white;
+  font-size: clamp(2.1rem, 4vw, 3.7rem);
+}
+
+.surface p:not(.surface__label) {
+  max-width: 34rem;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.surface--primary p:not(.surface__label) {
+  color: #c6d2cc;
+}
+
+.surface__meta {
+  margin-top: auto;
+  padding-top: 2rem;
+  color: #9fb5a9;
+  font-size: 0.78rem;
+}
+
+.placeholder-card {
+  position: relative;
+  display: flex;
+  min-height: 18rem;
+  margin-top: clamp(3rem, 8vw, 7rem);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  align-items: flex-end;
+}
+
+.placeholder-card__number {
+  position: absolute;
+  top: -1.8rem;
+  right: 1rem;
+  color: var(--accent-soft);
+  font-family: Georgia, serif;
+  font-size: clamp(7rem, 18vw, 14rem);
+  line-height: 1;
+  user-select: none;
+}
+
+.placeholder-card > div {
+  position: relative;
+  max-width: 34rem;
+}
+
+.placeholder-card h2 {
+  margin-bottom: 0.7rem;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.placeholder-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}

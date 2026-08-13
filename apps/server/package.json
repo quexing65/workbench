@@ -1,0 +1,23 @@
+{
+  "name": "@workbench/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "npm run build -w @workbench/shared && tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --root ../.. --config vitest.config.ts apps/server",
+    "test:coverage": "vitest run --coverage --root ../.. --config vitest.config.ts apps/server --coverage.include=apps/server/src/**/*.ts"
+  },
+  "dependencies": {
+    "@workbench/shared": "0.1.0",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "pino": "^9.9.0",
+    "pino-http": "^10.5.0",
+    "zod": "^3.25.76"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "noEmit": false,
+    "outDir": "dist",
+    "paths": {
+      "@workbench/shared": ["packages/shared/dist/index.d.ts"]
+    },
+    "rootDir": "src",
+    "sourceMap": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["tests"]
+}

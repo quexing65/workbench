@@ -1,0 +1,61 @@
+{
+  "name": "personal-workbench-vnext",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first personal workbench",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "packageManager": "npm@11.16.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "predev": "npm run build -w @workbench/shared",
+    "dev": "concurrently --kill-others-on-fail --names server,web --prefix-colors cyan,magenta \"npm run dev -w @workbench/server\" \"npm run dev -w @workbench/web\"",
+    "build": "npm run build -w @workbench/shared && npm run build -w @workbench/server && npm run build -w @workbench/web",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "lint": "eslint . --max-warnings 0",
+    "pretypecheck": "npm run build -w @workbench/shared",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "pretest": "npm run build -w @workbench/shared",
+    "test": "npm run test --workspaces --if-present",
+    "pretest:coverage": "npm run build -w @workbench/shared",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "pretest:e2e": "npm run build -w @workbench/shared",
+    "test:e2e": "playwright test",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build",
+    "check:all": "npm run check && npm run test:e2e",
+    "db:migrate": "npm run db:migrate -w @workbench/server",
+    "import:personal": "npm run import:personal -w @workbench/server --",
+    "import:qoder": "npm run import:qoder -w @workbench/server --",
+    "import:apply": "npm run import:apply -w @workbench/server --",
+    "data:restore": "npm run data:restore -w @workbench/server --"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
+    "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.56.1",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@types/express": "^5.0.5",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.0",
+    "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^16.5.0",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.6.2",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.46.2",
+    "vitest": "^3.2.4"
+  }
+}

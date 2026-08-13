@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.local/
+*.sqlite*
+*.db*
+credentials/
+backups/
+logs/
+EXECUTION_PLAN.md
+docs/legacy-source.sha256
