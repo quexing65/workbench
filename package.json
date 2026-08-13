@@ -26,7 +26,7 @@
     "pretest:coverage": "npm run build -w @workbench/shared",
     "test:coverage": "npm run test:coverage --workspaces --if-present",
     "pretest:e2e": "npm run build -w @workbench/shared",
-    "test:e2e": "playwright test",
+    "test:e2e": "node scripts/run-e2e.mjs",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build",
     "check:all": "npm run check && npm run test:e2e",
     "db:migrate": "npm run db:migrate -w @workbench/server",

@@ -1,13 +1,16 @@
+import { defineConfig, devices } from '@playwright/test';
+
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { defineConfig, devices } from '@playwright/test';
 
 const host = '127.0.0.1';
 const webPort = 5190;
 const apiPort = 8790;
 const baseURL = `http://${host}:${webPort}`;
 const isCi = Boolean(process.env['CI']);
-const dataDir = process.env['WORKBENCH_DATA_DIR'] ?? join(tmpdir(), 'personal-workbench-vnext-e2e');
+const dataDirectory =
+  process.env['WORKBENCH_DATA_DIR'] ??
+  join(tmpdir(), `personal-workbench-vnext-e2e-${process.pid}`);
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -39,7 +42,7 @@ export default defineConfig({
         HOST: host,
         PORT: String(apiPort),
         WEB_DEV_ORIGIN: baseURL,
-        WORKBENCH_DATA_DIR: dataDir,
+        WORKBENCH_DATA_DIR: dataDirectory,
       },
       reuseExistingServer: !isCi,
       stderr: 'pipe',

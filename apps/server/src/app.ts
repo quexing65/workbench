@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import type { DatabaseSync } from 'node:sqlite';
 
 import express, { type Express } from 'express';
 import type { Logger } from 'pino';
@@ -11,10 +12,21 @@ import { requestId } from './http/request-id.js';
 import { mountStaticWeb } from './http/static-web.js';
 import { createHealthRouter } from './modules/health/route.js';
 import type { HealthDatabaseState } from './modules/health/route.js';
+import { NoteRepository } from './modules/notes/repository.js';
+import { createNoteRouter } from './modules/notes/route.js';
+import { NoteService } from './modules/notes/service.js';
+import { RecurringRepository } from './modules/recurring/repository.js';
+import { createRecurringRouter } from './modules/recurring/route.js';
+import { RecurringService } from './modules/recurring/service.js';
+import { TaskRepository } from './modules/tasks/repository.js';
+import { createTaskRouter } from './modules/tasks/route.js';
+import { TaskService } from './modules/tasks/service.js';
 
 export interface CreateAppOptions {
   readonly config: ServerConfig;
-  readonly database: HealthDatabaseState;
+  readonly database: HealthDatabaseState & {
+    readonly connection?: DatabaseSync;
+  };
   readonly logger?: Logger;
   readonly serveWeb?: boolean;
   readonly webDistDirectory?: string;
@@ -36,6 +48,22 @@ export function createApp(options: CreateAppOptions): Express {
 
   const api = express.Router();
   api.use('/health', createHealthRouter(config, options.database));
+  if (options.database.connection !== undefined) {
+    api.use(
+      '/tasks',
+      createTaskRouter(new TaskService(new TaskRepository(options.database.connection))),
+    );
+    api.use(
+      '/recurring-tasks',
+      createRecurringRouter(
+        new RecurringService(new RecurringRepository(options.database.connection)),
+      ),
+    );
+    api.use(
+      '/notes',
+      createNoteRouter(new NoteService(new NoteRepository(options.database.connection))),
+    );
+  }
   api.use(notFound('API_NOT_FOUND', 'API 路由不存在'));
   app.use('/api/v1', api);
   app.use('/api', notFound('API_NOT_FOUND', 'API 路由不存在'));

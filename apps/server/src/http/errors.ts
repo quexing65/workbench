@@ -1,8 +1,15 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 
+import {
+  DomainValidationError,
+  ResourceNotFoundError,
+  RevisionConflictError,
+} from '../modules/domain-errors.js';
+
 export interface SafeErrorDetail {
   readonly field?: string;
   readonly message: string;
+  readonly current?: unknown;
 }
 
 export class AppError extends Error {
@@ -24,6 +31,22 @@ function hasProperty(value: unknown, property: string): value is Record<string, 
 function normalizeError(error: unknown): AppError {
   if (error instanceof AppError) {
     return error;
+  }
+
+  if (error instanceof ResourceNotFoundError) {
+    return new AppError(404, error.code, error.message);
+  }
+
+  if (error instanceof RevisionConflictError) {
+    return new AppError(409, 'REVISION_CONFLICT', error.message, [
+      { message: '请刷新后重试', current: error.current },
+    ]);
+  }
+
+  if (error instanceof DomainValidationError) {
+    return new AppError(400, 'VALIDATION_ERROR', '请求参数无效', [
+      { field: error.field, message: error.message },
+    ]);
   }
 
   if (hasProperty(error, 'type') && error['type'] === 'entity.parse.failed') {

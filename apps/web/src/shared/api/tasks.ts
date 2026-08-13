@@ -1,0 +1,56 @@
+import {
+  dailyTaskSchema,
+  taskListResponseSchema,
+  type CreateTaskInput,
+  type DailyTask,
+  type TaskListResponse,
+  type TaskStatus,
+} from '@workbench/shared';
+import { z } from 'zod';
+
+import { apiRequest } from './client';
+
+export function getTasks(date: string, signal?: AbortSignal): Promise<TaskListResponse> {
+  return apiRequest(`/api/v1/tasks?date=${encodeURIComponent(date)}`, taskListResponseSchema, {
+    ...(signal === undefined ? {} : { signal }),
+  });
+}
+
+export function createTask(input: CreateTaskInput): Promise<DailyTask> {
+  return apiRequest('/api/v1/tasks', dailyTaskSchema, { method: 'POST', body: input });
+}
+
+export function updateTask(
+  id: string,
+  revision: number,
+  patch: { title?: string; description?: string; date?: string; status?: TaskStatus },
+): Promise<DailyTask> {
+  return apiRequest(`/api/v1/tasks/${id}`, dailyTaskSchema, {
+    method: 'PATCH',
+    body: { revision, ...patch },
+  });
+}
+
+export function deleteTask(id: string, revision: number): Promise<void> {
+  return apiRequest(`/api/v1/tasks/${id}`, z.void(), { method: 'DELETE', revision });
+}
+
+export const occurrenceResponseSchema = z.object({
+  templateId: z.string().uuid(),
+  date: z.string(),
+  status: z.enum(['active', 'completed', 'cancelled']),
+  revision: z.number().int().positive(),
+});
+
+export function updateOccurrence(
+  templateId: string,
+  date: string,
+  revision: number,
+  status: TaskStatus,
+) {
+  return apiRequest(
+    `/api/v1/recurring-tasks/${templateId}/occurrences/${date}`,
+    occurrenceResponseSchema,
+    { method: 'PUT', body: { revision, status } },
+  );
+}

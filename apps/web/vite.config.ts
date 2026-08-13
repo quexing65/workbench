@@ -16,5 +16,18 @@ export default defineConfig({
     setupFiles: './src/tests/setup.ts',
     css: true,
     restoreMocks: true,
+    coverage: {
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['**/*.d.ts', '**/*.test.{ts,tsx}', '**/dist/**', 'src/main.tsx'],
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'html'],
+      reportsDirectory: '../../coverage/web',
+      thresholds: {
+        branches: 80,
+        functions: 85,
+        lines: 85,
+        statements: 85,
+      },
+    },
   },
 });

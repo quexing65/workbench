@@ -1,4 +1,5 @@
 import type { Logger } from 'pino';
+import type { DatabaseSync } from 'node:sqlite';
 
 import { createApp } from '../src/app.js';
 import type { ServerConfig } from '../src/config.js';
@@ -15,11 +16,19 @@ export const testConfig: ServerConfig = {
 };
 
 export function makeApp(
-  options: { logger?: Logger; serveWeb?: boolean; webDistDirectory?: string } = {},
+  options: {
+    logger?: Logger;
+    serveWeb?: boolean;
+    webDistDirectory?: string;
+    database?: DatabaseSync;
+  } = {},
 ) {
   return createApp({
     config: testConfig,
-    database: { schemaVersion: 1 },
+    database: {
+      schemaVersion: 1,
+      ...(options.database === undefined ? {} : { connection: options.database }),
+    },
     logger: options.logger ?? createLogger(testConfig),
     ...(options.serveWeb === undefined ? {} : { serveWeb: options.serveWeb }),
     ...(options.webDistDirectory === undefined

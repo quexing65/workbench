@@ -1,6 +1,6 @@
 # vNext 数据模型基线
 
-- 状态：阶段 2 已实施
+- 状态：阶段 3 已实施
 - 当前 schema version：1
 - 日期：2026-08-13
 
@@ -32,7 +32,13 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 
 ### 通用工作台
 
-- `tasks`：每日任务，状态为 active/completed/cancelled。
+- `tasks`：每日任务，状态为 active/completed/cancelled；更新使用 revision 原子乐观锁，
+  删除为软删除。
+- `recurring_task_templates`：每日固定任务的日期范围规则；查询任务列表时按日期合并，
+  不预生成未来记录。
+- `recurring_task_occurrences`：仅在某天状态被修改时创建 override；不存在时 revision=0，
+  创建后从 1 开始，日期之间互不影响。
+- `notes`：可搜索、置顶和软删除的小记；搜索全部使用参数化 SQL，更新时间参与稳定分页。
 - `recurring_task_templates`：每日固定任务模板和起止日期。
 - `recurring_task_occurrences`：仅保存某日完成/取消等覆盖状态。
 - `notes`：内容、置顶、创建/更新时间和软删除。
