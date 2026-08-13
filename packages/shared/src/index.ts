@@ -14,6 +14,13 @@ export type {
   UpdateNoteInput,
 } from './contracts/notes.js';
 export {
+  dayStatsSchema,
+  overviewQuerySchema,
+  overviewResponseSchema,
+  resumableLearningSchema,
+} from './contracts/overview.js';
+export type { DayStats, OverviewResponse, ResumableLearning } from './contracts/overview.js';
+export {
   createRecurringTaskSchema,
   occurrenceParamsSchema,
   recurringTaskListResponseSchema,
@@ -27,6 +34,8 @@ export type {
   UpdateOccurrenceInput,
   UpdateRecurringTaskInput,
 } from './contracts/recurring-tasks.js';
+export { reviewQuerySchema, reviewResponseSchema } from './contracts/review.js';
+export type { ReviewResponse } from './contracts/review.js';
 export {
   createTaskSchema,
   dailyTaskSchema,
@@ -45,7 +54,13 @@ export type {
   TaskStatus,
   UpdateTaskInput,
 } from './contracts/tasks.js';
-export { compareBusinessDates, isBusinessDate, parseBusinessDate } from './domain/business-date.js';
+export {
+  addBusinessDays,
+  businessDateSpan,
+  compareBusinessDates,
+  isBusinessDate,
+  parseBusinessDate,
+} from './domain/business-date.js';
 export type { BusinessDateParts } from './domain/business-date.js';
 export {
   epochMillisecondsToIso,

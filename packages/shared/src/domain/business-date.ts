@@ -45,3 +45,24 @@ export function compareBusinessDates(left: string, right: string): number {
   parseBusinessDate(right);
   return left.localeCompare(right);
 }
+
+function toEpochDay(value: string): number {
+  const { year, month, day } = parseBusinessDate(value);
+  const date = new Date(0);
+  date.setUTCHours(0, 0, 0, 0);
+  date.setUTCFullYear(year, month - 1, day);
+  return Math.floor(date.getTime() / 86_400_000);
+}
+
+export function addBusinessDays(value: string, days: number): string {
+  if (!Number.isInteger(days)) throw new RangeError('Days must be an integer');
+  const date = new Date((toEpochDay(value) + days) * 86_400_000);
+  const year = String(date.getUTCFullYear()).padStart(4, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function businessDateSpan(from: string, to: string): number {
+  return toEpochDay(to) - toEpochDay(from) + 1;
+}

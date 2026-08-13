@@ -12,6 +12,9 @@ import { requestId } from './http/request-id.js';
 import { mountStaticWeb } from './http/static-web.js';
 import { createHealthRouter } from './modules/health/route.js';
 import type { HealthDatabaseState } from './modules/health/route.js';
+import { InsightRepository } from './modules/insights/repository.js';
+import { createInsightRouter } from './modules/insights/route.js';
+import { InsightService } from './modules/insights/service.js';
 import { NoteRepository } from './modules/notes/repository.js';
 import { createNoteRouter } from './modules/notes/route.js';
 import { NoteService } from './modules/notes/service.js';
@@ -49,10 +52,14 @@ export function createApp(options: CreateAppOptions): Express {
   const api = express.Router();
   api.use('/health', createHealthRouter(config, options.database));
   if (options.database.connection !== undefined) {
+    const tasks = new TaskRepository(options.database.connection);
     api.use(
-      '/tasks',
-      createTaskRouter(new TaskService(new TaskRepository(options.database.connection))),
+      '/',
+      createInsightRouter(
+        new InsightService(new InsightRepository(options.database.connection), tasks),
+      ),
     );
+    api.use('/tasks', createTaskRouter(new TaskService(tasks)));
     api.use(
       '/recurring-tasks',
       createRecurringRouter(

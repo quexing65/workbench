@@ -1,0 +1,260 @@
+.page-loader,
+.review-state {
+  padding: 4rem 1rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.quick-add {
+  max-width: 48rem;
+  margin-top: 2rem;
+}
+
+.quick-add label {
+  display: block;
+  margin-bottom: 0.55rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.quick-add > div {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.quick-add input {
+  flex: 1;
+}
+
+.overview-grid .insight-block {
+  min-height: 15rem;
+}
+
+.overview-grid .surface--primary {
+  min-height: 31rem;
+}
+
+.insight-block h3 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.3rem;
+}
+
+.surface--primary .status-pill {
+  color: var(--accent-strong);
+  background: #dfece4;
+}
+
+.summary-stats,
+.review-totals {
+  display: grid;
+  margin: auto 0 0;
+  gap: 0.75rem;
+}
+
+.summary-stats {
+  padding-top: 2rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.summary-stats div {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgb(255 255 255 / 25%);
+}
+
+.summary-stats dt,
+.review-totals dt {
+  color: inherit;
+  font-size: 0.76rem;
+  opacity: 0.72;
+}
+
+.summary-stats dd,
+.review-totals dd {
+  margin: 0.2rem 0 0;
+  font-family: Georgia, serif;
+  font-size: 2rem;
+}
+
+.compact-list,
+.note-snippets {
+  display: grid;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  gap: 0.65rem;
+}
+
+.compact-list li {
+  display: flex;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.compact-list div,
+.compact-list small {
+  display: block;
+}
+
+.compact-list small {
+  margin-top: 0.2rem;
+  color: var(--muted);
+}
+
+.compact-list button {
+  flex: 0 0 auto;
+}
+
+.note-snippets li {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--muted);
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.text-link {
+  color: var(--accent-strong);
+  font-weight: 750;
+}
+
+.mini-chart,
+.review-chart {
+  display: flex;
+  min-height: 8rem;
+  margin: 1rem 0;
+  align-items: flex-end;
+  gap: 0.45rem;
+}
+
+.mini-chart > div,
+.review-chart__day {
+  display: grid;
+  min-width: 0;
+  height: 8rem;
+  flex: 1;
+  grid-template-rows: 1fr auto auto;
+  align-items: end;
+  gap: 0.2rem;
+  text-align: center;
+}
+
+.mini-chart span,
+.review-chart__bar {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 0.3rem 0.3rem 0 0;
+  background: var(--accent);
+}
+
+.mini-chart small,
+.mini-chart b,
+.review-chart small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-overflow: ellipsis;
+}
+
+.review-header {
+  display: flex;
+  max-width: none;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.range-toggle {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+}
+
+.review-totals {
+  margin-top: 3rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.review-totals div {
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: var(--paper);
+}
+
+.review-chart {
+  min-height: 16rem;
+  padding: 2rem 1rem 0;
+  border-bottom: 1px solid var(--line);
+  gap: max(0.2rem, 1vw);
+}
+
+.review-chart__day {
+  height: 14rem;
+}
+
+.review-empty {
+  margin: 2rem 0;
+  padding: 1rem;
+  border-left: 3px solid var(--warm);
+  color: var(--muted);
+}
+
+.review-table-wrap {
+  margin-top: 2rem;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+caption {
+  margin-bottom: 0.75rem;
+  color: var(--muted);
+  text-align: left;
+}
+
+th,
+td {
+  padding: 0.7rem;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+
+th:first-child,
+td:first-child {
+  text-align: left;
+}
+
+@media (max-width: 760px) {
+  .review-header {
+    display: block;
+  }
+
+  .range-toggle {
+    margin-top: 1.5rem;
+  }
+
+  .review-totals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .quick-add > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .compact-list li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

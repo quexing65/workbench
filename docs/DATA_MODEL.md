@@ -102,3 +102,10 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 迁移采用 `0001-name.sql` 编号并记录 SHA-256。每条迁移在事务内执行；已应用文件不可修改；
 checksum 不一致时拒绝启动。`0001-initial.sql` 已在阶段 2 落地完整 STRICT schema；
 SHA-256 为 `103858fe38bbdfdc4ed2af86fa5894b71b0203aa2ab756ded9c859eabbfd08ac`。
+
+## 只读聚合
+
+阶段 4 没有改变 schema。`GET /api/v1/overview` 和 `GET /api/v1/review` 仅对已有表做
+只读聚合：每日任务与有效固定任务按日期合并，缺少 occurrence 时状态为 active；小记按
+更新时间取最近三条；学习活动按 `last_observed_at_ms` 归属 Asia/Shanghai 业务日。没有计划
+的日期将完成率表示为 `null`，不伪造 0%。读取聚合不得创建 occurrence 或修改 revision。

@@ -15,7 +15,7 @@
   "scripts": {
     "predev": "npm run build -w @workbench/shared",
     "dev": "concurrently --kill-others-on-fail --names server,web --prefix-colors cyan,magenta \"npm run dev -w @workbench/server\" \"npm run dev -w @workbench/web\"",
-    "build": "npm run build -w @workbench/shared && npm run build -w @workbench/server && npm run build -w @workbench/web",
+    "build": "npm run build -w @workbench/shared && npm run build -w @workbench/server && npm run build -w @workbench/web && node scripts/check-web-bundle.mjs",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "lint": "eslint . --max-warnings 0",

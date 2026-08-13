@@ -25,7 +25,7 @@ cleanup();
 const playwrightCli = fileURLToPath(
   new URL('../node_modules/@playwright/test/cli.js', import.meta.url),
 );
-const result = spawnSync(process.execPath, [playwrightCli, 'test'], {
+const result = spawnSync(process.execPath, [playwrightCli, 'test', ...process.argv.slice(2)], {
   env: { ...process.env, WORKBENCH_DATA_DIR: dataDirectory },
   stdio: 'inherit',
 });
