@@ -18,7 +18,7 @@
 |    5 | B站学习模型        | 完成   | `71f6ae6` `feat: add Bilibili learning workflows`        |
 |    6 | 凭据/CDP/同步      | 完成   | `564e344` `feat: secure Bilibili credential sync`        |
 |    7 | 旧数据导入         | 完成   | `d637eeb` `feat: add auditable legacy imports`           |
-|    8 | 备份/恢复/切换     | 进行中 | `de6005e`；性能补强待本次提交                            |
+|    8 | 备份/恢复/切换     | 进行中 | `de6005e`；性能补强 `83db8c5`                            |
 
 ## 本阶段变更
 
