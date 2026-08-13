@@ -1,7 +1,7 @@
 # vNext 数据模型基线
 
-- 状态：阶段 0 设计基线；数据库尚未创建
-- 当前 schema version：0
+- 状态：阶段 2 已实施
+- 当前 schema version：1
 - 日期：2026-08-13
 
 SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态等非业务偏好；凭据不属于
@@ -94,4 +94,5 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 ## Migration 不变量
 
 迁移采用 `0001-name.sql` 编号并记录 SHA-256。每条迁移在事务内执行；已应用文件不可修改；
-checksum 不一致时拒绝启动。阶段 2 才实际创建数据库和 `0001`，阶段 0 不伪造 schema。
+checksum 不一致时拒绝启动。`0001-initial.sql` 已在阶段 2 落地完整 STRICT schema；
+SHA-256 为 `103858fe38bbdfdc4ed2af86fa5894b71b0203aa2ab756ded9c859eabbfd08ac`。

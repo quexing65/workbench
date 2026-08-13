@@ -8,7 +8,14 @@ describe('loadConfig', () => {
       host: '127.0.0.1',
       port: 8790,
       timeZone: 'Asia/Shanghai',
+      dataDirectory: expect.stringMatching(/[\\/]\.local$/u),
     });
+  });
+
+  it('resolves an explicit data directory', () => {
+    expect(loadConfig({ WORKBENCH_DATA_DIR: './test-data' }).dataDirectory).toMatch(
+      /[\\/]test-data$/u,
+    );
   });
 
   it('rejects a non-loopback bind', () => {

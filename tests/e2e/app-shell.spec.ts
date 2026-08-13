@@ -11,6 +11,8 @@ test('renders the application shell and exposes health through the web origin', 
   const healthBody: unknown = await healthResponse.json();
   expect(healthBody).toMatchObject({
     status: 'ok',
+    database: 'ok',
+    schemaVersion: 1,
     timeZone: 'Asia/Shanghai',
   });
 

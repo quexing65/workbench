@@ -10,9 +10,11 @@ import { loopbackGuard } from './http/origin-guard.js';
 import { requestId } from './http/request-id.js';
 import { mountStaticWeb } from './http/static-web.js';
 import { createHealthRouter } from './modules/health/route.js';
+import type { HealthDatabaseState } from './modules/health/route.js';
 
 export interface CreateAppOptions {
   readonly config: ServerConfig;
+  readonly database: HealthDatabaseState;
   readonly logger?: Logger;
   readonly serveWeb?: boolean;
   readonly webDistDirectory?: string;
@@ -33,7 +35,7 @@ export function createApp(options: CreateAppOptions): Express {
   app.use(express.json({ limit: '1mb', type: ['application/json', 'application/*+json'] }));
 
   const api = express.Router();
-  api.use('/health', createHealthRouter(config));
+  api.use('/health', createHealthRouter(config, options.database));
   api.use(notFound('API_NOT_FOUND', 'API 路由不存在'));
   app.use('/api/v1', api);
   app.use('/api', notFound('API_NOT_FOUND', 'API 路由不存在'));

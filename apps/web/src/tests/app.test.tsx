@@ -6,6 +6,8 @@ import { AppRouter } from '../app/router';
 const healthPayload = {
   status: 'ok',
   version: '0.1.0',
+  database: 'ok',
+  schemaVersion: 1,
   timeZone: 'Asia/Shanghai',
 };
 

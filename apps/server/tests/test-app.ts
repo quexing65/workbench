@@ -10,6 +10,7 @@ export const testConfig: ServerConfig = {
   port: 8790,
   webDevOrigin: 'http://127.0.0.1:5190',
   timeZone: 'Asia/Shanghai',
+  dataDirectory: 'unused-in-unit-tests',
   logLevel: 'silent',
 };
 
@@ -18,6 +19,7 @@ export function makeApp(
 ) {
   return createApp({
     config: testConfig,
+    database: { schemaVersion: 1 },
     logger: options.logger ?? createLogger(testConfig),
     ...(options.serveWeb === undefined ? {} : { serveWeb: options.serveWeb }),
     ...(options.webDistDirectory === undefined

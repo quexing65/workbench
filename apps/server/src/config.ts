@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { z } from 'zod';
 
 const serverConfigSchema = z.object({
@@ -6,6 +8,7 @@ const serverConfigSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65_535).default(8790),
   WEB_DEV_ORIGIN: z.string().default('http://127.0.0.1:5190'),
   APP_TIME_ZONE: z.string().min(1).default('Asia/Shanghai'),
+  WORKBENCH_DATA_DIR: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });
 
@@ -15,6 +18,7 @@ export interface ServerConfig {
   readonly port: number;
   readonly webDevOrigin: string;
   readonly timeZone: string;
+  readonly dataDirectory: string;
   readonly logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
 }
 
@@ -53,6 +57,10 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Server
   const parsed = serverConfigSchema.parse(environment);
   const webDevOrigin = parseOrigin(parsed.WEB_DEV_ORIGIN);
   assertTimeZone(parsed.APP_TIME_ZONE);
+  const defaultDataDirectory =
+    parsed.NODE_ENV === 'production' && environment['LOCALAPPDATA'] !== undefined
+      ? resolve(environment['LOCALAPPDATA'], 'PersonalWorkbenchVNext')
+      : resolve('.local');
 
   return {
     nodeEnv: parsed.NODE_ENV,
@@ -60,6 +68,10 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Server
     port: parsed.PORT,
     webDevOrigin,
     timeZone: parsed.APP_TIME_ZONE,
+    dataDirectory:
+      parsed.WORKBENCH_DATA_DIR === undefined
+        ? defaultDataDirectory
+        : resolve(parsed.WORKBENCH_DATA_DIR),
     logLevel: parsed.LOG_LEVEL,
   };
 }
