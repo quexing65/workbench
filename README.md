@@ -3,8 +3,8 @@
 一个全新的 local-first 个人工作台。产品设计参考 `Personal-Workbench`，本机
 SQLite/B站能力参考 `Personl-Workbench-qoder`，但本仓库不把两个旧项目作为运行时依赖。
 
-阶段 6 的 Windows DPAPI 凭据存储、受控 CDP 接入和可审计的 B站学习同步已经完成；
-当前准备进入阶段 7，实现两个旧项目的只读、两阶段数据导入。
+阶段 7 的 Personal JSON / qoder SQLite 只读检查、两阶段导入、冲突对账和数据页已经完成；
+当前准备进入阶段 8，实现备份、停服恢复、性能基线和最终切换演练。
 
 开始开发前必须阅读：
 

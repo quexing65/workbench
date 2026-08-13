@@ -1,6 +1,6 @@
 # vNext 安全基线
 
-- 状态：阶段 6 已实施（导入与备份条款将在阶段 7/8 验收）
+- 状态：阶段 7 已实施（备份与恢复条款将在阶段 8 验收）
 - 日期：2026-08-13
 
 ## 资产与信任边界
@@ -47,6 +47,12 @@
 - ready preflight 有 TTL；文件名不用于路径拼接；成功、失败、过期或重启恢复后都清理孤儿临时文件。
 - qoder 中的 SESSDATA 仅用返回布尔存在性的定向查询检测，禁止 `SELECT *` 或读取/物化其值；
   staging、warning、错误上下文和 fixture snapshot 都不得携带它。
+
+阶段 7 已实现上述导入约束：Personal v1/v2/v3 使用严格 Zod schema；qoder 使用
+read-only/query_only、`trusted_schema=OFF`、table/column allowlist、integrity/foreign-key 与
+容量边界检查。confirmation token 绑定 run/source/type/timezone/plan 且 15 分钟过期；apply
+重新校验源哈希、数据库计划摘要、目标投影和 tombstone 目标投影，失败回滚并清理临时文件。
+真实 SESSDATA 未被读入、复制、记录或迁移。
 
 ## 备份与恢复安全
 

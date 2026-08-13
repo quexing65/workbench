@@ -1,7 +1,7 @@
 # vNext 数据模型基线
 
-- 状态：阶段 3 已实施
-- 当前 schema version：1
+- 状态：阶段 7 已实施
+- 当前 schema version：2
 - 日期：2026-08-13
 
 SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态等非业务偏好；凭据不属于
@@ -28,6 +28,8 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 - `import_runs`：不可变 preflight/apply 运行记录；apply 显式引用 preflight，并记录
   plan digest、过期时间和 confirmation token 的原子消费状态。
 - `source_refs`：来源 ID 到 vNext ID、贡献状态、规范化来源投影及三方合并基线。
+- `source_contributions`：来源级物化贡献、规范化键、创建归属、active 状态和成功 apply 引用；
+  用于多来源共享目标及只撤销单一来源贡献。
 - `deletion_markers`：Personal tombstone 的来源级删除事实。
 
 ### 通用工作台
@@ -102,6 +104,11 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 迁移采用 `0001-name.sql` 编号并记录 SHA-256。每条迁移在事务内执行；已应用文件不可修改；
 checksum 不一致时拒绝启动。`0001-initial.sql` 已在阶段 2 落地完整 STRICT schema；
 SHA-256 为 `103858fe38bbdfdc4ed2af86fa5894b71b0203aa2ab756ded9c859eabbfd08ac`。
+
+阶段 7 新增 `0002-source-contributions.sql`，SHA-256 为
+`53b63690deffce1fed6a4276bd5690e4d28efc13db59aaf6f72a02575f192965`：新增
+`source_contributions`，将 deletion marker 主键扩展为来源 ID + canonical key，并给成功 apply
+记录逻辑校验和。schema version 升至 2；`0001` 未修改。
 
 ## B站同步
 

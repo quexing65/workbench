@@ -1,6 +1,6 @@
 # vNext 架构基线
 
-- 状态：阶段 6 已实施
+- 状态：阶段 7 已实施
 - 日期：2026-08-13
 - 默认时区：Asia/Shanghai
 
@@ -80,6 +80,9 @@ Express 在 `127.0.0.1:8790` 同源托管静态页面和 `/api/v1`。
   参数重启，Chrome 136+ 仅提供安全说明。
 - Bili sync：单进程互斥、持久化运行状态、启动恢复中断任务；历史观察继续使用统一进度纯函数，
   不直接覆盖学习进度。
+- Legacy import：Personal v1/v2/v3 JSON 与 qoder SQLite 只经复制到随机临时目录后读取；
+  preflight 生成有 TTL 的不可变计划，apply 重新校验源、计划和目标基线，先做一致快照再以
+  `BEGIN IMMEDIATE` 单事务写入。来源贡献与 tombstone 分开记录，冲突默认保留本地。
 
 ## 质量门槛
 

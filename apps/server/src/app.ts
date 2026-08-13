@@ -16,6 +16,8 @@ import type { HealthDatabaseState } from './modules/health/route.js';
 import { InsightRepository } from './modules/insights/repository.js';
 import { createInsightRouter } from './modules/insights/route.js';
 import { InsightService } from './modules/insights/service.js';
+import { ImportService } from './modules/imports/import-service.js';
+import { createImportRouter } from './modules/imports/route.js';
 import { BiliSessionHttpClient, type BiliSessionClient } from './modules/bili/session-client.js';
 import {
   LocalCdpAdapter,
@@ -54,6 +56,7 @@ export interface CreateAppOptions {
   readonly biliSessionClient?: BiliSessionClient;
   readonly credentialStore?: BiliCredentialStore;
   readonly browserCredentialAdapter?: BrowserCredentialAdapter;
+  readonly mountImports?: boolean;
   readonly serveWeb?: boolean;
   readonly webDistDirectory?: string;
 }
@@ -104,6 +107,17 @@ export function createApp(options: CreateAppOptions): Express {
       '/notes',
       createNoteRouter(new NoteService(new NoteRepository(options.database.connection))),
     );
+    if (options.mountImports ?? true) {
+      const importService = new ImportService(
+        options.database.connection,
+        join(config.dataDirectory, 'tmp', 'imports'),
+        join(config.dataDirectory, 'backups'),
+      );
+      api.use(
+        '/data/imports',
+        createImportRouter(importService, join(config.dataDirectory, 'tmp', 'imports', 'uploads')),
+      );
+    }
     const learningService = new LearningService(
       learningResources,
       learningSeries,

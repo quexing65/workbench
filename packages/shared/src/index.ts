@@ -1,6 +1,27 @@
 export { healthResponseSchema } from './contracts/health.js';
 export type { HealthResponse } from './contracts/health.js';
 export {
+  applyImportSchema,
+  importConflictSchema,
+  importCountSchema,
+  importFatalSchema,
+  importPreflightResponseSchema,
+  importReportSchema,
+  importResolutionSchema,
+  importSourceTypeSchema,
+  importWarningSchema,
+} from './contracts/imports.js';
+export type {
+  ApplyImportInput,
+  ImportConflict,
+  ImportCount,
+  ImportFatal,
+  ImportPreflightResponse,
+  ImportReport,
+  ImportSourceType,
+  ImportWarning,
+} from './contracts/imports.js';
+export {
   biliBrowserSchema,
   biliCredentialStatusSchema,
   fetchBiliCredentialSchema,

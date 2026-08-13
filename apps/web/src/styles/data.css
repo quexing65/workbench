@@ -1,0 +1,139 @@
+.data-layout {
+  display: grid;
+  margin-top: clamp(2rem, 5vw, 4rem);
+  grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.import-form select,
+.import-form input[type='file'] {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  color: var(--ink);
+  background: #fffefa;
+  font: inherit;
+}
+
+.import-caution,
+.credential-detected {
+  padding: 0.85rem;
+  border-radius: 0.7rem;
+  color: #6b3e05;
+  background: #fff1d6;
+  font-size: 0.88rem;
+}
+
+.data-results {
+  display: grid;
+  gap: 1rem;
+}
+
+.report-heading,
+.report-meta > div,
+.count-card dl > div {
+  display: flex;
+  gap: 0.7rem;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.report-heading h2,
+.count-card h3,
+.report-messages h3 {
+  margin-bottom: 0;
+}
+
+.report-meta {
+  display: grid;
+  margin: 1rem 0;
+  gap: 0.5rem;
+}
+
+.report-meta dt,
+.count-card dt {
+  color: var(--muted);
+}
+
+.report-meta dd,
+.count-card dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.report-hash {
+  max-width: 24rem;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+}
+
+.count-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.65rem;
+}
+
+.count-card {
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: #fffefa;
+}
+
+.count-card dl {
+  display: grid;
+  margin-bottom: 0;
+  gap: 0.25rem;
+}
+
+.report-messages {
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line);
+}
+
+.report-messages ul {
+  padding-left: 1.2rem;
+}
+
+.import-confirm {
+  display: grid;
+  gap: 1rem;
+}
+
+.import-confirm label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+}
+
+.import-confirm input {
+  width: 1.25rem;
+  min-height: 1.25rem;
+}
+
+.status-pill--ready,
+.status-pill--succeeded {
+  color: #fff;
+  background: var(--accent);
+}
+
+.status-pill--failed {
+  color: #fff;
+  background: var(--error);
+}
+
+@media (max-width: 760px) {
+  .data-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .report-heading {
+    align-items: flex-start;
+  }
+}

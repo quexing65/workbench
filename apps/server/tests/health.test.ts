@@ -16,7 +16,7 @@ describe('GET /api/v1/health', () => {
       status: 'ok',
       version: '0.1.0',
       database: 'ok',
-      schemaVersion: 1,
+      schemaVersion: 2,
       timeZone: 'Asia/Shanghai',
     });
     expect(response.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/u);

@@ -10,6 +10,16 @@ const errorEnvelopeSchema = z.object({
   }),
 });
 
+export async function apiError(response: Response): Promise<ApiError> {
+  const parsed = errorEnvelopeSchema.safeParse(await response.json().catch(() => undefined));
+  return new ApiError(
+    response.status,
+    parsed.success ? parsed.data.error.code : 'REQUEST_FAILED',
+    parsed.success ? parsed.data.error.message : '请求失败，请稍后重试',
+    parsed.success ? parsed.data.error.details[0]?.current : undefined,
+  );
+}
+
 export class ApiError extends Error {
   public constructor(
     public readonly status: number,
@@ -54,13 +64,7 @@ export async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    const parsed = errorEnvelopeSchema.safeParse(await response.json().catch(() => undefined));
-    throw new ApiError(
-      response.status,
-      parsed.success ? parsed.data.error.code : 'REQUEST_FAILED',
-      parsed.success ? parsed.data.error.message : '请求失败，请稍后重试',
-      parsed.success ? parsed.data.error.details[0]?.current : undefined,
-    );
+    throw await apiError(response);
   }
 
   if (response.status === 204) return schema.parse(undefined);

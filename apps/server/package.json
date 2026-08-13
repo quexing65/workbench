@@ -9,6 +9,9 @@
     "build": "npm run build -w @workbench/shared && tsc -p tsconfig.build.json && node scripts/copy-migrations.mjs",
     "start": "node dist/index.js",
     "db:migrate": "tsx src/db/cli-migrate.ts",
+    "import:personal": "tsx src/modules/imports/cli-import.ts personal",
+    "import:qoder": "tsx src/modules/imports/cli-import.ts qoder",
+    "import:apply": "tsx src/modules/imports/cli-import.ts apply",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --root ../.. --config vitest.config.ts apps/server",
     "test:coverage": "vitest run --coverage --root ../.. --config vitest.config.ts apps/server --coverage.include=apps/server/src/**/*.ts"

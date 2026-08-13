@@ -30,12 +30,17 @@ export function makeApp(
     biliSessionClient?: BiliSessionClient;
     credentialStore?: BiliCredentialStore;
     browserCredentialAdapter?: BrowserCredentialAdapter;
+    mountImports?: boolean;
+    dataDirectory?: string;
   } = {},
 ) {
   return createApp({
-    config: testConfig,
+    config: {
+      ...testConfig,
+      ...(options.dataDirectory === undefined ? {} : { dataDirectory: options.dataDirectory }),
+    },
     database: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       ...(options.database === undefined ? {} : { connection: options.database }),
     },
     logger: options.logger ?? createLogger(testConfig),
@@ -47,6 +52,7 @@ export function makeApp(
     ...(options.browserCredentialAdapter === undefined
       ? {}
       : { browserCredentialAdapter: options.browserCredentialAdapter }),
+    mountImports: options.mountImports ?? false,
     ...(options.serveWeb === undefined ? {} : { serveWeb: options.serveWeb }),
     ...(options.webDistDirectory === undefined
       ? {}
