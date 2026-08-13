@@ -11,6 +11,7 @@ export const PERFORMANCE_FIXTURE_COUNTS = {
   tasks: 10_000,
   notes: 10_000,
   learningResources: 1_000,
+  learningSeries: 10,
 } as const;
 
 interface PlanRow {
@@ -39,6 +40,10 @@ function dateAt(index: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+function fixtureId(kind: 1 | 2 | 3 | 4 | 5, index: number): string {
+  return `00000000-0000-4000-800${kind}-${String(index).padStart(12, '0')}`;
+}
+
 export function populatePerformanceFixture(database: DatabaseSync): number {
   const started = performance.now();
   withTransaction(database, () => {
@@ -52,7 +57,7 @@ export function populatePerformanceFixture(database: DatabaseSync): number {
       const status = index % 5 === 0 ? 'completed' : index % 11 === 0 ? 'cancelled' : 'active';
       const now = 1_700_000_000_000 + index;
       task.run(
-        `perf-task-${String(index).padStart(5, '0')}`,
+        fixtureId(1, index),
         `Performance task ${index}`,
         dateAt(index),
         status,
@@ -70,7 +75,7 @@ export function populatePerformanceFixture(database: DatabaseSync): number {
     for (let index = 0; index < PERFORMANCE_FIXTURE_COUNTS.notes; index += 1) {
       const now = 1_700_000_000_000 + index;
       note.run(
-        `perf-note-${String(index).padStart(5, '0')}`,
+        fixtureId(2, index),
         `Performance note ${index}`,
         index % 101 === 0 ? 1 : 0,
         now,
@@ -102,8 +107,8 @@ export function populatePerformanceFixture(database: DatabaseSync): number {
       ) VALUES (?, 120, ?, ?, ?, 1)
     `);
     for (let index = 0; index < PERFORMANCE_FIXTURE_COUNTS.learningResources; index += 1) {
-      const resourceId = `perf-resource-${String(index).padStart(4, '0')}`;
-      const partId = `perf-part-${String(index).padStart(4, '0')}`;
+      const resourceId = fixtureId(3, index);
+      const partId = fixtureId(4, index);
       const externalId = `BV${String(index).padStart(10, '0')}`;
       const now = 1_700_000_000_000 + index * 86_400_000;
       const completed = index % 7 === 0 ? 1 : 0;
@@ -119,6 +124,27 @@ export function populatePerformanceFixture(database: DatabaseSync): number {
       part.run(partId, resourceId, `cid-${index}`, `Part ${index}`, now, now);
       resourceProgress.run(resourceId, partId, partId, completed, now, now);
       partProgress.run(partId, completed, now, now);
+    }
+
+    const series = database.prepare(`
+      INSERT INTO learning_series (id, name, created_at_ms, updated_at_ms, revision)
+      VALUES (?, ?, ?, ?, 1)
+    `);
+    const seriesItem = database.prepare(`
+      INSERT INTO learning_series_items (series_id, resource_id, position, created_at_ms)
+      VALUES (?, ?, ?, ?)
+    `);
+    for (
+      let seriesIndex = 0;
+      seriesIndex < PERFORMANCE_FIXTURE_COUNTS.learningSeries;
+      seriesIndex += 1
+    ) {
+      const seriesId = fixtureId(5, seriesIndex);
+      const now = 1_700_100_000_000 + seriesIndex;
+      series.run(seriesId, `Performance series ${seriesIndex}`, now, now);
+      for (let position = 0; position < 100; position += 1) {
+        seriesItem.run(seriesId, fixtureId(3, seriesIndex * 100 + position), position, now);
+      }
     }
   });
   database.exec('ANALYZE');

@@ -1,6 +1,8 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 import { openWorkbenchDatabase } from '../db/connection.js';
 import { populatePerformanceFixture, runPerformanceAudit } from './audit.js';
@@ -21,6 +23,14 @@ try {
       const outputPath = resolve(process.env['INIT_CWD'] ?? process.cwd(), output);
       mkdirSync(dirname(outputPath), { recursive: true });
       writeFileSync(outputPath, json, { encoding: 'utf8', flag: 'w' });
+      const prettier = fileURLToPath(
+        new URL('../../../../node_modules/prettier/bin/prettier.cjs', import.meta.url),
+      );
+      const formatted = spawnSync(process.execPath, [prettier, outputPath, '--write'], {
+        encoding: 'utf8',
+      });
+      if (formatted.error !== undefined) throw formatted.error;
+      if (formatted.status !== 0) throw new Error('Performance report formatting failed');
     }
     if (!report.passed) process.exitCode = 1;
   } finally {

@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2026-08-13T12:18:05.140Z",
+  "fixture": {
+    "tasks": 10000,
+    "notes": 10000,
+    "learningResources": 1000,
+    "learningSeries": 10
+  },
+  "budgets": {
+    "maximumNavigationMs": 3000,
+    "maximumInteractionMs": 1500,
+    "maximumDomElements": 5000
+  },
+  "pages": [
+    {
+      "path": "/overview",
+      "navigationMs": 672.5,
+      "domElements": 272,
+      "apiResources": [
+        {
+          "path": "/api/v1/health",
+          "durationMs": 3.6
+        },
+        {
+          "path": "/api/v1/overview",
+          "durationMs": 52.2
+        }
+      ]
+    },
+    {
+      "path": "/tasks",
+      "navigationMs": 414.78,
+      "domElements": 224,
+      "apiResources": [
+        {
+          "path": "/api/v1/health",
+          "durationMs": 3.8
+        },
+        {
+          "path": "/api/v1/tasks",
+          "durationMs": 3.6
+        }
+      ]
+    },
+    {
+      "path": "/notes",
+      "navigationMs": 420.62,
+      "domElements": 803,
+      "apiResources": [
+        {
+          "path": "/api/v1/health",
+          "durationMs": 3.7
+        },
+        {
+          "path": "/api/v1/notes",
+          "durationMs": 6.5
+        }
+      ]
+    },
+    {
+      "path": "/learning",
+      "navigationMs": 634.42,
+      "domElements": 687,
+      "apiResources": [
+        {
+          "path": "/api/v1/health",
+          "durationMs": 3.6
+        },
+        {
+          "path": "/api/v1/bili/credential/status",
+          "durationMs": 173.9
+        },
+        {
+          "path": "/api/v1/learning/resources",
+          "durationMs": 174.3
+        },
+        {
+          "path": "/api/v1/learning/series",
+          "durationMs": 177.4
+        }
+      ]
+    },
+    {
+      "path": "/review",
+      "navigationMs": 411.22,
+      "domElements": 194,
+      "apiResources": [
+        {
+          "path": "/api/v1/health",
+          "durationMs": 4.4
+        },
+        {
+          "path": "/api/v1/review",
+          "durationMs": 6.7
+        }
+      ]
+    }
+  ],
+  "interactions": {
+    "taskDateChangeMs": 42.79,
+    "noteSearchMs": 363.39,
+    "seriesEditMs": 99.06,
+    "reviewRangeChangeMs": 92.93
+  },
+  "expandedStates": {
+    "learningSeriesEditorDomElements": 2201
+  },
+  "failures": [],
+  "passed": true
+}

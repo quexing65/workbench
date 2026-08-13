@@ -83,12 +83,16 @@ Express 在 `127.0.0.1:8790` 同源托管静态页面和 `/api/v1`。
 - Legacy import：Personal v1/v2/v3 JSON 与 qoder SQLite 只经复制到随机临时目录后读取；
   preflight 生成有 TTL 的不可变计划，apply 重新校验源、计划和目标基线，先做一致快照再以
   `BEGIN IMMEDIATE` 单事务写入。来源贡献与 tombstone 分开记录，冲突默认保留本地。
+- Performance：查询计划审计与正式构建浏览器审计共用 10k tasks、10k notes、1k videos 隔离
+  fixture；首屏列表必须有界，用户可显式逐步展开全部数据，自动门禁检查完成加载、交互和 DOM
+  预算。
 
 ## 质量门槛
 
 阶段 1 建立 TypeScript strict、ESLint 0 warning、Vitest、Playwright 和 Windows CI。
 阶段 3 起全局覆盖率 lines/functions/statements ≥85%、branches ≥80%；关键迁移、导入、
-进度和凭据模块要求更高覆盖率。完整要求以 `EXECUTION_PLAN.md` 为准。
+进度和凭据模块要求更高覆盖率。`check:all` 还必须运行 Chromium E2E 和目标数据量浏览器性能
+审计。完整要求以 `EXECUTION_PLAN.md` 为准。
 
 ## 关联决策
 

@@ -43,9 +43,19 @@ test('persists a daily task, recurring task and note through page refreshes', as
   const seriesName = `端到端学习系列 ${suffix}`;
   await page.getByLabel('新系列名称').fill(seriesName);
   await page.getByRole('button', { name: '创建系列' }).click();
+  await expect(
+    page.getByRole('region', { name: '学习系列', exact: true }).getByText(seriesName, {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: `编辑系列 ${seriesName}` }).click();
   await expect(page.locator(`input[value="${seriesName}"]`)).toBeVisible();
   await page.reload();
-  await expect(page.locator(`input[value="${seriesName}"]`)).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: '学习系列', exact: true }).getByText(seriesName, {
+      exact: true,
+    }),
+  ).toBeVisible();
 });
 
 test('business pages fit a 360px viewport without page-level horizontal overflow', async ({

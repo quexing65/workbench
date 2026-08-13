@@ -68,10 +68,17 @@ hash、integrity、foreign keys 和 app ID；在 staging 副本应用可兼容 m
 ```powershell
 npm run db:migrate
 npm run performance:audit -- --output docs/reports/performance-audit.json
+npm run performance:browser -- --output docs/reports/browser-performance-audit.json
 ```
 
 性能审计只在系统临时目录生成 10,000 任务、10,000 小记和 1,000 视频，运行常用页面查询与
-`EXPLAIN QUERY PLAN`，结束后删除 fixture。报告不含业务标题、正文或凭据。
+`EXPLAIN QUERY PLAN`。浏览器审计会构建正式 Web/Server、启动隔离的正式同源服务，测量总览、
+任务、小记、学习和回顾的完成加载时间、日期/搜索/系列编辑/回顾交互和首屏/系列展开态 DOM 数。两个命令结束后都删除 fixture；
+报告不含业务标题、正文、绝对路径或凭据。
+
+浏览器门槛为页面完成加载不超过 3 秒、日期切换/搜索/回顾范围切换不超过 1.5 秒、单页 DOM
+不超过 5,000。总览逾期任务和学习库按 20 项逐步显示，避免大数据量首屏渲染全部实体，同时
+保留继续显示全部数据的入口。该基准使用本机合成数据，不能替代 3–7 天真实使用观察。
 
 ## 故障处理
 

@@ -7,6 +7,8 @@ import { getOverview } from '../../shared/api/insights';
 import { queryKeys } from '../../shared/api/query-keys';
 import { createTask, updateTask } from '../../shared/api/tasks';
 
+const OVERDUE_BATCH_SIZE = 20;
+
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
 }
@@ -75,6 +77,7 @@ function Summary({ data }: { data: OverviewResponse }) {
 export function OverviewPage() {
   const date = today();
   const [title, setTitle] = useState('');
+  const [visibleOverdueCount, setVisibleOverdueCount] = useState(OVERDUE_BATCH_SIZE);
   const client = useQueryClient();
   const overview = useQuery({
     queryKey: queryKeys.overview(date),
@@ -102,6 +105,9 @@ export function OverviewPage() {
     void overview.refetch();
   };
   const common = { pending: overview.isPending, error: overview.isError, retry };
+  const overdueTasks = overview.data?.overdueTasks ?? [];
+  const visibleOverdueTasks = overdueTasks.slice(0, visibleOverdueCount);
+  const remainingOverdueTasks = overdueTasks.length - visibleOverdueTasks.length;
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -161,7 +167,7 @@ export function OverviewPage() {
             <p className="empty-state">没有逾期任务。</p>
           ) : null}
           <ul className="compact-list">
-            {overview.data?.overdueTasks.map((task) => (
+            {visibleOverdueTasks.map((task) => (
               <li key={task.id}>
                 <div>
                   <strong>{task.title}</strong>
@@ -177,6 +183,15 @@ export function OverviewPage() {
               </li>
             ))}
           </ul>
+          {remainingOverdueTasks > 0 ? (
+            <button
+              className="button-secondary"
+              onClick={() => setVisibleOverdueCount((count) => count + OVERDUE_BATCH_SIZE)}
+            >
+              再显示 {Math.min(OVERDUE_BATCH_SIZE, remainingOverdueTasks)} 条（剩余{' '}
+              {remainingOverdueTasks} 条）
+            </button>
+          ) : null}
           {move.error ? (
             <p role="alert" className="form-error">
               移动失败，请刷新后重试。

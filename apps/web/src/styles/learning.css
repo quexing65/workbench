@@ -151,6 +151,11 @@ select {
   gap: 1rem;
 }
 
+.list-more {
+  width: 100%;
+  margin-top: 1rem;
+}
+
 .learning-card,
 .series-card {
   padding: 1.15rem;
@@ -234,6 +239,30 @@ select {
   background: #fffefa;
 }
 
+.series-summary {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: #fffefa;
+}
+
+.series-summary__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.series-summary__header small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+}
+
+.series-summary .series-card {
+  margin-top: 1rem;
+}
+
 .series-items > li span {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -272,6 +301,7 @@ select {
 
 @media (max-width: 560px) {
   .learning-card__header,
+  .series-summary__header,
   .part-list > li,
   .series-items > li,
   .part-progress-form {

@@ -62,7 +62,7 @@ function SeriesEditor({
   }
 
   return (
-    <li className="series-card">
+    <div className="series-card">
       <div className="field-row">
         <label>
           系列名称
@@ -167,7 +167,7 @@ function SeriesEditor({
             : mutation.error.message}
         </p>
       )}
-    </li>
+    </div>
   );
 }
 
@@ -179,6 +179,7 @@ export function LearningSeriesPanel({
   readonly resources: readonly LearningResource[];
 }) {
   const [name, setName] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
   const client = useQueryClient();
   const create = useMutation({
     mutationFn: () => createLearningSeries(name),
@@ -219,7 +220,29 @@ export function LearningSeriesPanel({
       {series.length === 0 && <p className="empty-state">还没有学习系列。</p>}
       <ul className="series-list">
         {series.map((item) => (
-          <SeriesEditor key={`${item.id}:${item.revision}`} series={item} resources={resources} />
+          <li className="series-summary" key={item.id}>
+            <div className="series-summary__header">
+              <div>
+                <strong>{item.name}</strong>
+                <small>{item.resourceIds.length} 项资源</small>
+              </div>
+              <button
+                type="button"
+                className="button-secondary"
+                aria-expanded={editingId === item.id}
+                onClick={() => setEditingId((current) => (current === item.id ? null : item.id))}
+              >
+                {editingId === item.id ? '收起编辑' : `编辑系列 ${item.name}`}
+              </button>
+            </div>
+            {editingId === item.id ? (
+              <SeriesEditor
+                key={`${item.id}:${item.revision}`}
+                series={item}
+                resources={resources}
+              />
+            ) : null}
+          </li>
         ))}
       </ul>
     </section>

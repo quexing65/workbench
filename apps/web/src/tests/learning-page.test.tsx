@@ -177,6 +177,7 @@ describe('learning center', () => {
       }),
     );
     renderLearningPage();
+    fireEvent.click(await screen.findByRole('button', { name: '编辑系列 前端系列' }));
     fireEvent.change(await screen.findByLabelText('新系列名称'), { target: { value: '新系列' } });
     fireEvent.click(screen.getByRole('button', { name: '创建系列' }));
     expect(await screen.findByDisplayValue('新系列')).toBeInTheDocument();
@@ -255,5 +256,26 @@ describe('learning center', () => {
     fireEvent.click(screen.getByRole('button', { name: '导入资源' }));
     expect(await screen.findByText(/已安全保留/)).toBeInTheDocument();
     expect(screen.getByLabelText('视频链接或 BV 号')).toHaveValue('https://b23.tv/abc123');
+  });
+
+  it('keeps a large learning library available without rendering every card initially', async () => {
+    const items = Array.from({ length: 25 }, (_, index) =>
+      resource({
+        id: `10000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+        title: `性能课程 ${index + 1}`,
+      }),
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) =>
+        json(requestPath(input).endsWith('/series') ? { items: [] } : { items }),
+      ),
+    );
+    renderLearningPage();
+
+    expect(await screen.findByRole('heading', { name: '性能课程 20' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '性能课程 21' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '再显示 5 项（剩余 5 项）' }));
+    expect(screen.getByRole('heading', { name: '性能课程 25' })).toBeInTheDocument();
   });
 });

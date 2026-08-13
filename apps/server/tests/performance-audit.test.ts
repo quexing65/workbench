@@ -30,7 +30,7 @@ describe('performance fixture and query plan audit', () => {
         () => new Date('2026-08-13T00:00:00.000Z'),
       );
       const counts = Object.fromEntries(
-        ['tasks', 'notes', 'learning_resources'].map((table) => [
+        ['tasks', 'notes', 'learning_resources', 'learning_series'].map((table) => [
           table,
           Number(
             database.connection.prepare(`SELECT count(*) AS count FROM ${table}`).get()?.['count'],
@@ -42,6 +42,7 @@ describe('performance fixture and query plan audit', () => {
         tasks: PERFORMANCE_FIXTURE_COUNTS.tasks,
         notes: PERFORMANCE_FIXTURE_COUNTS.notes,
         learning_resources: PERFORMANCE_FIXTURE_COUNTS.learningResources,
+        learning_series: PERFORMANCE_FIXTURE_COUNTS.learningSeries,
       });
       expect(report.generatedAt).toBe('2026-08-13T00:00:00.000Z');
       expect(report.queries).toHaveLength(7);

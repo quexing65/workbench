@@ -11,10 +11,13 @@ import { LearningResourceCard } from './LearningResourceCard';
 import { LearningSeriesPanel } from './LearningSeriesPanel';
 import { BiliSyncPanel } from './BiliSyncPanel';
 
+const RESOURCE_BATCH_SIZE = 20;
+
 export function LearningPage() {
   const [url, setUrl] = useState('');
   const [seriesId, setSeriesId] = useState('');
   const [unresolvedMessage, setUnresolvedMessage] = useState('');
+  const [visibleResourceCount, setVisibleResourceCount] = useState(RESOURCE_BATCH_SIZE);
   const client = useQueryClient();
   const resources = useQuery({
     queryKey: queryKeys.learningResources,
@@ -47,6 +50,9 @@ export function LearningPage() {
   }
 
   const hasLoadError = resources.isError || series.isError;
+  const resourceItems = resources.data?.items ?? [];
+  const visibleResources = resourceItems.slice(0, visibleResourceCount);
+  const remainingResources = resourceItems.length - visibleResources.length;
 
   return (
     <section className="page learning-page">
@@ -125,10 +131,19 @@ export function LearningPage() {
               <p className="empty-state">还没有学习资源，从上方导入一个 B站视频。</p>
             )}
             <div className="learning-list">
-              {resources.data.items.map((resource) => (
+              {visibleResources.map((resource) => (
                 <LearningResourceCard key={resource.id} resource={resource} />
               ))}
             </div>
+            {remainingResources > 0 ? (
+              <button
+                className="button-secondary list-more"
+                onClick={() => setVisibleResourceCount((count) => count + RESOURCE_BATCH_SIZE)}
+              >
+                再显示 {Math.min(RESOURCE_BATCH_SIZE, remainingResources)} 项（剩余{' '}
+                {remainingResources} 项）
+              </button>
+            ) : null}
           </section>
           <LearningSeriesPanel series={series.data.items} resources={resources.data.items} />
         </div>

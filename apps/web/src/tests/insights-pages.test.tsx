@@ -159,6 +159,21 @@ describe('overview page', () => {
     expect(screen.getByText('还没有可续接的学习进度。')).toBeInTheDocument();
     expect(screen.getByText('近 7 天还没有计划，不计算完成率。')).toBeInTheDocument();
   });
+
+  it('keeps a large overdue list available without rendering it all at once', async () => {
+    const overdueTasks = Array.from({ length: 25 }, (_, index) => ({
+      ...overview.overdueTasks[0],
+      id: `10000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+      title: `逾期任务 ${index + 1}`,
+    }));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ ...overview, overdueTasks })));
+    renderPage(<OverviewPage />);
+
+    expect(await screen.findByText('逾期任务 20', { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText('逾期任务 21', { exact: true })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '再显示 5 条（剩余 5 条）' }));
+    expect(screen.getByText('逾期任务 25', { exact: true })).toBeInTheDocument();
+  });
 });
 
 describe('review page', () => {
