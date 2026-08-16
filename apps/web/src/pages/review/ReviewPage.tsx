@@ -13,7 +13,6 @@ function percent(value: number | null): string {
   return value === null ? '—' : `${Math.round(value * 100)}%`;
 }
 
-const DAYS_PER_PAGE = 7;
 const PIE_COLORS = ['#315f50', '#d3794d', '#71899b', '#a2865f', '#74658d', '#5f8b75'];
 
 function durationLabel(seconds: number): string {
@@ -23,95 +22,29 @@ function durationLabel(seconds: number): string {
   return hours > 0 ? `${hours} 小时 ${minutes} 分钟` : `${minutes} 分钟`;
 }
 
-function ReviewChart({ days }: { days: DayStats[] }) {
-  return (
-    <div className="review-chart" role="img" aria-label="当前页每日任务完成率柱状图">
-      {days.map((day) => (
-        <div className="review-chart__day" key={day.date}>
-          <span
-            className="review-chart__bar"
-            style={{ height: `${(day.completionRate ?? 0) * 100}%` }}
-          />
-          <b>{percent(day.completionRate)}</b>
-          <small>{day.date.slice(5)}</small>
-        </div>
-      ))}
-    </div>
-  );
+function signedDurationLabel(delta: number): string {
+  const sign = delta > 0 ? '+' : '-';
+  return `${sign}${durationLabel(Math.abs(delta))}`;
 }
 
-function SummaryTables({ data }: { data: ReviewResponse }) {
-  const pending = Math.max(0, data.totals.planned - data.totals.completed - data.totals.cancelled);
-  const share = (value: number) =>
-    data.totals.planned === 0 ? '—' : percent(value / data.totals.planned);
-  const activeDays = data.days.filter((day) => day.learningActivities > 0).length;
-  const peakDay = data.days.reduce<DayStats | null>(
-    (peak, day) => (peak === null || day.learningActivities > peak.learningActivities ? day : peak),
-    null,
-  );
-
+function DeltaBadge({
+  delta,
+  format,
+  threshold = 1,
+}: {
+  delta: number | null;
+  format: (delta: number) => string;
+  threshold?: number;
+}) {
+  if (delta === null) return null;
+  if (Math.abs(delta) < threshold) {
+    return <small className="review-stat__delta is-flat">与上期持平</small>;
+  }
+  const up = delta > 0;
   return (
-    <>
-      <section className="review-table-card" aria-labelledby="task-outcome-title">
-        <h2 id="task-outcome-title">任务结果</h2>
-        <table>
-          <caption>所选范围任务状态汇总</caption>
-          <thead>
-            <tr>
-              <th>状态</th>
-              <th>数量</th>
-              <th>占计划</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>已完成</th>
-              <td>{data.totals.completed}</td>
-              <td>{share(data.totals.completed)}</td>
-            </tr>
-            <tr>
-              <th>已取消</th>
-              <td>{data.totals.cancelled}</td>
-              <td>{share(data.totals.cancelled)}</td>
-            </tr>
-            <tr>
-              <th>待完成</th>
-              <td>{pending}</td>
-              <td>{share(pending)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section className="review-table-card" aria-labelledby="learning-activity-title">
-        <h2 id="learning-activity-title">学习活跃度</h2>
-        <table>
-          <caption>所选范围学习活动汇总</caption>
-          <tbody>
-            <tr>
-              <th>有学习记录的天数</th>
-              <td>{activeDays} 天</td>
-            </tr>
-            <tr>
-              <th>学习活动总数</th>
-              <td>{data.totals.learningActivities}</td>
-            </tr>
-            <tr>
-              <th>日均学习活动</th>
-              <td>{(data.totals.learningActivities / data.days.length).toFixed(1)}</td>
-            </tr>
-            <tr>
-              <th>最活跃日期</th>
-              <td>
-                {peakDay !== null && peakDay.learningActivities > 0
-                  ? `${peakDay.date} · ${peakDay.learningActivities} 次`
-                  : '暂无记录'}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-    </>
+    <small className={`review-stat__delta${up ? ' is-up' : ' is-down'}`}>
+      {up ? '↑' : '↓'} 较上期 {format(delta)}
+    </small>
   );
 }
 
@@ -212,6 +145,163 @@ function StudyDurationPie({ data }: { data: ReviewResponse['learningDuration'] }
   );
 }
 
+function ActivityRhythm({ days }: { days: DayStats[] }) {
+  const total = days.reduce((sum, day) => sum + day.learningActivities, 0);
+  const activeCount = days.filter((day) => day.learningActivities > 0).length;
+  const max = Math.max(...days.map((day) => day.learningActivities));
+  const peakDay = days.reduce<DayStats | null>(
+    (peak, day) => (peak === null || day.learningActivities > peak.learningActivities ? day : peak),
+    null,
+  );
+
+  return (
+    <section
+      className="review-study-card review-rhythm-card"
+      aria-labelledby="activity-rhythm-title"
+    >
+      <div className="review-study-card__header">
+        <div>
+          <p className="eyebrow">学习节奏</p>
+          <h2 id="activity-rhythm-title">活跃热区</h2>
+        </div>
+        <p>每天一格，颜色越深表示当天学习活动越多，空格代表没有学习记录。</p>
+      </div>
+      {total === 0 ? (
+        <p className="review-empty">所选范围内还没有学习活动记录。</p>
+      ) : (
+        <>
+          <div className="review-rhythm__grid" role="group" aria-label="每日学习活动热度">
+            {days.map((day) => {
+              const intensity =
+                day.learningActivities === 0
+                  ? 0
+                  : Math.round((0.24 + (day.learningActivities / max) * 0.76) * 100);
+              return (
+                <span
+                  key={day.date}
+                  className={`review-rhythm__cell${day.learningActivities === 0 ? ' is-empty' : ''}`}
+                  role="img"
+                  aria-label={`${day.date}：学习活动 ${day.learningActivities} 次`}
+                  style={
+                    intensity === 0
+                      ? undefined
+                      : {
+                          background: `color-mix(in srgb, var(--accent) ${intensity}%, var(--paper))`,
+                        }
+                  }
+                />
+              );
+            })}
+          </div>
+          <p className="review-rhythm__meta">
+            学习活动 {total} 次 · 有记录 {activeCount} 天
+            {peakDay !== null && peakDay.learningActivities > 0
+              ? ` · 最活跃 ${peakDay.date.slice(5)}（${peakDay.learningActivities} 次）`
+              : ''}
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
+function columnAriaLabel(day: DayStats, pending: number): string {
+  return `${day.date}：计划 ${day.planned}，完成 ${day.completed}，取消 ${day.cancelled}，待完成 ${pending}，完成率 ${percent(day.completionRate)}，学习活动 ${day.learningActivities} 次`;
+}
+
+function DailySection({ days }: { days: DayStats[] }) {
+  const [activeDate, setActiveDate] = useState<string | null>(null);
+  const compact = days.length > 7;
+  const maxPlanned = Math.max(1, ...days.map((day) => day.planned));
+  const activeDay = days.find((day) => day.date === activeDate) ?? null;
+
+  return (
+    <section className="review-detail-card" aria-labelledby="daily-review-title">
+      <div className="review-section-header">
+        <div>
+          <p className="eyebrow">按日查看</p>
+          <h2 id="daily-review-title">每日趋势与明细</h2>
+        </div>
+        <p className="review-trend-readout" aria-live="polite">
+          {activeDay === null ? (
+            <span>悬停或聚焦柱子查看当天明细，共 {days.length} 天。</span>
+          ) : (
+            <>
+              <strong>{activeDay.date}</strong>
+              <span>
+                完成 {activeDay.completed} / 计划 {activeDay.planned}
+              </span>
+              {activeDay.cancelled > 0 ? <span>取消 {activeDay.cancelled}</span> : null}
+              <span>完成率 {percent(activeDay.completionRate)}</span>
+              <span>学习活动 {activeDay.learningActivities} 次</span>
+            </>
+          )}
+        </p>
+      </div>
+      <div className="review-trend" role="group" aria-label="每日计划、完成、取消堆叠柱状图">
+        {days.map((day, index) => {
+          const pending = Math.max(0, day.planned - day.completed - day.cancelled);
+          const showDateLabel =
+            !compact || index === 0 || index === days.length - 1 || (index + 1) % 5 === 0;
+          return (
+            <div
+              key={day.date}
+              className={`review-trend__col${activeDay?.date === day.date ? ' is-active' : ''}`}
+              role="img"
+              tabIndex={0}
+              aria-label={columnAriaLabel(day, pending)}
+              onMouseEnter={() => setActiveDate(day.date)}
+              onMouseLeave={() => setActiveDate(null)}
+              onFocus={() => setActiveDate(day.date)}
+              onBlur={() => setActiveDate(null)}
+            >
+              <div
+                className={`review-trend__stack${day.planned === 0 ? ' is-empty' : ''}`}
+                style={
+                  day.planned === 0 ? undefined : { height: `${(day.planned / maxPlanned) * 100}%` }
+                }
+              >
+                {pending > 0 ? (
+                  <span className="review-trend__seg is-pending" style={{ flexGrow: pending }} />
+                ) : null}
+                {day.cancelled > 0 ? (
+                  <span
+                    className="review-trend__seg is-cancelled"
+                    style={{ flexGrow: day.cancelled }}
+                  />
+                ) : null}
+                {day.completed > 0 ? (
+                  <span
+                    className="review-trend__seg is-completed"
+                    style={{ flexGrow: day.completed }}
+                  />
+                ) : null}
+              </div>
+              <b>{compact ? '' : percent(day.completionRate)}</b>
+              <small>{showDateLabel ? day.date.slice(5) : ''}</small>
+            </div>
+          );
+        })}
+      </div>
+      <p className="review-trend-legend" aria-hidden="true">
+        <span>
+          <i className="review-trend-legend__dot is-completed" />
+          完成
+        </span>
+        <span>
+          <i className="review-trend-legend__dot is-cancelled" />
+          取消
+        </span>
+        <span>
+          <i className="review-trend-legend__dot is-pending" />
+          待完成
+        </span>
+      </p>
+      <DailyTable days={days} />
+    </section>
+  );
+}
+
 function DailyTable({ days }: { days: DayStats[] }) {
   return (
     <div className="review-table-wrap">
@@ -244,67 +334,43 @@ function DailyTable({ days }: { days: DayStats[] }) {
   );
 }
 
-function DatePager({
-  days,
-  page,
-  pageCount,
-  onPageChange,
-}: {
-  days: DayStats[];
-  page: number;
-  pageCount: number;
-  onPageChange: (page: number) => void;
-}) {
-  return (
-    <nav className="review-date-pager" aria-label="回顾日期分页">
-      <p>
-        {days[0]?.date} – {days.at(-1)?.date}
-        <small>
-          第 {page + 1} / {pageCount} 页
-        </small>
-      </p>
-      <div>
-        <button
-          type="button"
-          className="button-secondary"
-          disabled={page >= pageCount - 1}
-          onClick={() => onPageChange(page + 1)}
-        >
-          更早日期
-        </button>
-        <button
-          type="button"
-          className="button-secondary"
-          disabled={page === 0}
-          onClick={() => onPageChange(page - 1)}
-        >
-          更新日期
-        </button>
-      </div>
-    </nav>
-  );
-}
-
 export function ReviewPage() {
   const [range, setRange] = useState<7 | 30>(7);
-  const [datePage, setDatePage] = useState(0);
   const to = today();
   const from = addBusinessDays(to, 1 - range);
   const review = useQuery({
     queryKey: queryKeys.review(from, to),
     queryFn: ({ signal }) => getReview(from, to, signal),
   });
-  const pageCount = Math.max(1, Math.ceil((review.data?.days.length ?? 0) / DAYS_PER_PAGE));
-  const currentPage = Math.min(datePage, pageCount - 1);
-  const pageEnd = review.data ? review.data.days.length - currentPage * DAYS_PER_PAGE : 0;
-  const visibleDays = review.data
-    ? review.data.days.slice(Math.max(0, pageEnd - DAYS_PER_PAGE), pageEnd)
-    : [];
+  // 上一个等长区间，仅用于结论层的环比角标。
+  const previousFrom = addBusinessDays(from, -range);
+  const previousTo = addBusinessDays(from, -1);
+  const previous = useQuery({
+    queryKey: queryKeys.review(previousFrom, previousTo),
+    queryFn: ({ signal }) => getReview(previousFrom, previousTo, signal),
+  });
 
-  function selectRange(nextRange: 7 | 30) {
-    setRange(nextRange);
-    setDatePage(0);
-  }
+  const totals = review.data?.totals ?? null;
+  const previousData = previous.data ?? null;
+  const activeDays = review.data?.days.filter((day) => day.learningActivities > 0).length ?? null;
+  const previousActiveDays =
+    previousData?.days.filter((day) => day.learningActivities > 0).length ?? null;
+  const deltas =
+    totals !== null && previousData !== null && activeDays !== null && previousActiveDays !== null
+      ? {
+          rate:
+            totals.completionRate !== null && previousData.totals.completionRate !== null
+              ? (totals.completionRate - previousData.totals.completionRate) * 100
+              : null,
+          completed: totals.completed - previousData.totals.completed,
+          duration:
+            (review.data?.learningDuration.totalSeconds ?? 0) -
+            previousData.learningDuration.totalSeconds,
+          activeDays: activeDays - previousActiveDays,
+        }
+      : null;
+  const pendingTotal =
+    totals === null ? null : Math.max(0, totals.planned - totals.completed - totals.cancelled);
 
   return (
     <section className="page business-page" aria-labelledby="review-title">
@@ -318,14 +384,14 @@ export function ReviewPage() {
           <button
             className={range === 7 ? '' : 'button-secondary'}
             aria-pressed={range === 7}
-            onClick={() => selectRange(7)}
+            onClick={() => setRange(7)}
           >
             近 7 天
           </button>
           <button
             className={range === 30 ? '' : 'button-secondary'}
             aria-pressed={range === 30}
-            onClick={() => selectRange(30)}
+            onClick={() => setRange(30)}
           >
             近 30 天
           </button>
@@ -342,53 +408,59 @@ export function ReviewPage() {
           <button onClick={() => review.refetch()}>重试</button>
         </div>
       ) : null}
-      {review.data ? (
+      {review.data && totals !== null ? (
         <>
-          <dl className="review-totals">
-            <div>
-              <dt>计划</dt>
-              <dd>{review.data.totals.planned}</dd>
-            </div>
-            <div>
-              <dt>完成</dt>
-              <dd>{review.data.totals.completed}</dd>
-            </div>
-            <div>
-              <dt>取消</dt>
-              <dd>{review.data.totals.cancelled}</dd>
-            </div>
-            <div>
+          <dl className="review-stats">
+            <div className="review-stat">
               <dt>完成率</dt>
-              <dd>{percent(review.data.totals.completionRate)}</dd>
+              <dd>{percent(totals.completionRate)}</dd>
+              <DeltaBadge
+                delta={deltas === null ? null : deltas.rate}
+                format={(delta) => `${delta > 0 ? '+' : ''}${Math.round(delta)}%`}
+              />
             </div>
-            <div>
-              <dt>学习活动</dt>
-              <dd>{review.data.totals.learningActivities}</dd>
+            <div className="review-stat">
+              <dt>完成任务</dt>
+              <dd>{totals.completed}</dd>
+              <DeltaBadge
+                delta={deltas === null ? null : deltas.completed}
+                format={(delta) => `${delta > 0 ? '+' : ''}${delta} 项`}
+              />
+            </div>
+            <div className="review-stat">
+              <dt>学习时长</dt>
+              <dd>{durationLabel(review.data.learningDuration.totalSeconds)}</dd>
+              <DeltaBadge
+                delta={deltas === null ? null : deltas.duration}
+                format={signedDurationLabel}
+                threshold={60}
+              />
+            </div>
+            <div className="review-stat">
+              <dt>活跃天数</dt>
+              <dd>
+                {activeDays ?? 0} / {review.data.days.length} 天
+              </dd>
+              <DeltaBadge
+                delta={deltas === null ? null : deltas.activeDays}
+                format={(delta) => `${delta > 0 ? '+' : ''}${delta} 天`}
+              />
             </div>
           </dl>
-          {review.data.totals.planned === 0 ? (
+          {totals.planned > 0 ? (
+            <p className="review-stats-meta">
+              共计划 {totals.planned} 项：完成 {totals.completed} · 取消 {totals.cancelled} · 待完成{' '}
+              {pendingTotal}。
+            </p>
+          ) : null}
+          {totals.planned === 0 ? (
             <p className="review-empty">这段时间还没有计划，因此不计算完成率。</p>
           ) : null}
           <div className="review-summary-grid">
-            <SummaryTables data={review.data} />
             <StudyDurationPie data={review.data.learningDuration} />
+            <ActivityRhythm days={review.data.days} />
           </div>
-          <section className="review-detail-card" aria-labelledby="daily-review-title">
-            <div className="review-section-header">
-              <div>
-                <p className="eyebrow">按日查看</p>
-                <h2 id="daily-review-title">每日趋势与明细</h2>
-              </div>
-              <DatePager
-                days={visibleDays}
-                page={currentPage}
-                pageCount={pageCount}
-                onPageChange={setDatePage}
-              />
-            </div>
-            <ReviewChart days={visibleDays} />
-            <DailyTable days={visibleDays} />
-          </section>
+          <DailySection days={review.data.days} />
         </>
       ) : null}
     </section>

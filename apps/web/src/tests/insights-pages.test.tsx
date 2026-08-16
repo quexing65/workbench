@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { addBusinessDays } from '@workbench/shared';
+import { addBusinessDays, businessDateSpan } from '@workbench/shared';
 
 import { OverviewPage } from '../pages/overview/OverviewPage';
 import { ReviewPage } from '../pages/review/ReviewPage';
@@ -177,54 +177,86 @@ describe('overview page', () => {
 });
 
 describe('review page', () => {
-  it('shows totals, an equivalent data table and switches to thirty days', async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const span = String(input).includes('2026-07-15') ? 30 : 7;
-      const from = span === 30 ? '2026-07-15' : '2026-08-07';
-      const days = Array.from({ length: span }, (_, index) => ({
-        ...day,
-        date: addBusinessDays(from, index),
-      }));
-      return json({
-        from,
-        to: date,
-        days,
-        totals: {
-          planned: span * 2,
-          completed: span,
-          cancelled: 0,
-          completionRate: 0.5,
-          learningActivities: span,
-        },
-        learningDuration: {
-          totalSeconds: 5400,
-          bySeries: [
-            {
-              seriesId: '10000000-0000-4000-8000-000000000001',
-              seriesName: '数据库',
-              durationSeconds: 3600,
-            },
-            {
-              seriesId: '10000000-0000-4000-8000-000000000002',
-              seriesName: '人工智能',
-              durationSeconds: 1800,
-            },
-          ],
-        },
-      });
+  function reviewPayload(from: string, to: string) {
+    const isCurrent = to === date;
+    const span = businessDateSpan(from, to);
+    const days = Array.from({ length: span }, (_, index) => ({
+      ...day,
+      date: addBusinessDays(from, index),
+      completed: isCurrent ? 1 : 0,
+      completionRate: isCurrent ? 0.5 : 0,
+      learningActivities: isCurrent ? 1 : 0,
+    }));
+    return {
+      from,
+      to,
+      days,
+      totals: {
+        planned: span * 2,
+        completed: isCurrent ? span : 0,
+        cancelled: 0,
+        completionRate: isCurrent ? 0.5 : 0,
+        learningActivities: isCurrent ? span : 0,
+      },
+      learningDuration: isCurrent
+        ? {
+            totalSeconds: 5400,
+            bySeries: [
+              {
+                seriesId: '10000000-0000-4000-8000-000000000001',
+                seriesName: '数据库',
+                durationSeconds: 3600,
+              },
+              {
+                seriesId: '10000000-0000-4000-8000-000000000002',
+                seriesName: '人工智能',
+                durationSeconds: 1800,
+              },
+            ],
+          }
+        : { totalSeconds: 0, bySeries: [] },
+    };
+  }
+
+  function reviewFetch() {
+    return vi.fn(async (input: RequestInfo | URL) => {
+      const params = new URL(String(input), 'http://localhost').searchParams;
+      const from = params.get('from') ?? '2026-08-07';
+      const to = params.get('to') ?? date;
+      return json(reviewPayload(from, to));
     });
+  }
+
+  it('shows period-over-period stats, full-range trend and rhythm, then switches to thirty days', async () => {
+    const fetchMock = reviewFetch();
     vi.stubGlobal('fetch', fetchMock);
     renderPage(<ReviewPage />);
-    expect(await screen.findByText('14')).toBeInTheDocument();
-    const dailyTable = screen.getByRole('table', {
-      name: '每日计划、完成、取消和学习活动明细',
-    });
-    expect(dailyTable).toBeInTheDocument();
-    expect(screen.getByRole('table', { name: '所选范围任务状态汇总' })).toBeInTheDocument();
-    expect(screen.getByRole('table', { name: '所选范围学习活动汇总' })).toBeInTheDocument();
+
+    expect(await screen.findByText('↑ 较上期 +50%')).toBeInTheDocument();
+    expect(screen.getByText('↑ 较上期 +7 项')).toBeInTheDocument();
+    expect(screen.getByText('↑ 较上期 +1 小时 30 分钟')).toBeInTheDocument();
+    expect(screen.getByText('↑ 较上期 +7 天')).toBeInTheDocument();
+    expect(screen.getAllByText('50%').length).toBeGreaterThan(0);
+    expect(screen.getByText('共计划 14 项：完成 7 · 取消 0 · 待完成 7。')).toBeInTheDocument();
+
+    const trend = screen.getByRole('group', { name: '每日计划、完成、取消堆叠柱状图' });
+    const columns = within(trend).getAllByRole('img');
+    expect(columns).toHaveLength(7);
+    expect(columns[0]).toHaveAttribute(
+      'aria-label',
+      '2026-08-07：计划 2，完成 1，取消 0，待完成 1，完成率 50%，学习活动 1 次',
+    );
+    fireEvent.mouseEnter(columns[0]!);
+    expect(await screen.findByText('完成 1 / 计划 2')).toBeInTheDocument();
+    fireEvent.mouseLeave(columns[0]!);
+    await waitFor(() => expect(screen.queryByText('完成 1 / 计划 2')).not.toBeInTheDocument());
+
+    const rhythm = screen.getByRole('group', { name: '每日学习活动热度' });
+    expect(within(rhythm).getAllByRole('img')).toHaveLength(7);
+
     const durationPie = screen.getByRole('group', { name: /学习时长系列分布/ });
     expect(durationPie).toBeInTheDocument();
-    expect(screen.getByText('1 小时 30 分钟')).toBeInTheDocument();
+    expect(screen.getAllByText('1 小时 30 分钟').length).toBeGreaterThan(0);
     expect(screen.getByText('数据库')).toBeInTheDocument();
     expect(screen.getByText('人工智能')).toBeInTheDocument();
     const databaseSlice = screen.getByRole('button', { name: /数据库：1 小时.*占比 67%/ });
@@ -236,18 +268,35 @@ describe('review page', () => {
     // React 19.2 下离散事件的更新不与 fireEvent 同步落盘，需要等待选中态提交。
     await waitFor(() => expect(databaseSlice).toHaveAttribute('aria-pressed', 'true'));
     expect(within(durationPie).getByText('数据库')).toBeInTheDocument();
+
+    const dailyTable = screen.getByRole('table', {
+      name: '每日计划、完成、取消和学习活动明细',
+    });
+    expect(within(dailyTable).getAllByRole('row')).toHaveLength(8);
+
     fireEvent.click(screen.getByRole('button', { name: '近 30 天' }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('2026-07-15'),
+        expect.stringContaining('from=2026-07-15'),
         expect.anything(),
       ),
     );
-    expect(await screen.findByText('60')).toBeInTheDocument();
-    expect(screen.getByText('2026-08-07 – 2026-08-13')).toBeInTheDocument();
-    expect(within(dailyTable).getAllByRole('row')).toHaveLength(8);
-    fireEvent.click(screen.getByRole('button', { name: '更早日期' }));
-    expect(screen.getByText('2026-07-31 – 2026-08-06')).toBeInTheDocument();
+    expect(
+      await screen.findByText('共计划 60 项：完成 30 · 取消 0 · 待完成 30。'),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('group', { name: '每日计划、完成、取消堆叠柱状图' })).getAllByRole(
+        'img',
+      ),
+    ).toHaveLength(30);
+    expect(
+      within(
+        screen.getByRole('table', { name: '每日计划、完成、取消和学习活动明细' }),
+      ).getAllByRole('row'),
+    ).toHaveLength(31);
+    expect(
+      within(screen.getByRole('group', { name: '每日学习活动热度' })).getAllByRole('img'),
+    ).toHaveLength(30);
   });
 
   it('does not show a misleading zero percent and can retry failures', async () => {
@@ -270,16 +319,19 @@ describe('review page', () => {
       },
       learningDuration: { totalSeconds: 0, bySeries: [] },
     };
+    // 每次调用都要返回新的 Response：body 只能读取一次，而页面会并发请求当前期与上期。
     vi.stubGlobal(
       'fetch',
       vi
         .fn()
         .mockResolvedValueOnce(json({ error: { code: 'FAIL', message: '失败', details: [] } }, 500))
-        .mockResolvedValue(json(empty)),
+        .mockImplementation(async () => json(empty)),
     );
     renderPage(<ReviewPage />);
     fireEvent.click(await screen.findByRole('button', { name: '重试' }));
     expect(await screen.findByText('这段时间还没有计划，因此不计算完成率。')).toBeInTheDocument();
     expect(screen.queryByText('0%')).not.toBeInTheDocument();
+    expect(screen.getAllByText('与上期持平').length).toBeGreaterThan(0);
+    expect(screen.getByText('所选范围内还没有学习活动记录。')).toBeInTheDocument();
   });
 });
