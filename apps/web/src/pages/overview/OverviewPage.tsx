@@ -6,11 +6,20 @@ import { Link } from 'react-router-dom';
 import { getOverview } from '../../shared/api/insights';
 import { queryKeys } from '../../shared/api/query-keys';
 import { createTask, updateTask } from '../../shared/api/tasks';
+import { DayTrendChart } from '../../shared/ui/DayTrendChart';
 
 const OVERDUE_BATCH_SIZE = 20;
 
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
+}
+
+function resumePositionLabel(seconds: number): string {
+  if (seconds < 60) return `${seconds} 秒处`;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const position = hours > 0 ? `${hours} 小时 ${minutes} 分钟` : `${minutes} 分钟`;
+  return `${position}处`;
 }
 
 interface BlockProps {
@@ -45,6 +54,8 @@ function Block({ title, label, pending, error, retry, children, primary = false 
 
 function Summary({ data }: { data: OverviewResponse }) {
   const focus = data.today.items.find((item) => item.status === 'active');
+  const rate = data.today.planned === 0 ? null : data.today.completed / data.today.planned;
+  const progress = rate === null ? 0 : Math.round(rate * 100);
   return (
     <>
       {focus ? (
@@ -56,7 +67,22 @@ function Summary({ data }: { data: OverviewResponse }) {
       ) : (
         <p className="empty-state">今天没有等待完成的任务，给自己留一点余白吧。</p>
       )}
+      <div
+        className="today-progress"
+        role="progressbar"
+        aria-label="今日完成进度"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress}
+        aria-valuetext={rate === null ? '今天还没有计划' : `已完成 ${progress}%`}
+      >
+        <span style={{ width: `${progress}%` }} />
+      </div>
       <dl className="summary-stats">
+        <div>
+          <dt>完成率</dt>
+          <dd>{rate === null ? '—' : `${progress}%`}</dd>
+        </div>
         <div>
           <dt>计划</dt>
           <dd>{data.today.planned}</dd>
@@ -162,7 +188,11 @@ export function OverviewPage() {
         <Block title="今日焦点" label="任务摘要" primary {...common}>
           {overview.data ? <Summary data={overview.data} /> : null}
         </Block>
-        <Block title="过期待办" label="移回今天" {...common}>
+        <Block
+          title={overdueTasks.length > 0 ? `过期待办 · ${overdueTasks.length}` : '过期待办'}
+          label="移回今天"
+          {...common}
+        >
           {overview.data?.overdueTasks.length === 0 ? (
             <p className="empty-state">没有逾期任务。</p>
           ) : null}
@@ -224,7 +254,7 @@ export function OverviewPage() {
               <h3>{overview.data.nextLearning.title}</h3>
               <p>
                 {overview.data.nextLearning.resumePartTitle} ·{' '}
-                {Math.floor(overview.data.nextLearning.resumeSeconds / 60)} 分钟处
+                {resumePositionLabel(overview.data.nextLearning.resumeSeconds)}
               </p>
               <Link className="text-link" to="/learning">
                 打开学习页
@@ -238,17 +268,27 @@ export function OverviewPage() {
           {overview.data?.last7Days.every((day) => day.planned === 0) ? (
             <p className="empty-state">近 7 天还没有计划，不计算完成率。</p>
           ) : null}
-          <div className="mini-chart" role="img" aria-label="近 7 天每日任务完成率">
-            {overview.data?.last7Days.map((day) => (
-              <div key={day.date}>
-                <span style={{ height: `${(day.completionRate ?? 0) * 100}%` }} />
-                <small>{day.date.slice(5)}</small>
-                <b>
-                  {day.completionRate === null ? '—' : `${Math.round(day.completionRate * 100)}%`}
-                </b>
-              </div>
-            ))}
-          </div>
+          {overview.data ? (
+            <DayTrendChart
+              days={overview.data.last7Days}
+              chartLabel="近 7 天每日计划与完成堆叠柱状图"
+              size="sm"
+            />
+          ) : null}
+          <p className="day-chart-legend" aria-hidden="true">
+            <span>
+              <i className="day-chart-legend__dot is-completed" />
+              完成
+            </span>
+            <span>
+              <i className="day-chart-legend__dot is-cancelled" />
+              取消
+            </span>
+            <span>
+              <i className="day-chart-legend__dot is-pending" />
+              待完成
+            </span>
+          </p>
           <Link className="text-link" to="/review">
             查看完整回顾
           </Link>

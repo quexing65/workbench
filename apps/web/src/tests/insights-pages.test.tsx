@@ -121,6 +121,15 @@ describe('overview page', () => {
     expect(screen.getByRole('heading', { name: 'TypeScript 课程' })).toBeInTheDocument();
     expect(screen.getAllByText('50%')).toHaveLength(7);
 
+    const progress = screen.getByRole('progressbar', { name: '今日完成进度' });
+    expect(progress).toHaveAttribute('aria-valuenow', '0');
+    expect(progress).toHaveAttribute('aria-valuetext', '已完成 0%');
+    const weekChart = screen.getByRole('group', {
+      name: '近 7 天每日计划与完成堆叠柱状图',
+    });
+    expect(within(weekChart).getAllByRole('img')).toHaveLength(7);
+    expect(screen.getByRole('heading', { name: '过期待办 · 1' })).toBeInTheDocument();
+
     fireEvent.change(screen.getByLabelText('快速添加今天的任务'), {
       target: { value: '新任务' },
     });

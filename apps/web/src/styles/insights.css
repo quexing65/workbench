@@ -45,15 +45,29 @@
   background: #dfece4;
 }
 
-.summary-stats {
-  display: grid;
-  margin: auto 0 0;
-  gap: 0.75rem;
+.today-progress {
+  overflow: hidden;
+  height: 0.55rem;
+  margin-top: 2rem;
+  border-radius: 99rem;
+  background: rgb(255 255 255 / 18%);
+}
+
+.today-progress span {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 99rem;
+  background: #dfece4;
+  transition: width 300ms ease;
 }
 
 .summary-stats {
+  display: grid;
+  margin: auto 0 0;
   padding-top: 2rem;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
 }
 
 .summary-stats div {
@@ -117,41 +131,6 @@
 .text-link {
   color: var(--accent-strong);
   font-weight: 750;
-}
-
-.mini-chart {
-  display: flex;
-  min-height: 8rem;
-  margin: 1rem 0;
-  align-items: flex-end;
-  gap: 0.45rem;
-}
-
-.mini-chart > div {
-  display: grid;
-  min-width: 0;
-  height: 8rem;
-  flex: 1;
-  grid-template-rows: 1fr auto auto;
-  align-items: end;
-  gap: 0.2rem;
-  text-align: center;
-}
-
-.mini-chart span {
-  display: block;
-  width: 100%;
-  min-height: 2px;
-  border-radius: 0.3rem 0.3rem 0 0;
-  background: var(--accent);
-}
-
-.mini-chart small,
-.mini-chart b {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.62rem;
-  text-overflow: ellipsis;
 }
 
 .review-header {
@@ -405,7 +384,7 @@
   margin-bottom: 0.35rem;
 }
 
-.review-trend-readout {
+.day-chart-readout {
   display: flex;
   flex-wrap: wrap;
   margin: 0;
@@ -415,11 +394,11 @@
   justify-content: flex-end;
 }
 
-.review-trend-readout strong {
+.day-chart-readout strong {
   color: var(--ink);
 }
 
-.review-trend {
+.day-chart {
   display: flex;
   min-height: 10.5rem;
   margin: 1rem 0 0;
@@ -429,7 +408,7 @@
   gap: max(0.2rem, 0.9vw);
 }
 
-.review-trend__col {
+.day-chart__col {
   display: grid;
   min-width: 0;
   height: 9.5rem;
@@ -440,13 +419,26 @@
   text-align: center;
 }
 
-.review-trend__col:focus-visible {
+.day-chart--sm {
+  min-height: 8rem;
+}
+
+.day-chart--sm .day-chart__col {
+  height: 7rem;
+  gap: 0.15rem;
+}
+
+.day-chart--sm .day-chart__col b {
+  font-size: 0.66rem;
+}
+
+.day-chart__col:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 0.3rem;
 }
 
-.review-trend__stack {
+.day-chart__stack {
   display: flex;
   overflow: hidden;
   flex-direction: column;
@@ -455,35 +447,35 @@
   border-radius: 0.3rem 0.3rem 0 0;
 }
 
-.review-trend__stack.is-empty {
+.day-chart__stack.is-empty {
   height: 3px;
   background: var(--line);
 }
 
-.review-trend__seg {
+.day-chart__seg {
   display: block;
   width: 100%;
   min-height: 2px;
 }
 
-.review-trend__seg.is-completed {
+.day-chart__seg.is-completed {
   background: var(--accent);
 }
 
-.review-trend__seg.is-cancelled {
+.day-chart__seg.is-cancelled {
   background: var(--warm);
 }
 
-.review-trend__seg.is-pending {
+.day-chart__seg.is-pending {
   background: rgb(113 137 155 / 38%);
 }
 
-.review-trend__col b {
+.day-chart__col b {
   color: var(--ink);
   font-size: 0.72rem;
 }
 
-.review-trend__col small {
+.day-chart__col small {
   overflow: hidden;
   color: var(--muted);
   font-size: 0.62rem;
@@ -491,15 +483,15 @@
   text-overflow: ellipsis;
 }
 
-.review-trend__col.is-active b {
+.day-chart__col.is-active b {
   color: var(--accent-strong);
 }
 
-.review-trend__col.is-active .review-trend__stack {
+.day-chart__col.is-active .day-chart__stack {
   box-shadow: 0 0 0 1px var(--accent-strong);
 }
 
-.review-trend-legend {
+.day-chart-legend {
   display: flex;
   margin: 0.6rem 0 0.9rem;
   color: var(--muted);
@@ -507,27 +499,27 @@
   gap: 1rem;
 }
 
-.review-trend-legend span {
+.day-chart-legend span {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
 }
 
-.review-trend-legend__dot {
+.day-chart-legend__dot {
   width: 0.62rem;
   height: 0.62rem;
   border-radius: 0.2rem;
 }
 
-.review-trend-legend__dot.is-completed {
+.day-chart-legend__dot.is-completed {
   background: var(--accent);
 }
 
-.review-trend-legend__dot.is-cancelled {
+.day-chart-legend__dot.is-cancelled {
   background: var(--warm);
 }
 
-.review-trend-legend__dot.is-pending {
+.day-chart-legend__dot.is-pending {
   background: rgb(113 137 155 / 38%);
 }
 
@@ -603,6 +595,14 @@ td:first-child {
 }
 
 @media (max-width: 760px) {
+  .summary-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .summary-stats dd {
+    font-size: 1.6rem;
+  }
+
   .review-header {
     display: block;
   }
@@ -625,7 +625,7 @@ td:first-child {
     flex-direction: column;
   }
 
-  .review-trend-readout {
+  .day-chart-readout {
     justify-content: flex-start;
   }
 }

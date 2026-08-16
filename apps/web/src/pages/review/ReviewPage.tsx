@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { getReview } from '../../shared/api/insights';
 import { queryKeys } from '../../shared/api/query-keys';
+import { DayTrendChart } from '../../shared/ui/DayTrendChart';
 
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
@@ -205,14 +206,9 @@ function ActivityRhythm({ days }: { days: DayStats[] }) {
   );
 }
 
-function columnAriaLabel(day: DayStats, pending: number): string {
-  return `${day.date}：计划 ${day.planned}，完成 ${day.completed}，取消 ${day.cancelled}，待完成 ${pending}，完成率 ${percent(day.completionRate)}，学习活动 ${day.learningActivities} 次`;
-}
-
 function DailySection({ days }: { days: DayStats[] }) {
   const [activeDate, setActiveDate] = useState<string | null>(null);
   const compact = days.length > 7;
-  const maxPlanned = Math.max(1, ...days.map((day) => day.planned));
   const activeDay = days.find((day) => day.date === activeDate) ?? null;
 
   return (
@@ -222,7 +218,7 @@ function DailySection({ days }: { days: DayStats[] }) {
           <p className="eyebrow">按日查看</p>
           <h2 id="daily-review-title">每日趋势与明细</h2>
         </div>
-        <p className="review-trend-readout" aria-live="polite">
+        <p className="day-chart-readout" aria-live="polite">
           {activeDay === null ? (
             <span>悬停或聚焦柱子查看当天明细，共 {days.length} 天。</span>
           ) : (
@@ -238,62 +234,24 @@ function DailySection({ days }: { days: DayStats[] }) {
           )}
         </p>
       </div>
-      <div className="review-trend" role="group" aria-label="每日计划、完成、取消堆叠柱状图">
-        {days.map((day, index) => {
-          const pending = Math.max(0, day.planned - day.completed - day.cancelled);
-          const showDateLabel =
-            !compact || index === 0 || index === days.length - 1 || (index + 1) % 5 === 0;
-          return (
-            <div
-              key={day.date}
-              className={`review-trend__col${activeDay?.date === day.date ? ' is-active' : ''}`}
-              role="img"
-              tabIndex={0}
-              aria-label={columnAriaLabel(day, pending)}
-              onMouseEnter={() => setActiveDate(day.date)}
-              onMouseLeave={() => setActiveDate(null)}
-              onFocus={() => setActiveDate(day.date)}
-              onBlur={() => setActiveDate(null)}
-            >
-              <div
-                className={`review-trend__stack${day.planned === 0 ? ' is-empty' : ''}`}
-                style={
-                  day.planned === 0 ? undefined : { height: `${(day.planned / maxPlanned) * 100}%` }
-                }
-              >
-                {pending > 0 ? (
-                  <span className="review-trend__seg is-pending" style={{ flexGrow: pending }} />
-                ) : null}
-                {day.cancelled > 0 ? (
-                  <span
-                    className="review-trend__seg is-cancelled"
-                    style={{ flexGrow: day.cancelled }}
-                  />
-                ) : null}
-                {day.completed > 0 ? (
-                  <span
-                    className="review-trend__seg is-completed"
-                    style={{ flexGrow: day.completed }}
-                  />
-                ) : null}
-              </div>
-              <b>{compact ? '' : percent(day.completionRate)}</b>
-              <small>{showDateLabel ? day.date.slice(5) : ''}</small>
-            </div>
-          );
-        })}
-      </div>
-      <p className="review-trend-legend" aria-hidden="true">
+      <DayTrendChart
+        days={days}
+        chartLabel="每日计划、完成、取消堆叠柱状图"
+        compact={compact}
+        activeDate={activeDate}
+        onActiveDateChange={setActiveDate}
+      />
+      <p className="day-chart-legend" aria-hidden="true">
         <span>
-          <i className="review-trend-legend__dot is-completed" />
+          <i className="day-chart-legend__dot is-completed" />
           完成
         </span>
         <span>
-          <i className="review-trend-legend__dot is-cancelled" />
+          <i className="day-chart-legend__dot is-cancelled" />
           取消
         </span>
         <span>
-          <i className="review-trend-legend__dot is-pending" />
+          <i className="day-chart-legend__dot is-pending" />
           待完成
         </span>
       </p>
