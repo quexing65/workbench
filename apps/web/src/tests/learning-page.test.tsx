@@ -27,6 +27,7 @@ describe('learning center', () => {
 
   it('renders resource details, parts and resume state', async () => {
     const item = resource({
+      durationSeconds: 10_000,
       progress: {
         ...resource().progress,
         furthestPartId: firstPartId,
@@ -44,12 +45,13 @@ describe('learning center', () => {
     renderLearningPage();
 
     expect(await screen.findByRole('heading', { name: '安全测试课程' })).toBeInTheDocument();
-    expect(screen.getByText(/上次看到 0:20/)).toBeInTheDocument();
-    expect(screen.getByText('P1 · 基础')).toBeInTheDocument();
-    expect(screen.getByText('P2 · 进阶')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /在 B站打开/ })).toHaveAttribute(
+    expect(screen.getByText('当前观看：P1 · 基础')).toBeInTheDocument();
+    expect(screen.queryByText(/P2 · 进阶/)).not.toBeInTheDocument();
+    expect(screen.getByText('合集总进度')).toBeInTheDocument();
+    expect(screen.getByText(/0:25 \/ 2:46:40（0%）/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /继续观看/ })).toHaveAttribute(
       'href',
-      item.sourceUrl,
+      `${item.sourceUrl}?p=1&t=20`,
     );
   });
 
@@ -68,6 +70,8 @@ describe('learning center', () => {
       }),
     );
     renderLearningPage();
+    expect(screen.queryByLabelText('视频链接或 BV 号')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '导入 B站学习资源' }));
     const url = screen.getByLabelText('视频链接或 BV 号');
     fireEvent.change(url, { target: { value: 'BV1AB411C7DE' } });
     await screen.findByRole('option', { name: '前端系列' });
@@ -78,6 +82,8 @@ describe('learning center', () => {
     const post = calls.find(([, init]) => init?.method === 'POST');
     expect(JSON.parse(String(post?.[1]?.body))).toEqual({ url: 'BV1AB411C7DE', seriesId });
     expect(url).toHaveValue('');
+    fireEvent.click(screen.getByRole('button', { name: '收起资源导入' }));
+    expect(screen.queryByLabelText('视频链接或 BV 号')).not.toBeInTheDocument();
   });
 
   it('records progress, completes, resets and deletes with explicit confirmations', async () => {
@@ -177,6 +183,8 @@ describe('learning center', () => {
       }),
     );
     renderLearningPage();
+    expect(screen.queryByRole('heading', { name: '学习系列' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '学习系列' }));
     fireEvent.click(await screen.findByRole('button', { name: '编辑系列 前端系列' }));
     fireEvent.change(await screen.findByLabelText('新系列名称'), { target: { value: '新系列' } });
     fireEvent.click(screen.getByRole('button', { name: '创建系列' }));
@@ -198,7 +206,7 @@ describe('learning center', () => {
     );
     if (renamedEditor === null) throw new Error('重命名后的系列编辑器不存在');
     fireEvent.click(within(renamedEditor).getByRole('button', { name: '上移 第二门课' }));
-    fireEvent.click(within(renamedEditor).getByRole('button', { name: '保存顺序' }));
+    fireEvent.click(within(renamedEditor).getByRole('button', { name: '保存资源与顺序' }));
     await waitFor(() =>
       expect(
         writes.some(
@@ -250,6 +258,7 @@ describe('learning center', () => {
     expect(await screen.findByText(/学习数据加载失败/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '重试' }));
     await waitFor(() => expect(screen.getByText(/还没有学习资源/)).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: '导入 B站学习资源' }));
     fireEvent.change(screen.getByLabelText('视频链接或 BV 号'), {
       target: { value: 'https://b23.tv/abc123' },
     });
@@ -277,5 +286,41 @@ describe('learning center', () => {
     expect(screen.queryByRole('heading', { name: '性能课程 21' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '再显示 5 项（剩余 5 项）' }));
     expect(screen.getByRole('heading', { name: '性能课程 25' })).toBeInTheDocument();
+  });
+
+  it('shows only the current episode with episode and collection progress', async () => {
+    const item = resource({
+      parts: Array.from({ length: 8 }, (_, index) => ({
+        ...resource().parts[0]!,
+        id: `20000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+        externalPartId: String(index + 1),
+        partNumber: index + 1,
+        title: `第 ${index + 1} 集`,
+        durationSeconds: 100,
+      })),
+      durationSeconds: 800,
+      progress: {
+        ...resource().progress,
+        furthestPartId: '20000000-0000-4000-8000-000000000003',
+        furthestSeconds: 50,
+        resumePartId: '20000000-0000-4000-8000-000000000003',
+        resumeSeconds: 40,
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) =>
+        json(requestPath(input).endsWith('/series') ? { items: [] } : { items: [item] }),
+      ),
+    );
+    renderLearningPage();
+
+    expect(await screen.findByText('当前观看：P4 · 第 4 集')).toBeInTheDocument();
+    expect(screen.queryByText(/P3 · 第 3 集/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/P5 · 第 5 集/)).not.toBeInTheDocument();
+    expect(screen.getByText('0:40 / 1:40（40%）')).toBeInTheDocument();
+    expect(screen.getByText('5:50 / 13:20（44%）')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: '本集观看进度' })).toHaveValue(40);
+    expect(screen.getByRole('progressbar', { name: '合集总进度' })).toHaveValue(350);
   });
 });

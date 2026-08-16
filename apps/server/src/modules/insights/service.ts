@@ -61,6 +61,7 @@ export class InsightService {
 
   public review(from: string, to: string): ReviewResponse {
     const activity = this.repository.learningActivityCounts(from, to);
+    const learningDurationBySeries = this.repository.learningDurationBySeries(from, to);
     const days = dateRange(from, to).map((date) =>
       stats(date, this.tasks.list(date), activity.get(date) ?? 0),
     );
@@ -80,6 +81,13 @@ export class InsightService {
       totals: {
         ...totals,
         completionRate: totals.planned === 0 ? null : totals.completed / totals.planned,
+      },
+      learningDuration: {
+        totalSeconds: learningDurationBySeries.reduce(
+          (total, item) => total + item.durationSeconds,
+          0,
+        ),
+        bySeries: learningDurationBySeries,
       },
     };
   }

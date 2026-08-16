@@ -61,6 +61,7 @@ async function seedTasks() {
 function seedLearning() {
   const resourceId = '10000000-0000-4000-8000-000000000001';
   const partId = '20000000-0000-4000-8000-000000000001';
+  const seriesId = '30000000-0000-4000-8000-000000000001';
   const observedAt = Date.UTC(2026, 7, 13, 4);
   database.connection
     .prepare(
@@ -90,6 +91,24 @@ function seedLearning() {
        VALUES (?, 120, ?, ?)`,
     )
     .run(partId, observedAt, observedAt);
+  database.connection
+    .prepare(
+      `INSERT INTO learning_watch_daily (part_id, watch_date, watched_seconds)
+       VALUES (?, '2026-08-13', 120), (?, '2026-08-10', 60)`,
+    )
+    .run(partId, partId);
+  database.connection
+    .prepare(
+      `INSERT INTO learning_series (id, name, created_at_ms, updated_at_ms)
+       VALUES (?, '类型系统', ?, ?)`,
+    )
+    .run(seriesId, observedAt, observedAt);
+  database.connection
+    .prepare(
+      `INSERT INTO learning_series_items (series_id, resource_id, position, created_at_ms)
+       VALUES (?, ?, 0, ?)`,
+    )
+    .run(seriesId, resourceId, observedAt);
 }
 
 describe('overview and review API', () => {
@@ -147,6 +166,16 @@ describe('overview and review API', () => {
       cancelled: 0,
       completionRate: 0.5,
       learningActivities: 1,
+    });
+    expect(review.body.learningDuration).toEqual({
+      totalSeconds: 120,
+      bySeries: [
+        {
+          seriesId: '30000000-0000-4000-8000-000000000001',
+          seriesName: '类型系统',
+          durationSeconds: 120,
+        },
+      ],
     });
     expect(review.body.days).toHaveLength(3);
     expect((await read('/api/v1/review?from=2026-08-14&to=2026-08-12')).status).toBe(400);

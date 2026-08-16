@@ -12,6 +12,7 @@ SQLite/B站能力参考 `Personl-Workbench-qoder`，但本仓库不把两个旧�
 - `EXECUTION_PLAN.md`
 - `docs/STATUS.md`
 - `docs/ARCHITECTURE.md`
+- `docs/PROJECT_STRUCTURE.md`
 - `docs/DATA_MODEL.md`
 - `docs/SECURITY.md`
 - `docs/OPERATIONS.md`

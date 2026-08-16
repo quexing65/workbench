@@ -53,89 +53,121 @@ export function DataPage() {
       </header>
 
       <div className="data-layout">
-        <section className="editor-card backup-card" aria-labelledby="backup-title">
-          <p className="eyebrow">一致快照</p>
-          <h2 id="backup-title">创建普通备份</h2>
-          <p>
-            下载受控 <code>.pwbk</code>，仅含 manifest 和一致 SQLite 快照；登录凭据不进入备份。
-          </p>
-          <button disabled={backup.isPending} onClick={() => backup.mutate()}>
-            {backup.isPending ? '正在校验并打包…' : '创建并下载备份'}
-          </button>
-          {backup.isSuccess && (
-            <p className="form-success" role="status">
-              备份已通过浏览器下载，请妥善保存。
+        <div className="data-actions" aria-label="备份与导入">
+          <section
+            className="editor-card data-action-card backup-card"
+            aria-labelledby="backup-title"
+          >
+            <div className="data-action-card__heading">
+              <div>
+                <p className="eyebrow">导出 · 一致快照</p>
+                <h2 id="backup-title">创建普通备份</h2>
+              </div>
+              <span className="data-step" aria-hidden="true">
+                01
+              </span>
+            </div>
+            <p className="data-action-card__description">
+              下载受控 <code>.pwbk</code>，仅含 manifest 和一致 SQLite 快照；登录凭据不进入备份。
             </p>
-          )}
-          {backup.error instanceof Error && (
-            <p className="form-error" role="alert">
-              {backup.error.message}
+            <button disabled={backup.isPending} onClick={() => backup.mutate()}>
+              {backup.isPending ? '正在校验并打包…' : '创建并下载备份'}
+            </button>
+            {backup.isSuccess && (
+              <p className="form-success" role="status">
+                备份已通过浏览器下载，请妥善保存。
+              </p>
+            )}
+            {backup.error instanceof Error && (
+              <p className="form-error" role="alert">
+                {backup.error.message}
+              </p>
+            )}
+            <p className="credential-note data-action-card__note">
+              整库时间点恢复不是迁移或合并。请停止服务后运行
+              <code> npm run data:restore -- --file &lt;backup.pwbk&gt;</code>
+              ；页面不接受服务器路径。
             </p>
-          )}
-          <p className="credential-note">
-            整库时间点恢复不是迁移或合并。请停止服务后运行
-            <code> npm run data:restore -- --file &lt;backup.pwbk&gt;</code>；页面不接受服务器路径。
-          </p>
-        </section>
+          </section>
 
-        <form className="editor-card import-form" onSubmit={submit}>
-          <h2>导入旧数据</h2>
-          <label>
-            来源
-            <select
-              value={sourceType}
-              onChange={(event) => {
-                setSourceType(event.target.value as ImportSourceType);
-                setPreview(null);
-              }}
-            >
-              <option value="personal-json">Personal JSON（v1 / v2 / v3）</option>
-              <option value="qoder-sqlite">qoder SQLite 快照</option>
-            </select>
-          </label>
-          {sourceType === 'qoder-sqlite' && (
-            <label>
-              来源时区
-              <input
-                required
-                value={sourceTimezone}
-                onChange={(event) => setSourceTimezone(event.target.value)}
-              />
-            </label>
-          )}
-          <label>
-            备份文件
-            <input
-              required
-              type="file"
-              accept={sourceType === 'personal-json' ? '.json,application/json' : '.db,.sqlite'}
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-            />
-          </label>
-          {sourceType === 'qoder-sqlite' && (
-            <p className="import-caution">
-              请选择 qoder 的一致备份快照；不要在旧服务运行且存在 WAL 时直接复制 workbench.db。
+          <form className="editor-card data-action-card import-form" onSubmit={submit}>
+            <div className="data-action-card__heading">
+              <div>
+                <p className="eyebrow">导入 · 先预检后应用</p>
+                <h2>导入旧数据</h2>
+              </div>
+              <span className="data-step" aria-hidden="true">
+                02
+              </span>
+            </div>
+            <div className="import-fields">
+              <label>
+                来源
+                <select
+                  value={sourceType}
+                  onChange={(event) => {
+                    setSourceType(event.target.value as ImportSourceType);
+                    setPreview(null);
+                  }}
+                >
+                  <option value="personal-json">Personal JSON（v1 / v2 / v3）</option>
+                  <option value="qoder-sqlite">qoder SQLite 快照</option>
+                </select>
+              </label>
+              {sourceType === 'qoder-sqlite' && (
+                <label>
+                  来源时区
+                  <input
+                    required
+                    value={sourceTimezone}
+                    onChange={(event) => setSourceTimezone(event.target.value)}
+                  />
+                </label>
+              )}
+              <label className="import-file-field">
+                备份文件
+                <input
+                  required
+                  type="file"
+                  accept={sourceType === 'personal-json' ? '.json,application/json' : '.db,.sqlite'}
+                  onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                />
+              </label>
+            </div>
+            {sourceType === 'qoder-sqlite' && (
+              <p className="import-caution">
+                请选择 qoder 的一致备份快照；不要在旧服务运行且存在 WAL 时直接复制 workbench.db。
+              </p>
+            )}
+            <button disabled={file === null || preflight.isPending || apply.isPending}>
+              {preflight.isPending ? '正在只读检查…' : '预检并生成对账报告'}
+            </button>
+            <p className="credential-note data-action-card__note">
+              文件上传到随机临时目录；成功或失败后会清理。SESSDATA
+              仅检测存在性，不读取、不显示、不迁移。
             </p>
-          )}
-          <button disabled={file === null || preflight.isPending || apply.isPending}>
-            {preflight.isPending ? '正在只读检查…' : '预检并生成对账报告'}
-          </button>
-          <p className="credential-note">
-            文件上传到随机临时目录；成功或失败后会清理。SESSDATA
-            仅检测存在性，不读取、不显示、不迁移。
-          </p>
-          {error instanceof Error && (
-            <p className="form-error" role="alert">
-              {error.message}
-            </p>
-          )}
-        </form>
+            {error instanceof Error && (
+              <p className="form-error" role="alert">
+                {error.message}
+              </p>
+            )}
+          </form>
+        </div>
 
-        <div className="data-results">
+        <div className="data-results" aria-live="polite">
           {preview === null ? (
-            <section className="list-panel" aria-labelledby="import-empty-title">
-              <h2 id="import-empty-title">等待预检</h2>
-              <p>预检不会写入业务数据。报告会逐类列出新增、更新、不变、冲突和拒绝数量。</p>
+            <section
+              className="list-panel data-results__empty"
+              aria-labelledby="import-empty-title"
+            >
+              <div className="data-results__empty-mark" aria-hidden="true">
+                ✓
+              </div>
+              <div>
+                <p className="eyebrow">对账结果</p>
+                <h2 id="import-empty-title">等待预检</h2>
+                <p>预检不会写入业务数据。报告会逐类列出新增、更新、不变、冲突和拒绝数量。</p>
+              </div>
             </section>
           ) : (
             <ImportReportPanel report={preview.report} />

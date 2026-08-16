@@ -35,6 +35,7 @@ describe('insight contracts', () => {
           completionRate: null,
           learningActivities: 0,
         },
+        learningDuration: { totalSeconds: 0, bySeries: [] },
       }).success,
     ).toBe(true);
   });

@@ -10,14 +10,16 @@ import {
 
 describe('Bili credential and sync contracts', () => {
   it('accepts only the secret save input and bounded sync pages', () => {
+    const resourceId = '19dc0426-6277-4caf-bda7-e0f794833691';
     expect(saveBiliCredentialSchema.parse({ sessdata: ' test-value ' })).toEqual({
       sessdata: 'test-value',
     });
     expect(saveBiliCredentialSchema.safeParse({ sessdata: 'x', remember: true }).success).toBe(
       false,
     );
-    expect(startLearningSyncSchema.parse({})).toEqual({ pages: 3 });
-    expect(startLearningSyncSchema.safeParse({ pages: 6 }).success).toBe(false);
+    expect(startLearningSyncSchema.parse({ resourceId })).toEqual({ resourceId, pages: 3 });
+    expect(startLearningSyncSchema.safeParse({ resourceId, pages: 6 }).success).toBe(false);
+    expect(startLearningSyncSchema.safeParse({ pages: 3 }).success).toBe(false);
   });
 
   it('requires an allowlisted browser and rejects unexpected restart fields', () => {

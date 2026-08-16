@@ -140,6 +140,8 @@ export type { NormalizedBiliUrl } from './domain/bili-url.js';
 export {
   LearningObservationConflictError,
   mergeLearningObservation,
+  WATCH_GRACE_SECONDS,
+  WATCH_RATE_CAP,
 } from './domain/learning-progress.js';
 export type {
   LearningMergeResult,

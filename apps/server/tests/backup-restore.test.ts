@@ -88,10 +88,10 @@ describe('controlled backup archive', () => {
     expect(extracted.manifest).toMatchObject({
       app: BACKUP_APP_ID,
       backupFormat: BACKUP_FORMAT_VERSION,
-      schemaVersion: 3,
+      schemaVersion: 4,
       secretIncluded: false,
     });
-    expect(inspectSnapshot(extracted.databasePath)).toEqual({ schemaVersion: 3 });
+    expect(inspectSnapshot(extracted.databasePath)).toEqual({ schemaVersion: 4 });
     const snapshot = new DatabaseSync(extracted.databasePath, { readOnly: true });
     try {
       expect(logicalDatabaseChecksum(snapshot)).toBe(expectedChecksum);
@@ -203,7 +203,7 @@ describe('controlled backup archive', () => {
     const manifest: BackupManifest = {
       app: BACKUP_APP_ID,
       backupFormat: BACKUP_FORMAT_VERSION,
-      schemaVersion: 3,
+      schemaVersion: 4,
       createdAt: '2026-08-13T12:00:00.000Z',
       dbBytes: 1,
       dbSha256: '0'.repeat(64),

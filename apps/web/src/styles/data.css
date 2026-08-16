@@ -1,17 +1,71 @@
 .data-layout {
   display: grid;
-  margin-top: clamp(2rem, 5vw, 4rem);
-  grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
-  gap: 1.25rem;
+  margin-top: clamp(1.75rem, 4vw, 3rem);
+  gap: 1rem;
   align-items: start;
 }
 
-.backup-card {
-  grid-column: 1 / -1;
+.data-page .editor-card {
+  position: static;
+}
+
+.data-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.data-action-card {
+  min-width: 0;
+  align-content: start;
+}
+
+.data-action-card__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.data-action-card__heading .eyebrow {
+  margin-bottom: 0.45rem;
+}
+
+.data-action-card__heading h2 {
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
+}
+
+.data-step {
+  color: var(--line);
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.data-action-card__description {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.data-action-card__note {
+  margin-top: auto;
 }
 
 .backup-card code {
   overflow-wrap: anywhere;
+}
+
+.import-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.import-file-field {
+  grid-column: 1 / -1;
 }
 
 .import-form select,
@@ -38,6 +92,40 @@
 .data-results {
   display: grid;
   gap: 1rem;
+}
+
+.data-results__empty {
+  display: flex;
+  min-height: 9rem;
+  align-items: center;
+  gap: 1rem;
+}
+
+.data-results__empty-mark {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-size: 1.2rem;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.data-results__empty .eyebrow {
+  margin-bottom: 0.35rem;
+}
+
+.data-results__empty h2 {
+  margin-bottom: 0.4rem;
+}
+
+.data-results__empty p:last-child {
+  max-width: 48rem;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
 }
 
 .report-heading,
@@ -137,11 +225,20 @@
 }
 
 @media (max-width: 760px) {
-  .data-layout {
+  .data-actions,
+  .import-fields {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .import-file-field {
+    grid-column: auto;
+  }
+
   .report-heading {
+    align-items: flex-start;
+  }
+
+  .data-results__empty {
     align-items: flex-start;
   }
 }

@@ -112,7 +112,12 @@ export class LearningService {
       id,
       input.revision,
       input.partId,
-      { progress: merged.progress, partProgress: merged.partProgress },
+      {
+        progress: merged.progress,
+        partProgress: merged.partProgress,
+        watchedDelta: merged.watchedDelta,
+        observedAt: input.observedAt,
+      },
       this.now(),
     );
     if (updated === undefined) throw new RevisionConflictError(this.required(id));

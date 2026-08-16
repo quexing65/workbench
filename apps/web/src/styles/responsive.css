@@ -1,3 +1,17 @@
+@media (max-width: 74rem) {
+  .main-content {
+    padding-inline: clamp(1.25rem, 3vw, 2.5rem);
+  }
+
+  .learning-sections {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .series-panel {
+    position: static;
+  }
+}
+
 @media (max-width: 899px) {
   .sidebar {
     display: none;
@@ -142,7 +156,7 @@
   }
 
   h1 {
-    font-size: clamp(2.25rem, 12vw, 3.15rem);
+    font-size: clamp(1.85rem, 9vw, 2.5rem);
   }
 
   .mobile-nav .nav-link:nth-child(3) span:last-child {

@@ -136,7 +136,7 @@ export function RecurringPage() {
         <h1>固定任务</h1>
         <p className="page-lead">只保存规则；某天改变状态时，才记录那一天。</p>
       </header>
-      <div className="business-layout">
+      <div className="business-layout business-layout--wide-editor">
         <form className="editor-card" onSubmit={submit}>
           <h2>新建固定任务</h2>
           <label>

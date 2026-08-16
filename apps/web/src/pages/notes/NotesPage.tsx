@@ -137,7 +137,7 @@ export function NotesPage() {
         <h1>小记</h1>
         <p className="page-lead">草稿留在表单里，只有保存成功后才会清空。</p>
       </header>
-      <div className="business-layout">
+      <div className="business-layout business-layout--wide-editor">
         <form className="editor-card" onSubmit={submit}>
           <h2>写一条小记</h2>
           <label>

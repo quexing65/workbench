@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   LearningObservationConflictError,
   mergeLearningObservation,
+  type LearningPartProgressState,
   type LearningProgressState,
 } from './learning-progress.js';
 
@@ -116,8 +117,10 @@ describe('mergeLearningObservation', () => {
       resumeSeconds: 50,
       lastObservedAt: '2026-08-13T13:00:00.000Z',
     };
-    const partProgress = {
+    const partProgress: LearningPartProgressState = {
       furthestSeconds: 50,
+      watchedSeconds: 0,
+      lastSeconds: 50,
       completed: false,
       completedAt: null,
       lastObservedAt: '2026-08-13T13:00:00.000Z',
@@ -131,6 +134,7 @@ describe('mergeLearningObservation', () => {
     expect(result).toEqual({
       progress,
       partProgress,
+      watchedDelta: 0,
       changed: false,
       ignored: false,
     });
@@ -181,5 +185,105 @@ describe('mergeLearningObservation', () => {
         observedAt: '2026-08-13T12:00:00.000Z',
       }),
     ).toThrow(RangeError);
+  });
+});
+
+describe('mergeLearningObservation watched duration', () => {
+  function step(
+    previous: { progress: LearningProgressState; partProgress: LearningPartProgressState | null },
+    partId: string,
+    seconds: number,
+    observedAt: string,
+  ) {
+    return mergeLearningObservation(parts, previous.progress, previous.partProgress, {
+      partId,
+      seconds,
+      observedAt,
+    });
+  }
+
+  it('establishes a baseline without counting the first observation', () => {
+    const result = step(
+      { progress: empty, partProgress: null },
+      'part-a',
+      40,
+      '2026-08-13T12:00:00.000Z',
+    );
+    expect(result.watchedDelta).toBe(0);
+    expect(result.partProgress).toMatchObject({ watchedSeconds: 0, lastSeconds: 40 });
+  });
+
+  it('accumulates continuous playback between observations', () => {
+    const first = step(
+      { progress: empty, partProgress: null },
+      'part-a',
+      40,
+      '2026-08-13T12:00:00.000Z',
+    );
+    const second = step(first, 'part-a', 100, '2026-08-13T12:01:05.000Z');
+    expect(second.watchedDelta).toBe(60);
+    expect(second.partProgress).toMatchObject({ watchedSeconds: 60, lastSeconds: 100 });
+  });
+
+  it('caps suspicious jumps so seeking is not counted', () => {
+    const first = step(
+      { progress: empty, partProgress: null },
+      'part-a',
+      0,
+      '2026-08-13T12:00:00.000Z',
+    );
+    const jump = step(first, 'part-a', 100, '2026-08-13T12:00:10.000Z');
+    // 间隔 10 秒：封顶 10 * 3 + 15 = 45 秒，而非 100 秒。
+    expect(jump.watchedDelta).toBe(45);
+    expect(jump.partProgress.watchedSeconds).toBe(45);
+  });
+
+  it('counts 1.5x playback by the original-speed timeline', () => {
+    const first = step(
+      { progress: empty, partProgress: null },
+      'part-a',
+      0,
+      '2026-08-13T12:00:00.000Z',
+    );
+    // 1.5 倍速看 40 实分钟，时间轴推进 2400 秒，全额计入。
+    const watched = step(first, 'part-a', 100, '2026-08-13T12:40:00.000Z');
+    expect(watched.partProgress).toMatchObject({ furthestSeconds: 100, watchedSeconds: 100 });
+  });
+
+  it('does not count rewinds', () => {
+    const first = step(
+      { progress: empty, partProgress: null },
+      'part-a',
+      90,
+      '2026-08-13T12:00:00.000Z',
+    );
+    const rewind = step(first, 'part-a', 20, '2026-08-13T12:01:00.000Z');
+    expect(rewind.watchedDelta).toBe(0);
+    expect(rewind.partProgress.lastSeconds).toBe(20);
+  });
+
+  it('accumulates again after rewinding past the previous position', () => {
+    const first = step(
+      { progress: empty, partProgress: null },
+      'part-a',
+      90,
+      '2026-08-13T12:00:00.000Z',
+    );
+    const rewind = step(first, 'part-a', 60, '2026-08-13T12:01:00.000Z');
+    const forward = step(rewind, 'part-a', 80, '2026-08-13T12:03:00.000Z');
+    expect(forward.watchedDelta).toBe(20);
+    expect(forward.partProgress.watchedSeconds).toBe(20);
+  });
+
+  it('ignores stale out-of-order observations for watched duration', () => {
+    const first = step(
+      { progress: empty, partProgress: null },
+      'part-a',
+      40,
+      '2026-08-13T12:00:00.000Z',
+    );
+    const stale = step(first, 'part-a', 90, '2026-08-13T11:59:00.000Z');
+    expect(stale.watchedDelta).toBe(0);
+    expect(stale.partProgress).toMatchObject({ watchedSeconds: 0, lastSeconds: 40 });
   });
 });

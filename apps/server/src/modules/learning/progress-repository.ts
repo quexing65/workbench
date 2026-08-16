@@ -17,6 +17,8 @@ export class LearningProgressRepository {
     next: {
       readonly progress: Omit<LearningProgress, 'revision'>;
       readonly partProgress: Omit<LearningPartProgress, 'revision'>;
+      readonly watchedDelta: number;
+      readonly observedAt: string;
     },
     now: number,
   ): LearningResource | undefined {
@@ -46,6 +48,7 @@ export class LearningProgressRepository {
         );
       if (result.changes === 0) return undefined;
       this.upsertPartProgress(partId, next.partProgress, now);
+      this.recordWatchedSeconds(partId, next.watchedDelta, next.observedAt);
       return this.reader.findRequired(resourceId);
     });
   }
@@ -95,21 +98,37 @@ export class LearningProgressRepository {
     this.database
       .prepare(
         `INSERT INTO learning_part_progress
-         (part_id, furthest_seconds, completed, completed_at_ms, last_observed_at_ms,
-          updated_at_ms, revision) VALUES (?, ?, ?, ?, ?, ?, 1)
+         (part_id, furthest_seconds, watched_seconds, last_seconds, completed, completed_at_ms,
+          last_observed_at_ms, updated_at_ms, revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
          ON CONFLICT(part_id) DO UPDATE SET
-           furthest_seconds = excluded.furthest_seconds, completed = excluded.completed,
-           completed_at_ms = excluded.completed_at_ms,
+           furthest_seconds = excluded.furthest_seconds,
+           watched_seconds = excluded.watched_seconds, last_seconds = excluded.last_seconds,
+           completed = excluded.completed, completed_at_ms = excluded.completed_at_ms,
            last_observed_at_ms = excluded.last_observed_at_ms,
            updated_at_ms = excluded.updated_at_ms, revision = revision + 1`,
       )
       .run(
         partId,
         progress.furthestSeconds,
+        progress.watchedSeconds,
+        progress.lastSeconds,
         progress.completed ? 1 : 0,
         progress.completedAt === null ? null : Date.parse(progress.completedAt),
         progress.lastObservedAt === null ? null : Date.parse(progress.lastObservedAt),
         now,
       );
+  }
+
+  private recordWatchedSeconds(partId: string, watchedDelta: number, observedAt: string): void {
+    if (watchedDelta <= 0) return;
+    // 与 insights 查询口径一致：按 UTC+8 业务日归属观看时长。
+    const watchDate = new Date(Date.parse(observedAt) + 8 * 3_600_000).toISOString().slice(0, 10);
+    this.database
+      .prepare(
+        `INSERT INTO learning_watch_daily (part_id, watch_date, watched_seconds) VALUES (?, ?, ?)
+         ON CONFLICT(part_id, watch_date) DO UPDATE SET
+           watched_seconds = watched_seconds + excluded.watched_seconds`,
+      )
+      .run(partId, watchDate, watchedDelta);
   }
 }

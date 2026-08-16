@@ -63,7 +63,7 @@ function SeriesEditor({
 
   return (
     <div className="series-card">
-      <div className="field-row">
+      <div className="series-name-row">
         <label>
           系列名称
           <input
@@ -87,24 +87,26 @@ function SeriesEditor({
             <li key={id}>
               <span>{title}</span>
               <div className="series-item-actions">
-                <button
-                  type="button"
-                  className="button-secondary"
-                  aria-label={`上移 ${title}`}
-                  disabled={index === 0}
-                  onClick={() => move(index, -1)}
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  className="button-secondary"
-                  aria-label={`下移 ${title}`}
-                  disabled={index === ids.length - 1}
-                  onClick={() => move(index, 1)}
-                >
-                  ↓
-                </button>
+                {index > 0 ? (
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    aria-label={`上移 ${title}`}
+                    onClick={() => move(index, -1)}
+                  >
+                    ↑
+                  </button>
+                ) : null}
+                {index < ids.length - 1 ? (
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    aria-label={`下移 ${title}`}
+                    onClick={() => move(index, 1)}
+                  >
+                    ↓
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="button-danger"
@@ -118,7 +120,7 @@ function SeriesEditor({
           );
         })}
       </ol>
-      <div className="field-row series-add-row">
+      <div className="series-add-row">
         <label>
           添加资源
           <select value={toAdd} onChange={(event) => setToAdd(event.target.value)}>
@@ -142,12 +144,12 @@ function SeriesEditor({
           加入系列
         </button>
       </div>
-      <div className="button-row">
+      <div className="series-editor-actions">
         <button
           disabled={mutation.isPending}
           onClick={() => mutation.mutate({ kind: 'save-items' })}
         >
-          保存顺序
+          保存资源与顺序
         </button>
         <button
           className="button-danger"
@@ -196,11 +198,11 @@ export function LearningSeriesPanel({
 
   return (
     <section className="series-panel" aria-labelledby="series-title">
-      <div>
+      <div className="series-panel__header">
         <p className="eyebrow">有序学习</p>
         <h2 id="series-title">学习系列</h2>
       </div>
-      <form className="field-row" onSubmit={submit}>
+      <form className="series-create-form" onSubmit={submit}>
         <label>
           新系列名称
           <input

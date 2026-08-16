@@ -62,6 +62,67 @@ describe('BiliSessionHttpClient', () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it('skips non-video history entries without rejecting valid multipart progress', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      jsonResponse({
+        code: 0,
+        data: {
+          list: [
+            {
+              history: { business: 'live', bvid: '' },
+              view_at: 1_786_588_700,
+            },
+            {
+              history: { bvid: 'BV1AB411C7mD', page: 45 },
+              progress: 321,
+              view_at: 1_786_588_800,
+            },
+          ],
+        },
+      }),
+    );
+    const client = new BiliSessionHttpClient({ fetcher });
+
+    await expect(client.getHistory('mixed-history-sentinel', 1)).resolves.toEqual([
+      {
+        bvid: 'BV1AB411C7mD',
+        partNumber: 45,
+        progressSeconds: 321,
+        observedAt: '2026-08-13T02:40:00.000Z',
+      },
+    ]);
+  });
+
+  it('prefers the top-level multipart page used by current history responses', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          code: 0,
+          data: [
+            {
+              history: { bvid: 'BV1AB411C7mD', page: 1 },
+              page: { page: 45, cid: 486230045 },
+              progress: 222,
+              view_at: 1_786_588_800,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ code: 0, data: [] }));
+
+    await expect(
+      new BiliSessionHttpClient({ fetcher }).getHistory('current-page-sentinel', 2),
+    ).resolves.toEqual([
+      {
+        bvid: 'BV1AB411C7mD',
+        partNumber: 45,
+        progressSeconds: 222,
+        observedAt: '2026-08-13T02:40:00.000Z',
+      },
+    ]);
+  });
+
   it('falls back to the fixed cursor endpoint after a first-page legacy failure', async () => {
     const fetcher = vi
       .fn<typeof fetch>()

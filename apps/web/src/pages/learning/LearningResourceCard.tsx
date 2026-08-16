@@ -10,6 +10,7 @@ import {
   resetLearningProgress,
 } from '../../shared/api/learning';
 import { queryKeys } from '../../shared/api/query-keys';
+import { LearningResourceSync } from './LearningResourceSync';
 
 type Action =
   | { readonly kind: 'observe'; readonly partId: string; readonly seconds: number }
@@ -22,6 +23,11 @@ function durationLabel(value: number): string {
   return hours > 0
     ? `${String(hours)}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
     : `${String(minutes)}:${String(seconds).padStart(2, '0')}`;
+}
+
+function percent(value: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.min(100, Math.round((value / total) * 100));
 }
 
 export function LearningResourceCard({ resource }: { readonly resource: LearningResource }) {
@@ -72,6 +78,28 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
       if (isRevisionConflict(error)) void refresh();
     },
   });
+  const currentPart =
+    resource.parts.find((part) => part.id === resource.progress.resumePartId) ?? resource.parts[0];
+  const furthestPartIndex = resource.parts.findIndex(
+    (part) => part.id === resource.progress.furthestPartId,
+  );
+  const watchedBeforeFurthest = resource.parts
+    .slice(0, Math.max(furthestPartIndex, 0))
+    .reduce((sum, part) => sum + part.durationSeconds, 0);
+  const overallWatchedSeconds = resource.progress.completed
+    ? resource.durationSeconds
+    : watchedBeforeFurthest + resource.progress.furthestSeconds;
+  const overallPercent = percent(overallWatchedSeconds, resource.durationSeconds);
+  const canResume = overallWatchedSeconds > 0 && !resource.progress.completed;
+  const currentSeconds = currentPart
+    ? resource.progress.resumePartId === currentPart.id
+      ? resource.progress.resumeSeconds
+      : (currentPart.progress?.furthestSeconds ?? 0)
+    : 0;
+  const currentPercent = currentPart ? percent(currentSeconds, currentPart.durationSeconds) : 0;
+  const resumeUrl = currentPart
+    ? `${resource.sourceUrl.replace(/[?#].*$/u, '')}?p=${currentPart.partNumber}${currentSeconds > 5 ? `&t=${currentSeconds}` : ''}`
+    : resource.sourceUrl;
 
   return (
     <article className="learning-card">
@@ -88,66 +116,87 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
             {durationLabel(resource.durationSeconds)}
           </p>
         </div>
-        <a href={resource.sourceUrl} target="_blank" rel="noreferrer">
-          在 B站打开<span className="visually-hidden"> {resource.title}</span>
+        <a
+          href={resumeUrl}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`${canResume ? '继续观看' : '在 B站打开'} ${resource.title}`}
+        >
+          {canResume ? '继续观看' : '在 B站打开'}
         </a>
       </header>
 
-      {resource.progress.resumePartId !== null && (
-        <p className="resume-note">
-          上次看到 {durationLabel(resource.progress.resumeSeconds)}，可继续记录新的真实进度。
-        </p>
-      )}
-      <ol className="part-list">
-        {resource.parts.map((part) => {
-          const value = Number(seconds[part.id] ?? 0);
-          return (
-            <li key={part.id}>
+      {currentPart ? (
+        <div className="current-part" aria-label="当前观看进度">
+          <div className="current-part__heading">
+            <strong>
+              当前观看：P{currentPart.partNumber} · {currentPart.title}
+            </strong>
+            <span>
+              {durationLabel(currentSeconds)} / {durationLabel(currentPart.durationSeconds)}（
+              {currentPercent}%）
+            </span>
+          </div>
+          <progress
+            aria-label="本集观看进度"
+            max={Math.max(currentPart.durationSeconds, 1)}
+            value={currentSeconds}
+          />
+          <div className="overall-progress-copy">
+            <span>合集总进度</span>
+            <span>
+              {durationLabel(overallWatchedSeconds)} / {durationLabel(resource.durationSeconds)}（
+              {overallPercent}%）
+            </span>
+          </div>
+          <progress
+            aria-label="合集总进度"
+            max={Math.max(resource.durationSeconds, 1)}
+            value={overallWatchedSeconds}
+          />
+          {(() => {
+            const value = Number(seconds[currentPart.id] ?? 0);
+            return (
               <div className="part-copy">
-                <strong>
-                  P{part.partNumber} · {part.title}
-                </strong>
-                <small>
-                  已到 {durationLabel(part.progress?.furthestSeconds ?? 0)} /{' '}
-                  {durationLabel(part.durationSeconds)}
-                </small>
-                <progress
-                  aria-label={`${part.title} 观看进度`}
-                  max={Math.max(part.durationSeconds, 1)}
-                  value={part.progress?.furthestSeconds ?? 0}
-                />
+                <form
+                  className="part-progress-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    mutation.mutate({ kind: 'observe', partId: currentPart.id, seconds: value });
+                  }}
+                >
+                  <label>
+                    本集看到秒数
+                    <input
+                      aria-label={`${currentPart.title} 看到秒数`}
+                      type="number"
+                      min={0}
+                      max={currentPart.durationSeconds}
+                      step={1}
+                      required
+                      value={seconds[currentPart.id] ?? '0'}
+                      onChange={(event) =>
+                        setSeconds((current) => ({
+                          ...current,
+                          [currentPart.id]: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <button disabled={mutation.isPending || !Number.isInteger(value)}>
+                    记录进度
+                  </button>
+                </form>
               </div>
-              <form
-                className="part-progress-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  mutation.mutate({ kind: 'observe', partId: part.id, seconds: value });
-                }}
-              >
-                <label>
-                  <span className="visually-hidden">{part.title} 看到秒数</span>
-                  <input
-                    aria-label={`${part.title} 看到秒数`}
-                    type="number"
-                    min={0}
-                    max={part.durationSeconds}
-                    step={1}
-                    required
-                    value={seconds[part.id] ?? '0'}
-                    onChange={(event) =>
-                      setSeconds((current) => ({ ...current, [part.id]: event.target.value }))
-                    }
-                  />
-                </label>
-                <button disabled={mutation.isPending || !Number.isInteger(value)}>记录进度</button>
-              </form>
-            </li>
-          );
-        })}
-      </ol>
+            );
+          })()}
+        </div>
+      ) : null}
       <div className="button-row learning-actions">
+        <LearningResourceSync resourceId={resource.id} resourceTitle={resource.title} />
         {!resource.progress.completed && (
           <button
+            className="learning-action-button learning-action-button--primary"
             disabled={mutation.isPending}
             onClick={() =>
               window.confirm('确认将整项学习标记为完成吗？') &&
@@ -158,7 +207,7 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
           </button>
         )}
         <button
-          className="button-secondary"
+          className="button-secondary learning-action-button"
           disabled={mutation.isPending}
           onClick={() =>
             window.confirm('确认清空这项学习的全部进度吗？此操作不能撤销。') &&
@@ -168,7 +217,7 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
           重置进度
         </button>
         <button
-          className="button-danger"
+          className="button-danger learning-action-button learning-action-button--danger"
           disabled={mutation.isPending}
           onClick={() =>
             window.confirm('确认从工作台移除这项学习资源吗？') &&

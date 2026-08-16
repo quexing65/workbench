@@ -8,7 +8,7 @@ export function createLearningSyncRouter(service: LearningSyncService): Router {
   const router = Router();
   router.post('/', async (request, response) => {
     const input = parseInput(startLearningSyncSchema, request.body);
-    response.status(202).json({ runId: await service.start(input.pages) });
+    response.status(202).json({ runId: await service.start(input.resourceId, input.pages) });
   });
   router.get('/:id', (request, response) => {
     response.json(service.find(parseUuidParameter(request)));

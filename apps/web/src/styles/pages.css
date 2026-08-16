@@ -26,14 +26,10 @@
 
 h1 {
   max-width: 14em;
-  margin-bottom: 1rem;
-  font-size: clamp(2.25rem, 5vw, 4.75rem);
-  line-height: 1.07;
-  letter-spacing: -0.035em;
-}
-
-.page--placeholder h1 {
-  font-size: clamp(2.5rem, 5vw, 4rem);
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.9rem, 3.2vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
 }
 
 .page-lead {

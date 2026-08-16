@@ -181,7 +181,7 @@ export function TasksPage() {
         <h1>任务</h1>
         <p className="page-lead">把每天的任务与固定任务放在一张清单里。</p>
       </header>
-      <div className="business-layout">
+      <div className="business-layout business-layout--wide-editor">
         <form className="editor-card" onSubmit={submit}>
           <h2>新增任务</h2>
           <label>

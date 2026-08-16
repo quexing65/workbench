@@ -38,6 +38,8 @@ interface PartRow {
   duration_seconds: number;
   revision: number;
   furthest_seconds: number | null;
+  watched_seconds: number | null;
+  last_seconds: number | null;
   completed: number | null;
   completed_at_ms: number | null;
   last_observed_at_ms: number | null;
@@ -67,6 +69,8 @@ function mapPartProgress(row: PartRow): LearningPartProgress | null {
     ? null
     : {
         furthestSeconds: row.furthest_seconds ?? 0,
+        watchedSeconds: row.watched_seconds ?? 0,
+        lastSeconds: row.last_seconds ?? 0,
         completed: row.completed === 1,
         completedAt: iso(row.completed_at_ms),
         lastObservedAt: iso(row.last_observed_at_ms),
@@ -146,7 +150,8 @@ export class LearningResourceReader {
     return this.database
       .prepare(
         `SELECT p.id, p.external_part_id, p.part_number, p.title, p.duration_seconds, p.revision,
-                progress.furthest_seconds, progress.completed, progress.completed_at_ms,
+                progress.furthest_seconds, progress.watched_seconds, progress.last_seconds,
+                progress.completed, progress.completed_at_ms,
                 progress.last_observed_at_ms, progress.revision AS progress_revision
          FROM learning_parts p LEFT JOIN learning_part_progress progress ON progress.part_id = p.id
          WHERE p.resource_id = ? AND p.deleted_at_ms IS NULL ORDER BY p.part_number, p.id`,

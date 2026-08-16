@@ -18,23 +18,45 @@
   display: grid;
   margin-top: clamp(2rem, 5vw, 4rem);
   padding: clamp(1.2rem, 3vw, 2rem);
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
-.bili-sync-panel__header,
-.credential-actions,
-.browser-actions,
-.sync-actions {
+.learning-page__header {
   display: flex;
-  gap: 0.8rem;
-  align-items: end;
+  width: 100%;
+  max-width: none;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.learning-page__header > div {
+  min-width: 0;
+}
+
+.learning-tools-menu {
+  display: grid;
+  width: 11.5rem;
+  margin-left: auto;
+  flex: 0 0 auto;
+  gap: 0.65rem;
+}
+
+.learning-tools-toggle {
+  white-space: nowrap;
+}
+
+.bili-sync-panel__header {
+  display: flex;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+  gap: 1rem;
+  align-items: center;
   justify-content: space-between;
 }
 
 .bili-sync-panel__header h2,
 .bili-sync-panel__header p,
-.credential-note,
-.sync-actions p {
+.credential-note {
   margin-block: 0;
 }
 
@@ -51,41 +73,57 @@
   border-color: currentColor;
 }
 
-.credential-actions > form {
-  display: flex;
-  min-width: min(100%, 28rem);
-  gap: 0.65rem;
+.credential-section {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.65fr) minmax(25rem, 1.35fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
   align-items: end;
 }
 
-.credential-actions label,
-.sync-actions label {
+.credential-intro {
   display: grid;
-  flex: 1;
+  gap: 0.45rem;
+  align-self: center;
+}
+
+.credential-intro strong {
+  font-size: 1rem;
+}
+
+.credential-form {
+  display: grid;
+  grid-template-columns: minmax(15rem, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.credential-form label {
+  display: grid;
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 700;
   gap: 0.42rem;
 }
 
-.browser-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
+.credential-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.credential-buttons button {
+  white-space: nowrap;
+}
+
+.credential-clear {
+  border-color: var(--line);
+  color: var(--error);
+  background: transparent;
 }
 
 .credential-note {
   color: var(--muted);
   font-size: 0.88rem;
-}
-
-.sync-actions {
-  padding-top: 1rem;
-  border-top: 1px solid var(--line);
-  justify-content: flex-start;
-}
-
-.sync-actions label {
-  max-width: 10rem;
 }
 
 .learning-import {
@@ -132,9 +170,13 @@ select {
 .learning-sections {
   display: grid;
   margin-top: 1.25rem;
-  grid-template-columns: minmax(0, 1.65fr) minmax(18rem, 0.85fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
   align-items: start;
+}
+
+.learning-series-tools {
+  margin-top: clamp(2rem, 5vw, 4rem);
 }
 
 .learning-library,
@@ -179,6 +221,11 @@ select {
   color: var(--muted);
 }
 
+.learning-card__header a {
+  flex: none;
+  white-space: nowrap;
+}
+
 .resume-note {
   padding: 0.7rem 0.85rem;
   border-radius: 0.65rem;
@@ -216,6 +263,33 @@ select {
   accent-color: var(--accent-strong);
 }
 
+.current-part {
+  display: grid;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  gap: 0.55rem;
+  background: var(--accent-soft);
+}
+
+.current-part__heading,
+.overall-progress-copy {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.current-part__heading span,
+.overall-progress-copy {
+  color: var(--muted);
+}
+
+.current-part > progress {
+  width: 100%;
+  accent-color: var(--accent-strong);
+}
+
 .part-progress-form {
   display: flex;
   gap: 0.5rem;
@@ -226,13 +300,70 @@ select {
 }
 
 .learning-actions {
+  display: grid;
   padding-top: 0.75rem;
   border-top: 1px solid var(--line);
+  grid-template-columns: repeat(4, minmax(9rem, max-content));
+  align-items: stretch;
+}
+
+.learning-actions .learning-action-button {
+  min-width: 9rem;
+  border-color: var(--line);
+  color: var(--ink);
+  background: #fffefa;
+  white-space: nowrap;
+}
+
+.learning-actions .learning-action-button--primary {
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.learning-actions .learning-action-button--danger {
+  border-color: color-mix(in srgb, var(--error) 45%, var(--line));
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 7%, #fffefa);
+}
+
+.learning-actions .learning-action-button:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.resource-sync-status {
+  margin: 0;
+  grid-column: 1 / -1;
+  color: var(--muted);
 }
 
 .series-panel {
-  position: sticky;
-  top: 2rem;
+  position: static;
+}
+
+.series-panel__header {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.series-create-form,
+.series-name-row,
+.series-add-row {
+  display: grid;
+  grid-template-columns: minmax(16rem, 32rem) auto;
+  gap: 0.75rem;
+  align-items: end;
+  justify-content: start;
+}
+
+.series-create-form {
+  margin-top: 1rem;
+}
+
+.series-create-form button,
+.series-name-row button,
+.series-add-row button {
+  white-space: nowrap;
 }
 
 .series-card {
@@ -273,6 +404,14 @@ select {
   gap: 0.3rem;
 }
 
+.series-editor-actions {
+  display: flex;
+  padding-top: 0.25rem;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .series-item-actions button {
   min-width: 2.75rem;
   padding-inline: 0.65rem;
@@ -282,24 +421,65 @@ select {
   margin-bottom: 0.8rem;
 }
 
+@media (max-width: 700px) {
+  .series-create-form,
+  .series-name-row,
+  .series-add-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .series-create-form button,
+  .series-name-row button,
+  .series-add-row button {
+    width: 100%;
+  }
+
+  .series-editor-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 820px) {
+  .learning-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .learning-actions .learning-action-button {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 @media (max-width: 900px) {
   .learning-import,
   .learning-sections {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .series-panel {
-    position: static;
+  .credential-section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
   }
 
-  .credential-actions,
-  .browser-actions {
-    align-items: stretch;
-    flex-direction: column;
+  .series-panel {
+    position: static;
   }
 }
 
 @media (max-width: 560px) {
+  .learning-page__header {
+    flex-direction: column;
+  }
+
+  .learning-tools-menu {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .learning-tools-toggle {
+    align-self: stretch;
+  }
   .learning-card__header,
   .series-summary__header,
   .part-list > li,
@@ -314,13 +494,17 @@ select {
   }
 
   .bili-sync-panel__header,
-  .credential-actions > form,
-  .sync-actions {
+  .credential-form,
+  .credential-buttons {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .sync-actions label {
-    max-width: none;
+  .credential-form {
+    display: flex;
+  }
+
+  .learning-actions {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

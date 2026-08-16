@@ -29,11 +29,12 @@ describe('Workbench SQLite foundation', () => {
     const database = openWorkbenchDatabase({ dataDirectory: root });
 
     try {
-      expect(database.schemaVersion).toBe(3);
+      expect(database.schemaVersion).toBe(4);
       expect(database.migrations.applied).toEqual([
         '0001-initial',
         '0002-source-contributions',
         '0003-performance-indexes',
+        '0004-watched-seconds',
       ]);
       expect(readDatabasePragmas(database.connection)).toEqual({
         foreignKeys: 1,

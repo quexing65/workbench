@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { addBusinessDays } from '@workbench/shared';
@@ -196,12 +196,46 @@ describe('review page', () => {
           completionRate: 0.5,
           learningActivities: span,
         },
+        learningDuration: {
+          totalSeconds: 5400,
+          bySeries: [
+            {
+              seriesId: '10000000-0000-4000-8000-000000000001',
+              seriesName: '数据库',
+              durationSeconds: 3600,
+            },
+            {
+              seriesId: '10000000-0000-4000-8000-000000000002',
+              seriesName: '人工智能',
+              durationSeconds: 1800,
+            },
+          ],
+        },
       });
     });
     vi.stubGlobal('fetch', fetchMock);
     renderPage(<ReviewPage />);
     expect(await screen.findByText('14')).toBeInTheDocument();
-    expect(screen.getByRole('table')).toHaveAccessibleName('每日计划、完成、取消和学习活动明细');
+    const dailyTable = screen.getByRole('table', {
+      name: '每日计划、完成、取消和学习活动明细',
+    });
+    expect(dailyTable).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: '所选范围任务状态汇总' })).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: '所选范围学习活动汇总' })).toBeInTheDocument();
+    const durationPie = screen.getByRole('group', { name: /学习时长系列分布/ });
+    expect(durationPie).toBeInTheDocument();
+    expect(screen.getByText('1 小时 30 分钟')).toBeInTheDocument();
+    expect(screen.getByText('数据库')).toBeInTheDocument();
+    expect(screen.getByText('人工智能')).toBeInTheDocument();
+    const databaseSlice = screen.getByRole('button', { name: /数据库：1 小时.*占比 67%/ });
+    fireEvent.mouseEnter(databaseSlice);
+    expect(await within(durationPie).findByText('数据库')).toBeInTheDocument();
+    expect(within(durationPie).getByText('占比 67%')).toBeInTheDocument();
+    fireEvent.click(databaseSlice);
+    fireEvent.mouseLeave(databaseSlice);
+    // React 19.2 下离散事件的更新不与 fireEvent 同步落盘，需要等待选中态提交。
+    await waitFor(() => expect(databaseSlice).toHaveAttribute('aria-pressed', 'true'));
+    expect(within(durationPie).getByText('数据库')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '近 30 天' }));
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
@@ -210,6 +244,10 @@ describe('review page', () => {
       ),
     );
     expect(await screen.findByText('60')).toBeInTheDocument();
+    expect(screen.getByText('2026-08-07 – 2026-08-13')).toBeInTheDocument();
+    expect(within(dailyTable).getAllByRole('row')).toHaveLength(8);
+    fireEvent.click(screen.getByRole('button', { name: '更早日期' }));
+    expect(screen.getByText('2026-07-31 – 2026-08-06')).toBeInTheDocument();
   });
 
   it('does not show a misleading zero percent and can retry failures', async () => {
@@ -230,6 +268,7 @@ describe('review page', () => {
         completionRate: null,
         learningActivities: 0,
       },
+      learningDuration: { totalSeconds: 0, bySeries: [] },
     };
     vi.stubGlobal(
       'fetch',

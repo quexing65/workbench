@@ -19,31 +19,22 @@ const navSchema = z.object({
   data: z.object({ isLogin: z.boolean() }).optional(),
 });
 
-const pageValueSchema = z.union([
-  z.number().int().positive(),
-  z.object({ page: z.number().int().positive() }),
-]);
-const historyItemSchema = z.object({
-  bvid: z.string().optional(),
-  progress: z.number().int().safe(),
-  view_at: z.number().int().safe().nonnegative().max(4_102_444_800),
-  page: pageValueSchema.optional(),
-  history: z
-    .object({
-      bvid: z.string().optional(),
-      page: z.number().int().positive().optional(),
-    })
-    .optional(),
-});
-const historySchema = z.object({
-  code: z.number().int(),
-  data: z
-    .union([
-      z.array(historyItemSchema).max(1000),
-      z.object({ list: z.array(historyItemSchema).max(1000).default([]) }),
-    ])
-    .optional(),
-});
+const historyItemSchema = z
+  .object({
+    bvid: z.string().nullable().optional(),
+    progress: z.number().int().safe().nullable().optional(),
+    view_at: z.number().int().safe().nonnegative().max(4_102_444_800).nullable().optional(),
+    page: z.unknown().optional(),
+    history: z
+      .object({
+        bvid: z.string().nullable().optional(),
+        page: z.number().int().positive().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+const historySchema = z.object({ code: z.number().int(), data: z.unknown().optional() });
 
 export interface BiliSessionHttpClientOptions {
   readonly fetcher?: typeof fetch;
@@ -82,31 +73,44 @@ export class BiliSessionHttpClient implements BiliSessionClient {
       url.searchParams.set('pn', String(page));
       url.searchParams.set('ps', '100');
       const parsed = historySchema.safeParse(await this.requestJson(url.toString(), sessdata));
-      if (!parsed.success) throw invalidResponse();
+      if (!parsed.success) return this.getCursorHistory(sessdata, pages);
       if (parsed.data.code === -101) throw invalidCredential();
       if (parsed.data.code !== 0 && page === 1) {
-        return this.getCursorHistory(sessdata);
+        return this.getCursorHistory(sessdata, pages);
       }
       if (parsed.data.code !== 0) break;
       if (parsed.data.data === undefined) throw invalidResponse();
       const items = historyItems(parsed.data.data);
-      observations.push(...items.flatMap(mapHistoryItem));
+      observations.push(...items.flatMap(parseHistoryItem));
       if (items.length === 0) break;
     }
     return observations.sort((left, right) => left.observedAt.localeCompare(right.observedAt));
   }
 
-  private async getCursorHistory(sessdata: string): Promise<readonly BiliHistoryObservation[]> {
-    const url = 'https://api.bilibili.com/x/web-interface/history/cursor?max=0&view_at=0&ps=100';
-    const parsed = historySchema.safeParse(await this.requestJson(url, sessdata));
-    if (!parsed.success) throw invalidResponse();
-    if (parsed.data.code === -101) throw invalidCredential();
-    if (parsed.data.code !== 0 || parsed.data.data === undefined) {
-      throw biliApiError(parsed.data.code);
+  private async getCursorHistory(
+    sessdata: string,
+    pages: number,
+  ): Promise<readonly BiliHistoryObservation[]> {
+    const observations: BiliHistoryObservation[] = [];
+    let max = 0;
+    let viewAt = 0;
+    for (let page = 0; page < pages; page += 1) {
+      const url = new URL('https://api.bilibili.com/x/web-interface/history/cursor');
+      url.searchParams.set('max', String(max));
+      url.searchParams.set('view_at', String(viewAt));
+      url.searchParams.set('ps', '100');
+      const parsed = historySchema.safeParse(await this.requestJson(url.toString(), sessdata));
+      if (!parsed.success) throw invalidResponse();
+      if (parsed.data.code === -101) throw invalidCredential();
+      if (parsed.data.code !== 0) throw biliApiError(parsed.data.code);
+      const cursorPage = cursorHistoryPage(parsed.data.data);
+      if (cursorPage === undefined) throw invalidResponse();
+      observations.push(...cursorPage.items.flatMap(parseHistoryItem));
+      if (cursorPage.items.length === 0 || cursorPage.max === 0 || cursorPage.viewAt === 0) break;
+      max = cursorPage.max;
+      viewAt = cursorPage.viewAt;
     }
-    return historyItems(parsed.data.data)
-      .flatMap(mapHistoryItem)
-      .sort((left, right) => left.observedAt.localeCompare(right.observedAt));
+    return observations.sort((left, right) => left.observedAt.localeCompare(right.observedAt));
   }
 
   private async requestJson(url: string, sessdata: string): Promise<unknown> {
@@ -145,16 +149,51 @@ export class BiliSessionHttpClient implements BiliSessionClient {
   }
 }
 
-function historyItems(data: z.infer<typeof historySchema>['data']) {
-  if (data === undefined) return [];
-  return Array.isArray(data) ? data : data.list;
+function historyItems(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data.slice(0, 1000);
+  if (typeof data !== 'object' || data === null) return [];
+  const list = Reflect.get(data, 'list');
+  return Array.isArray(list) ? list.slice(0, 1000) : [];
+}
+
+function cursorHistoryPage(
+  data: unknown,
+): { readonly items: unknown[]; readonly max: number; readonly viewAt: number } | undefined {
+  if (typeof data !== 'object' || data === null) return undefined;
+  const items = historyItems(data);
+  const cursor = Reflect.get(data, 'cursor');
+  if (typeof cursor !== 'object' || cursor === null) {
+    return Reflect.has(data, 'list') ? { items, max: 0, viewAt: 0 } : undefined;
+  }
+  const max = Reflect.get(cursor, 'max');
+  const viewAt = Reflect.get(cursor, 'view_at');
+  if (!Number.isSafeInteger(max) || !Number.isSafeInteger(viewAt)) return undefined;
+  return { items, max: Number(max), viewAt: Number(viewAt) };
+}
+
+function parseHistoryItem(value: unknown): BiliHistoryObservation[] {
+  const parsed = historyItemSchema.safeParse(value);
+  return parsed.success ? mapHistoryItem(parsed.data) : [];
 }
 
 function mapHistoryItem(item: z.infer<typeof historyItemSchema>): BiliHistoryObservation[] {
   const bvid = item.history?.bvid ?? item.bvid;
-  const partNumber =
-    item.history?.page ?? (typeof item.page === 'number' ? item.page : item.page?.page) ?? 1;
-  if (bvid === undefined || !/^BV[0-9A-Za-z]{10}$/u.test(bvid) || item.view_at === 0) return [];
+  const legacyPage = z
+    .union([z.number().int().positive(), z.object({ page: z.number().int().positive() })])
+    .safeParse(item.page);
+  const partNumber = legacyPage.success
+    ? typeof legacyPage.data === 'number'
+      ? legacyPage.data
+      : legacyPage.data.page
+    : (item.history?.page ?? 1);
+  if (
+    typeof bvid !== 'string' ||
+    !/^BV[0-9A-Za-z]{10}$/u.test(bvid) ||
+    item.progress == null ||
+    item.view_at == null ||
+    item.view_at === 0
+  )
+    return [];
   return [
     {
       bvid,

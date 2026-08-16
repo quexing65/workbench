@@ -32,12 +32,16 @@ export class LearningSyncService {
     this.runs.recoverInterrupted(this.now());
   }
 
-  public async start(pages: number): Promise<string> {
+  public async start(resourceId: string, pages: number): Promise<string> {
     if (this.active) {
       throw new DomainConflictError('SYNC_ALREADY_RUNNING', '已有 B站同步正在运行');
     }
     this.active = true;
     try {
+      const resource = this.resources.find(resourceId);
+      if (resource === undefined) {
+        throw new ResourceNotFoundError('LEARNING_RESOURCE_NOT_FOUND', '学习资源不存在');
+      }
       const sessdata = await this.credentials.read();
       if (sessdata === null) {
         throw new DomainConflictError('BILI_CREDENTIAL_REQUIRED', '请先连接 B站登录态');
@@ -47,7 +51,7 @@ export class LearningSyncService {
       }
       const id = this.createId();
       this.runs.create(id, pages, this.now());
-      this.schedule(() => void this.execute(id, pages, sessdata));
+      this.schedule(() => void this.execute(id, pages, sessdata, resource.id, resource.externalId));
       return id;
     } catch (error) {
       this.active = false;
@@ -61,13 +65,22 @@ export class LearningSyncService {
     return run;
   }
 
-  private async execute(id: string, pages: number, sessdata: string): Promise<void> {
+  private async execute(
+    id: string,
+    pages: number,
+    sessdata: string,
+    resourceId: string,
+    externalId: string,
+  ): Promise<void> {
     try {
       this.runs.markRunning(id, this.now());
       const history = await this.bili.getHistory(sessdata, pages);
+      const matchingHistory = history.filter(
+        (observation) => observation.bvid.toLowerCase() === externalId.toLowerCase(),
+      );
       let updated = 0;
-      for (const observation of history) updated += this.apply(observation);
-      this.runs.succeed(id, history.length, updated, this.now());
+      for (const observation of matchingHistory) updated += this.apply(resourceId, observation);
+      this.runs.succeed(id, matchingHistory.length, updated, this.now());
     } catch (error) {
       try {
         this.runs.fail(id, safeCode(error), this.now());
@@ -79,8 +92,8 @@ export class LearningSyncService {
     }
   }
 
-  private apply(observation: BiliHistoryObservation): number {
-    const resource = this.resources.findByExternalId(observation.bvid);
+  private apply(resourceId: string, observation: BiliHistoryObservation): number {
+    const resource = this.resources.find(resourceId);
     if (resource === undefined || observation.progressSeconds < -1) return 0;
     const part = resource.parts.find(({ partNumber }) => partNumber === observation.partNumber);
     if (part === undefined) return 0;

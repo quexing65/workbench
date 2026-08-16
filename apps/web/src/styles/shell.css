@@ -13,6 +13,9 @@
   color: #f2f1eb;
   background: #22322d;
   flex-direction: column;
+  transition:
+    width 180ms ease,
+    padding 180ms ease;
 }
 
 .brand {
@@ -20,6 +23,30 @@
   min-width: 0;
   align-items: center;
   gap: 0.8rem;
+}
+
+.sidebar-toggle {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 0.55rem;
+  color: #f2f1eb;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.sidebar-toggle svg {
+  display: block;
+}
+
+.sidebar-toggle:hover {
+  background: rgb(255 255 255 / 8%);
 }
 
 .brand__mark {
@@ -39,6 +66,7 @@
 .brand > span:last-child {
   display: flex;
   min-width: 0;
+  flex: 1;
   flex-direction: column;
 }
 
@@ -53,6 +81,7 @@
   color: #aebbb5;
   font-size: 0.75rem;
   letter-spacing: 0.1em;
+  white-space: nowrap;
 }
 
 .side-nav {
@@ -162,6 +191,44 @@
 .workspace {
   min-height: 100vh;
   margin-left: 16.5rem;
+  transition: margin-left 180ms ease;
+}
+
+.app-shell--sidebar-collapsed .sidebar {
+  width: 5.25rem;
+  padding-inline: 0.75rem;
+}
+
+.app-shell--sidebar-collapsed .workspace {
+  margin-left: 5.25rem;
+}
+
+.app-shell--sidebar-collapsed .brand {
+  justify-content: center;
+}
+
+.app-shell--sidebar-collapsed .brand > span:not(.brand__mark),
+.app-shell--sidebar-collapsed .nav-link__label,
+.app-shell--sidebar-collapsed .sidebar__footer {
+  display: none;
+}
+
+.app-shell--sidebar-collapsed .brand__mark {
+  display: none;
+}
+
+.app-shell--sidebar-collapsed .sidebar-toggle {
+  margin-left: 0;
+}
+
+.app-shell--sidebar-collapsed .side-nav {
+  align-items: center;
+}
+
+.app-shell--sidebar-collapsed .side-nav .nav-link {
+  width: 2.9rem;
+  padding-inline: 0.55rem;
+  justify-content: center;
 }
 
 .mobile-header,
@@ -171,5 +238,5 @@
 
 .main-content {
   min-height: 100vh;
-  padding: clamp(2rem, 5vw, 5rem) clamp(2rem, 6vw, 6.5rem);
+  padding: clamp(2rem, 5vw, 5rem) clamp(1.5rem, 5vw, 6.5rem);
 }

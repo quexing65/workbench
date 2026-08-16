@@ -34,3 +34,4 @@ Thumbs.db
 # Temporary work products
 work/
 outputs/
+/.dev-server*.log

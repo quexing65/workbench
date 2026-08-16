@@ -176,26 +176,260 @@
 }
 
 .review-totals {
-  margin-top: 3rem;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 2rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .review-totals div {
-  padding: 1.25rem;
+  padding: 0.9rem 1rem;
   border: 1px solid var(--line);
-  border-radius: 0.9rem;
+  border-radius: 0.75rem;
   background: var(--paper);
 }
 
+.review-totals dd {
+  font-size: 1.55rem;
+}
+
+.review-summary-grid {
+  display: grid;
+  margin-top: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.review-table-card,
+.review-detail-card,
+.review-study-card {
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--paper);
+  box-shadow: 0 5px 18px rgb(42 44 39 / 4%);
+}
+
+.review-table-card {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.review-table-card h2,
+.review-detail-card h2 {
+  margin-bottom: 0;
+  font-size: 1.15rem;
+}
+
+.review-table-card caption {
+  margin-top: 0.35rem;
+}
+
+.review-detail-card {
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.review-study-card {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.review-study-card__header {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.review-study-card__header h2,
+.review-study-card__header p {
+  margin-bottom: 0;
+}
+
+.review-study-card__header > p {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.review-study-content {
+  display: grid;
+  margin-top: 0.85rem;
+  grid-template-columns: minmax(6.5rem, 0.8fr) minmax(8rem, 1.2fr);
+  gap: 0.9rem;
+  align-items: center;
+}
+
+.review-study-pie {
+  display: grid;
+  width: min(100%, 8.5rem);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  place-items: center;
+}
+
+.review-study-pie svg,
+.review-study-pie > div {
+  grid-area: 1 / 1;
+}
+
+.review-study-pie svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.review-study-pie__track,
+.review-study-pie__slice {
+  fill: none;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+.review-study-pie__track {
+  stroke: var(--line);
+  stroke-width: 9;
+}
+
+.review-study-pie__slice {
+  stroke-width: 9;
+  cursor: pointer;
+  transition:
+    opacity 150ms ease,
+    stroke-width 150ms ease,
+    filter 150ms ease,
+    transform 150ms ease;
+}
+
+.review-study-pie.has-active .review-study-pie__slice:not(.is-active) {
+  opacity: 0.42;
+}
+
+.review-study-pie__slice.is-active {
+  stroke-width: 12;
+  filter: drop-shadow(0 2px 2px rgb(32 35 31 / 28%));
+  transform: rotate(-90deg) scale(1.035);
+}
+
+.review-study-pie__slice:focus-visible {
+  outline: none;
+  stroke-width: 12;
+  filter: drop-shadow(0 0 2px var(--warm));
+}
+
+.review-study-pie > div {
+  display: grid;
+  z-index: 1;
+  width: 58%;
+  aspect-ratio: 1;
+  padding: 0.4rem;
+  border-radius: 50%;
+  background: var(--paper);
+  place-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.review-study-pie strong {
+  max-width: 4.5rem;
+  overflow-wrap: anywhere;
+  font-family: Georgia, serif;
+  font-size: 0.9rem;
+  line-height: 1.15;
+}
+
+.review-study-pie small,
+.review-study-legend small {
+  color: var(--muted);
+}
+
+.review-study-pie small {
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+}
+
+.review-study-legend {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: 0.35rem;
+}
+
+.review-study-legend li {
+  display: grid;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--line);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.review-study-legend li:last-child {
+  border-bottom: 0;
+}
+
+.review-study-legend div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.review-study-swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+}
+
+.review-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.review-section-header .eyebrow {
+  margin-bottom: 0.35rem;
+}
+
+.review-date-pager {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.review-date-pager p {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.review-date-pager small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-weight: 500;
+  text-align: right;
+}
+
+.review-date-pager > div {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .review-chart {
-  min-height: 16rem;
-  padding: 2rem 1rem 0;
+  min-height: 9rem;
+  margin-bottom: 1rem;
+  padding: 1.25rem 0.75rem 0;
   border-bottom: 1px solid var(--line);
   gap: max(0.2rem, 1vw);
 }
 
 .review-chart__day {
-  height: 14rem;
+  height: 7.75rem;
+}
+
+.review-chart__day b {
+  color: var(--ink);
+  font-size: 0.72rem;
 }
 
 .review-empty {
@@ -206,7 +440,6 @@
 }
 
 .review-table-wrap {
-  margin-top: 2rem;
   overflow-x: auto;
 }
 
@@ -223,7 +456,7 @@ caption {
 
 th,
 td {
-  padding: 0.7rem;
+  padding: 0.52rem;
   border-bottom: 1px solid var(--line);
   text-align: right;
 }
@@ -231,6 +464,17 @@ td {
 th:first-child,
 td:first-child {
   text-align: left;
+}
+
+@media (max-width: 1050px) {
+  .review-totals,
+  .review-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .review-study-content {
+    grid-template-columns: minmax(7rem, 0.75fr) minmax(10rem, 1.25fr);
+  }
 }
 
 @media (max-width: 760px) {
@@ -242,12 +486,33 @@ td:first-child {
     margin-top: 1.5rem;
   }
 
-  .review-totals {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .review-study-content {
+    grid-template-columns: minmax(6.5rem, 0.8fr) minmax(8rem, 1.2fr);
+    gap: 0.9rem;
+  }
+
+  .review-section-header,
+  .review-date-pager {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .review-date-pager small {
+    text-align: left;
+  }
+
+  .review-date-pager > div button {
+    flex: 1;
   }
 }
 
 @media (max-width: 420px) {
+  .review-totals,
+  .review-summary-grid,
+  .review-study-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .quick-add > div {
     align-items: stretch;
     flex-direction: column;

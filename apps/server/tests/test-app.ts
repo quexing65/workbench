@@ -43,7 +43,7 @@ export function makeApp(
       ...(options.dataDirectory === undefined ? {} : { dataDirectory: options.dataDirectory }),
     },
     database: {
-      schemaVersion: 3,
+      schemaVersion: 4,
       ...(options.database === undefined ? {} : { connection: options.database }),
     },
     logger: options.logger ?? createLogger(testConfig),

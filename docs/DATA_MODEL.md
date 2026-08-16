@@ -50,7 +50,10 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 - `learning_resources`：一条 BVID 一项资源。
 - `learning_parts`：分P，以 cid 为稳定外部身份，part number 只用于显示兼容。
 - `learning_resource_progress`：整部最远位置、真实续播位置、完成和手动门槛。
-- `learning_part_progress`：分P局部最远位置和完成状态。
+- `learning_part_progress`：分P局部最远位置、实际观看累计（`watched_seconds`，按
+  “间隔 × 3 + 15秒”封顶估算，拖动跳过不计）与完成状态。
+- `learning_watch_daily`：分P × 业务日（UTC+8）的实际观看秒数聚合，回顾页学习时长的唯一
+  数据源；`reset` 不清空该表。
 - `learning_series` / `learning_series_items`：系列及有序视频关系。
 - `unresolved_learning_links`：尚不能离线解析的 b23 或普通链接。
 

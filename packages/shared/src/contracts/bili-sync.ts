@@ -34,7 +34,10 @@ export const fetchBiliCredentialSchema = z
 export type FetchBiliCredentialInput = z.infer<typeof fetchBiliCredentialSchema>;
 
 export const startLearningSyncSchema = z
-  .object({ pages: z.number().int().min(1).max(5).default(3) })
+  .object({
+    resourceId: z.string().uuid(),
+    pages: z.number().int().min(1).max(5).default(3),
+  })
   .strict();
 export type StartLearningSyncInput = z.infer<typeof startLearningSyncSchema>;
 

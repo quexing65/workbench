@@ -23,6 +23,7 @@ let root: string;
 let store: MemoryCredentialStore;
 let session: BiliSessionClient;
 let metadata: BiliVideoMetadata;
+let resourceId: string;
 
 const browser: BrowserCredentialAdapter = { fetch: vi.fn() };
 const publicBili: BiliClient = {
@@ -52,11 +53,11 @@ beforeEach(async () => {
       { cid: 'part-2', partNumber: 2, title: '第二讲', durationSeconds: 200 },
     ],
   };
-  new LearningResourceRepository(database.connection).upsertMetadata(
+  resourceId = new LearningResourceRepository(database.connection).upsertMetadata(
     metadata,
     Date.parse('2026-08-13T00:00:00.000Z'),
     () => crypto.randomUUID(),
-  );
+  ).id;
   session = { verifyCredential: vi.fn().mockResolvedValue(true), getHistory: vi.fn() };
 });
 
@@ -75,14 +76,14 @@ function createTestApp() {
   });
 }
 
-function start(app: ReturnType<typeof createTestApp>) {
+function start(app: ReturnType<typeof createTestApp>, targetResourceId = resourceId) {
   return request(app)
     .post('/api/v1/learning/sync')
     .set('Host', allowedHost)
     .set('Origin', 'http://127.0.0.1:5190')
     .set('X-Workbench-Request', '1')
     .set('Content-Type', 'application/json')
-    .send({ pages: 3 });
+    .send({ resourceId: targetResourceId, pages: 3 });
 }
 
 async function waitForRun(app: ReturnType<typeof createTestApp>, id: string) {
@@ -148,6 +149,45 @@ describe('learning sync API', () => {
       status: 'failed',
       safeErrorCode: 'BILI_RATE_LIMITED',
     });
+  });
+
+  it('updates only the learning resource selected by the sync request', async () => {
+    const otherMetadata: BiliVideoMetadata = {
+      ...metadata,
+      bvid: 'BV1other1c7de',
+      sourceUrl: 'https://www.bilibili.com/video/BV1other1c7de/',
+      title: '另一门课程',
+    };
+    const other = new LearningResourceRepository(database.connection).upsertMetadata(
+      otherMetadata,
+      Date.parse('2026-08-13T00:00:01.000Z'),
+      () => crypto.randomUUID(),
+    );
+    session.getHistory = vi.fn().mockResolvedValue([
+      {
+        bvid: metadata.bvid,
+        partNumber: 1,
+        progressSeconds: 40,
+        observedAt: '2026-08-13T01:00:00.000Z',
+      },
+      {
+        bvid: otherMetadata.bvid,
+        partNumber: 1,
+        progressSeconds: 80,
+        observedAt: '2026-08-13T01:01:00.000Z',
+      },
+    ]);
+
+    const app = createTestApp();
+    const run = await start(app, other.id);
+    expect((await waitForRun(app, String(run.body.runId))).body).toMatchObject({
+      status: 'succeeded',
+      historyCount: 1,
+      updatedCount: 1,
+    });
+    const resources = new LearningResourceRepository(database.connection).list();
+    expect(resources.find((item) => item.id === resourceId)?.progress.furthestSeconds).toBe(0);
+    expect(resources.find((item) => item.id === other.id)?.progress.furthestSeconds).toBe(80);
   });
 
   it('keeps furthest progress, moves resume, and blocks old history after reset', async () => {

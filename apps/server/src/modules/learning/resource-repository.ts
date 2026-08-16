@@ -62,6 +62,8 @@ export class LearningResourceRepository {
     next: {
       readonly progress: Omit<LearningProgress, 'revision'>;
       readonly partProgress: Omit<LearningPartProgress, 'revision'>;
+      readonly watchedDelta: number;
+      readonly observedAt: string;
     },
     now: number,
   ): LearningResource | undefined {

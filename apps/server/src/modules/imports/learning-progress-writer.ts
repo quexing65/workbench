@@ -39,6 +39,8 @@ function partState(row: Row | undefined): LearningPartProgressState | null {
   if (row === undefined) return null;
   return {
     furthestSeconds: Number(row['furthest_seconds']),
+    watchedSeconds: Number(row['watched_seconds'] ?? 0),
+    lastSeconds: Number(row['last_seconds'] ?? 0),
     completed: Number(row['completed']) === 1,
     completedAt:
       row['completed_at_ms'] === null
@@ -112,10 +114,11 @@ export function mergeImportedObservation(
   database
     .prepare(
       `INSERT INTO learning_part_progress (
-        part_id, furthest_seconds, completed, completed_at_ms, last_observed_at_ms,
-        updated_at_ms, revision
-      ) VALUES (?, ?, ?, ?, ?, ?, 1)
+        part_id, furthest_seconds, watched_seconds, last_seconds, completed, completed_at_ms,
+        last_observed_at_ms, updated_at_ms, revision
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
       ON CONFLICT(part_id) DO UPDATE SET furthest_seconds=excluded.furthest_seconds,
+        watched_seconds=excluded.watched_seconds, last_seconds=excluded.last_seconds,
         completed=excluded.completed, completed_at_ms=excluded.completed_at_ms,
         last_observed_at_ms=excluded.last_observed_at_ms, updated_at_ms=excluded.updated_at_ms,
         revision=learning_part_progress.revision+1`,
@@ -123,6 +126,8 @@ export function mergeImportedObservation(
     .run(
       partId,
       merged.partProgress.furthestSeconds,
+      merged.partProgress.watchedSeconds,
+      merged.partProgress.lastSeconds,
       merged.partProgress.completed ? 1 : 0,
       merged.partProgress.completedAt === null ? null : Date.parse(merged.partProgress.completedAt),
       merged.partProgress.lastObservedAt === null
@@ -130,4 +135,15 @@ export function mergeImportedObservation(
         : Date.parse(merged.partProgress.lastObservedAt),
       now,
     );
+  if (merged.watchedDelta > 0) {
+    // 与 LearningProgressRepository 口径一致：按 UTC+8 业务日归属观看时长。
+    const watchDate = new Date(observedAtMs + 8 * 3_600_000).toISOString().slice(0, 10);
+    database
+      .prepare(
+        `INSERT INTO learning_watch_daily (part_id, watch_date, watched_seconds) VALUES (?, ?, ?)
+         ON CONFLICT(part_id, watch_date) DO UPDATE SET
+           watched_seconds = watched_seconds + excluded.watched_seconds`,
+      )
+      .run(partId, watchDate, merged.watchedDelta);
+  }
 }

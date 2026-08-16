@@ -34,6 +34,12 @@ interface LearningRow {
   resume_seconds: number;
 }
 
+interface SeriesLearningDurationRow {
+  series_id: string | null;
+  series_name: string;
+  duration_seconds: number;
+}
+
 function task(row: DailyTaskRow): DailyTask {
   return {
     kind: 'daily',
@@ -130,5 +136,40 @@ export class InsightRepository {
       )
       .all(from, to) as unknown as Array<{ date: string; count: number }>;
     return new Map(rows.map((row) => [row.date, row.count]));
+  }
+
+  public learningDurationBySeries(
+    from: string,
+    to: string,
+  ): Array<{ seriesId: string | null; seriesName: string; durationSeconds: number }> {
+    const rows = this.database
+      .prepare(
+        `WITH ranked_series AS (
+           SELECT item.resource_id, series.id AS series_id, series.name AS series_name,
+                  row_number() OVER (
+                    PARTITION BY item.resource_id ORDER BY series.created_at_ms, series.id
+                  ) AS rank
+           FROM learning_series_items item
+           JOIN learning_series series ON series.id = item.series_id
+           WHERE series.deleted_at_ms IS NULL
+         )
+         SELECT ranked.series_id,
+                coalesce(ranked.series_name, '未分类') AS series_name,
+                sum(w.watched_seconds) AS duration_seconds
+         FROM learning_watch_daily w
+         JOIN learning_parts part ON part.id = w.part_id AND part.deleted_at_ms IS NULL
+         JOIN learning_resources resource ON resource.id = part.resource_id
+           AND resource.deleted_at_ms IS NULL
+         LEFT JOIN ranked_series ranked ON ranked.resource_id = resource.id AND ranked.rank = 1
+         WHERE w.watch_date >= ? AND w.watch_date <= ?
+         GROUP BY ranked.series_id, ranked.series_name
+         ORDER BY duration_seconds DESC, series_name`,
+      )
+      .all(from, to) as unknown as SeriesLearningDurationRow[];
+    return rows.map((row) => ({
+      seriesId: row.series_id,
+      seriesName: row.series_name,
+      durationSeconds: Number(row.duration_seconds),
+    }));
   }
 }

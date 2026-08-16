@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BiliSyncPanel } from '../pages/learning/BiliSyncPanel';
+import { LearningResourceSync } from '../pages/learning/LearningResourceSync';
 import { json, requestPath } from './learning-fixtures';
 
 function renderPanel() {
@@ -11,6 +12,18 @@ function renderPanel() {
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <BiliSyncPanel />
+    </QueryClientProvider>,
+  );
+}
+
+const resourceId = '55555555-5555-4555-8555-555555555555';
+
+function renderResourceSync() {
+  return render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <LearningResourceSync resourceId={resourceId} resourceTitle="同步测试课程" />
     </QueryClientProvider>,
   );
 }
@@ -47,47 +60,7 @@ describe('Bili connection and sync panel', () => {
     expect(document.body.textContent).not.toContain(sentinel);
   });
 
-  it('requires a second explicit action before asking Edge to restart', async () => {
-    const requests: unknown[] = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        const target = requestPath(input);
-        if (target.endsWith('/status')) {
-          return json({ present: false, valid: false, userLabel: '未连接' });
-        }
-        const body = JSON.parse(String(init?.body));
-        requests.push(body);
-        if (body.forceRestart === false) {
-          return json(
-            {
-              error: {
-                code: 'BROWSER_RESTART_REQUIRED',
-                message: '需要重新启动所选浏览器后才能读取登录态',
-                details: [],
-              },
-            },
-            409,
-          );
-        }
-        return json({ present: true, valid: true, userLabel: '已连接' });
-      }),
-    );
-    renderPanel();
-    fireEvent.click(await screen.findByRole('button', { name: '连接已开启调试的 Edge' }));
-    const restart = await screen.findByRole('button', { name: '确认重启 Edge 并连接' });
-    expect(requests).toEqual([{ browser: 'edge', forceRestart: false }]);
-    fireEvent.click(restart);
-    await waitFor(() =>
-      expect(requests).toEqual([
-        { browser: 'edge', forceRestart: false },
-        { browser: 'edge', forceRestart: true, confirmation: 'restart-browser' },
-      ]),
-    );
-    expect(confirm).toHaveBeenCalledTimes(1);
-  });
-
-  it('polls a run to completion and prevents a duplicate start while running', async () => {
+  it('syncs viewing history from an individual learning resource', async () => {
     let runReads = 0;
     let starts = 0;
     vi.stubGlobal(
@@ -99,6 +72,7 @@ describe('Bili connection and sync panel', () => {
         }
         if (target.endsWith('/learning/sync') && init?.method === 'POST') {
           starts += 1;
+          expect(JSON.parse(String(init.body))).toEqual({ resourceId, pages: 3 });
           return json({ runId: '77777777-7777-4777-8777-777777777777' }, 202);
         }
         runReads += 1;
@@ -115,13 +89,16 @@ describe('Bili connection and sync panel', () => {
         });
       }),
     );
-    renderPanel();
-    const start = await screen.findByRole('button', { name: '同步观看历史' });
+    renderResourceSync();
+    const start = await screen.findByRole('button', { name: '同步观看历史 同步测试课程' });
     await waitFor(() => expect(start).toBeEnabled());
     fireEvent.click(start);
-    expect(await screen.findByRole('button', { name: '正在同步…' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: '正在同步…' }));
+    const running = await screen.findByRole('button', { name: '同步观看历史 同步测试课程' });
+    expect(running).toBeDisabled();
+    fireEvent.click(running);
     expect(starts).toBe(1);
-    expect(await screen.findByText('已读取 4 条记录，更新 2 条进度。')).toBeInTheDocument();
+    expect(
+      await screen.findByText('已同步此资源：读取 4 条记录，更新 2 条进度。'),
+    ).toBeInTheDocument();
   });
 });

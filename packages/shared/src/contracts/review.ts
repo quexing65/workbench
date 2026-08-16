@@ -28,5 +28,16 @@ export const reviewResponseSchema = z.object({
     completionRate: z.number().min(0).max(1).nullable(),
     learningActivities: z.number().int().nonnegative(),
   }),
+  learningDuration: z.object({
+    /** 区间内实际播放的分 P 视频原速时长总和（拖动跳过不计）。 */
+    totalSeconds: z.number().int().nonnegative(),
+    bySeries: z.array(
+      z.object({
+        seriesId: z.string().uuid().nullable(),
+        seriesName: z.string().min(1).max(200),
+        durationSeconds: z.number().int().positive(),
+      }),
+    ),
+  }),
 });
 export type ReviewResponse = z.infer<typeof reviewResponseSchema>;

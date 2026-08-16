@@ -18,6 +18,8 @@ export type LearningProgress = z.infer<typeof learningProgressSchema>;
 
 export const learningPartProgressSchema = z.object({
   furthestSeconds: z.number().int().nonnegative(),
+  watchedSeconds: z.number().int().nonnegative(),
+  lastSeconds: z.number().int().nonnegative(),
   completed: z.boolean(),
   completedAt: nullableUtcTimestampSchema,
   lastObservedAt: nullableUtcTimestampSchema,

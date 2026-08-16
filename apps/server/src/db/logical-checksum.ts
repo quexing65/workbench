@@ -15,6 +15,7 @@ const BUSINESS_PROJECTIONS = {
     'SELECT * FROM learning_series_items ORDER BY series_id, position, resource_id',
   learningResourceProgress: 'SELECT * FROM learning_resource_progress ORDER BY resource_id',
   learningPartProgress: 'SELECT * FROM learning_part_progress ORDER BY part_id',
+  learningWatchDaily: 'SELECT * FROM learning_watch_daily ORDER BY part_id, watch_date',
   unresolvedLearningLinks: 'SELECT * FROM unresolved_learning_links ORDER BY id',
   settings: 'SELECT * FROM settings ORDER BY key',
 } as const;

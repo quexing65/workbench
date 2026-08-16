@@ -14,6 +14,9 @@ import { BiliSyncPanel } from './BiliSyncPanel';
 const RESOURCE_BATCH_SIZE = 20;
 
 export function LearningPage() {
+  const [showBiliTools, setShowBiliTools] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [showSeries, setShowSeries] = useState(false);
   const [url, setUrl] = useState('');
   const [seriesId, setSeriesId] = useState('');
   const [unresolvedMessage, setUnresolvedMessage] = useState('');
@@ -56,54 +59,97 @@ export function LearningPage() {
 
   return (
     <section className="page learning-page">
-      <header className="page-header">
-        <p className="eyebrow">持续前进</p>
-        <h1>学习</h1>
-        <p className="page-lead">整理 B站课程、分P与真实观看进度，随时从上次的位置继续。</p>
+      <header className="page-header learning-page__header">
+        <div>
+          <p className="eyebrow">持续前进</p>
+          <h1>学习</h1>
+          <p className="page-lead">整理 B站课程、分P与真实观看进度，随时从上次的位置继续。</p>
+        </div>
+        <div className="learning-tools-menu">
+          <button
+            type="button"
+            className="button-secondary learning-tools-toggle"
+            aria-expanded={showBiliTools}
+            aria-controls="bili-tools"
+            onClick={() => setShowBiliTools((current) => !current)}
+          >
+            {showBiliTools ? '收起 B站连接' : 'B站连接'}
+          </button>
+          <button
+            type="button"
+            className="button-secondary learning-tools-toggle"
+            aria-expanded={showImport}
+            aria-controls="learning-import"
+            onClick={() => setShowImport((current) => !current)}
+          >
+            {showImport ? '收起资源导入' : '导入 B站学习资源'}
+          </button>
+          <button
+            type="button"
+            className="button-secondary learning-tools-toggle"
+            aria-expanded={showSeries}
+            aria-controls="learning-series-tools"
+            onClick={() => setShowSeries((current) => !current)}
+          >
+            {showSeries ? '收起学习系列' : '学习系列'}
+          </button>
+        </div>
       </header>
 
-      <BiliSyncPanel />
-
-      <form className="learning-import" onSubmit={submit}>
-        <div>
-          <h2>导入 B站学习资源</h2>
-          <p>支持 bilibili.com 视频链接、BV 号与 b23.tv 短链。</p>
+      {showBiliTools ? (
+        <div id="bili-tools">
+          <BiliSyncPanel />
         </div>
-        <label>
-          视频链接或 BV 号
-          <input
-            required
-            maxLength={2048}
-            placeholder="https://www.bilibili.com/video/BV…"
-            value={url}
-            onChange={(event) => setUrl(event.target.value)}
-          />
-        </label>
-        <label>
-          加入系列（可选）
-          <select value={seriesId} onChange={(event) => setSeriesId(event.target.value)}>
-            <option value="">暂不加入</option>
-            {series.data?.items.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button disabled={importResource.isPending}>
-          {importResource.isPending ? '正在读取元数据…' : '导入资源'}
-        </button>
-        {importResource.error && (
-          <p role="alert" className="form-error">
-            {importResource.error.message}
-          </p>
-        )}
-        {unresolvedMessage && (
-          <p role="status" className="resume-note">
-            {unresolvedMessage}
-          </p>
-        )}
-      </form>
+      ) : null}
+
+      {showImport ? (
+        <form id="learning-import" className="learning-import" onSubmit={submit}>
+          <div>
+            <h2>导入 B站学习资源</h2>
+            <p>支持 bilibili.com 视频链接、BV 号与 b23.tv 短链。</p>
+          </div>
+          <label>
+            视频链接或 BV 号
+            <input
+              required
+              maxLength={2048}
+              placeholder="https://www.bilibili.com/video/BV…"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+            />
+          </label>
+          <label>
+            加入系列（可选）
+            <select value={seriesId} onChange={(event) => setSeriesId(event.target.value)}>
+              <option value="">暂不加入</option>
+              {series.data?.items.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button disabled={importResource.isPending}>
+            {importResource.isPending ? '正在读取元数据…' : '导入资源'}
+          </button>
+          {importResource.error && (
+            <p role="alert" className="form-error">
+              {importResource.error.message}
+            </p>
+          )}
+          {unresolvedMessage && (
+            <p role="status" className="resume-note">
+              {unresolvedMessage}
+            </p>
+          )}
+        </form>
+      ) : null}
+
+      {showSeries && resources.data && series.data ? (
+        <div id="learning-series-tools" className="learning-series-tools">
+          <LearningSeriesPanel series={series.data.items} resources={resources.data.items} />
+        </div>
+      ) : null}
 
       {hasLoadError && (
         <div className="load-error" role="alert">
@@ -145,7 +191,6 @@ export function LearningPage() {
               </button>
             ) : null}
           </section>
-          <LearningSeriesPanel series={series.data.items} resources={resources.data.items} />
         </div>
       )}
     </section>

@@ -19,10 +19,18 @@ export interface LearningProgressState {
 
 export interface LearningPartProgressState {
   readonly furthestSeconds: number;
+  readonly watchedSeconds: number;
+  readonly lastSeconds: number;
   readonly completed: boolean;
   readonly completedAt: string | null;
   readonly lastObservedAt: string | null;
 }
+
+/** 相邻两次观察之间允许的最大播放速率，超出视为拖动跳过。 */
+export const WATCH_RATE_CAP = 3;
+
+/** 跳过判定的时间容差（秒），用于吸收观察时间戳的误差。 */
+export const WATCH_GRACE_SECONDS = 15;
 
 export interface LearningObservation {
   readonly partId: string;
@@ -33,6 +41,8 @@ export interface LearningObservation {
 export interface LearningMergeResult {
   readonly progress: LearningProgressState;
   readonly partProgress: LearningPartProgressState;
+  /** 本次观察计入的实际观看秒数（按原速时长，拖动跳过不计）。 */
+  readonly watchedDelta: number;
   readonly changed: boolean;
   readonly ignored: boolean;
 }
@@ -84,6 +94,19 @@ function timestamp(value: string | null): number | null {
   return value === null ? null : isoToEpochMilliseconds(value);
 }
 
+function watchedDeltaFor(
+  partProgress: LearningPartProgressState,
+  observedAt: number,
+  seconds: number,
+): number {
+  const partLatest = timestamp(partProgress.lastObservedAt);
+  if (partLatest === null || observedAt <= partLatest) return 0;
+  const delta = seconds - partProgress.lastSeconds;
+  if (delta <= 0) return 0;
+  const cap = Math.ceil(((observedAt - partLatest) / 1000) * WATCH_RATE_CAP + WATCH_GRACE_SECONDS);
+  return Math.min(delta, cap);
+}
+
 export function mergeLearningObservation(
   parts: readonly LearningProgressPart[],
   progress: LearningProgressState,
@@ -101,10 +124,13 @@ export function mergeLearningObservation(
       progress,
       partProgress: currentPartProgress ?? {
         furthestSeconds: 0,
+        watchedSeconds: 0,
+        lastSeconds: 0,
         completed: false,
         completedAt: null,
         lastObservedAt: null,
       },
+      watchedDelta: 0,
       changed: false,
       ignored: true,
     };
@@ -122,10 +148,13 @@ export function mergeLearningObservation(
       progress,
       partProgress: currentPartProgress ?? {
         furthestSeconds: observation.seconds,
+        watchedSeconds: 0,
+        lastSeconds: observation.seconds,
         completed: false,
         completedAt: null,
         lastObservedAt: observation.observedAt,
       },
+      watchedDelta: 0,
       changed: false,
       ignored: false,
     };
@@ -139,16 +168,24 @@ export function mergeLearningObservation(
   const advancesLatest = lastObservedAt === null || observedAt > lastObservedAt;
   const partProgress = currentPartProgress ?? {
     furthestSeconds: 0,
+    watchedSeconds: 0,
+    lastSeconds: 0,
     completed: false,
     completedAt: null,
     lastObservedAt: null,
   };
   const partLatest = timestamp(partProgress.lastObservedAt);
+  const advancesPartObservedAt = partLatest === null || observedAt > partLatest;
+  const watchedDelta = advancesPartObservedAt
+    ? watchedDeltaFor(partProgress, observedAt, observation.seconds)
+    : 0;
   const partCompleted =
     partProgress.completed ||
     (observedPart.durationSeconds > 0 && observation.seconds === observedPart.durationSeconds);
   const nextPartProgress: LearningPartProgressState = {
     furthestSeconds: Math.max(partProgress.furthestSeconds, observation.seconds),
+    watchedSeconds: partProgress.watchedSeconds + watchedDelta,
+    lastSeconds: advancesPartObservedAt ? observation.seconds : partProgress.lastSeconds,
     completed: partCompleted,
     completedAt: partProgress.completedAt ?? (partCompleted ? observation.observedAt : null),
     lastObservedAt:
@@ -168,10 +205,13 @@ export function mergeLearningObservation(
   return {
     progress: nextProgress,
     partProgress: nextPartProgress,
+    watchedDelta,
     changed:
       advancesFurthest ||
       advancesLatest ||
       nextPartProgress.furthestSeconds !== partProgress.furthestSeconds ||
+      nextPartProgress.watchedSeconds !== partProgress.watchedSeconds ||
+      nextPartProgress.lastSeconds !== partProgress.lastSeconds ||
       nextPartProgress.completed !== partProgress.completed ||
       nextPartProgress.lastObservedAt !== partProgress.lastObservedAt,
     ignored: false,

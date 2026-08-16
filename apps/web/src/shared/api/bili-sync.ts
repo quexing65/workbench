@@ -35,10 +35,10 @@ export function fetchBiliCredential(
   });
 }
 
-export function startLearningSync(pages: number) {
+export function startLearningSync(resourceId: string, pages = 3) {
   return apiRequest('/api/v1/learning/sync', learningSyncStartResponseSchema, {
     method: 'POST',
-    body: { pages },
+    body: { resourceId, pages },
   });
 }
 

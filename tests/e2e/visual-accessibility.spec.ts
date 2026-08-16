@@ -8,10 +8,20 @@ test('matches the desktop and mobile review references', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/review');
   await expect(page.getByRole('heading', { name: '回顾' })).toBeVisible();
+  // 等待连接状态就绪，避免快照在“正在连接/已连接”之间摇摆。
+  await expect(page.locator('.health.health--ok').first()).toBeVisible();
   await expect(page).toHaveScreenshot('review-desktop.png', { animations: 'disabled' });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page).toHaveScreenshot('review-mobile.png', { animations: 'disabled' });
+  // 移动端顶栏有独立的连接状态展示，截图前同样等它就绪。
+  await expect(page.locator('.mobile-header .health.health--ok')).toBeVisible();
+  // 健康状态文案存在亚像素级的字体渲染抖动，与回顾页内容无关，遮罩后比较；
+  // 遮罩框边缘仍可能残留个位数像素偏移，给予极小容差。
+  await expect(page).toHaveScreenshot('review-mobile.png', {
+    animations: 'disabled',
+    mask: [page.locator('.mobile-header .health')],
+    maxDiffPixels: 16,
+  });
 });
 
 test('supports core task and note flows from the keyboard', async ({ page }) => {

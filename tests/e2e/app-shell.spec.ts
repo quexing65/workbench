@@ -12,7 +12,7 @@ test('renders the application shell and exposes health through the web origin', 
   expect(healthBody).toMatchObject({
     status: 'ok',
     database: 'ok',
-    schemaVersion: 3,
+    schemaVersion: 4,
     timeZone: 'Asia/Shanghai',
   });
 
