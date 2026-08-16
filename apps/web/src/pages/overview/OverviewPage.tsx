@@ -192,6 +192,13 @@ export function OverviewPage() {
               {remainingOverdueTasks} 条）
             </button>
           ) : null}
+          {overdueTasks.length > 0 ? (
+            <p className="overdue-link-row">
+              <Link className="text-link" to="/overdue">
+                处理全部逾期任务 →
+              </Link>
+            </p>
+          ) : null}
           {move.error ? (
             <p role="alert" className="form-error">
               移动失败，请刷新后重试。

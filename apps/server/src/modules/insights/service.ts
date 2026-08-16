@@ -52,7 +52,7 @@ export class InsightService {
         completed: items.filter((item) => item.status === 'completed').length,
         cancelled: items.filter((item) => item.status === 'cancelled').length,
       },
-      overdueTasks: this.repository.listOverdue(date),
+      overdueTasks: this.tasks.listOverdue(date),
       recentNotes: this.repository.listRecentNotes(3),
       nextLearning: this.repository.nextLearning(),
       last7Days,

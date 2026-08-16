@@ -17,6 +17,11 @@ export function createTaskRouter(service: TaskService): Router {
     response.json({ items: service.list(date) });
   });
 
+  router.get('/overdue', (request, response) => {
+    const { date } = parseInput(taskListQuerySchema, request.query);
+    response.json({ items: service.listOverdue(date) });
+  });
+
   router.post('/', (request, response) => {
     const task = service.create(parseInput(createTaskSchema, request.body));
     setRevisionEtag(response, task.revision);

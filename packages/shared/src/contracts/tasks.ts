@@ -41,6 +41,9 @@ export type DailyTask = z.infer<typeof dailyTaskSchema>;
 export const taskListResponseSchema = z.object({ items: z.array(taskListItemSchema) });
 export type TaskListResponse = z.infer<typeof taskListResponseSchema>;
 
+export const overdueTaskListResponseSchema = z.object({ items: z.array(dailyTaskSchema) });
+export type OverdueTaskListResponse = z.infer<typeof overdueTaskListResponseSchema>;
+
 export const taskListQuerySchema = z.object({ date: businessDateSchema }).strict();
 export const createTaskSchema = z
   .object({

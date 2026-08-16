@@ -15,6 +15,10 @@ export class TaskService {
     return this.repository.list(date);
   }
 
+  public listOverdue(date: string): DailyTask[] {
+    return this.repository.listOverdue(date);
+  }
+
   public create(input: CreateTaskInput): DailyTask {
     return this.repository.insert(this.createId(), { ...input, status: 'active' }, this.now());
   }

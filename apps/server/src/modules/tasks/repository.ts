@@ -86,6 +86,20 @@ export class TaskRepository {
     return [...dailyRows.map(daily), ...recurringRows.map((row) => recurring(row, date))];
   }
 
+  public listOverdue(date: string): DailyTask[] {
+    const rows = this.database
+      .prepare(
+        `
+        SELECT id, title, description, task_date, status, revision
+        FROM tasks
+        WHERE task_date < ? AND status = 'active' AND deleted_at_ms IS NULL
+        ORDER BY task_date, created_at_ms, id
+      `,
+      )
+      .all(date) as unknown as DailyTaskRow[];
+    return rows.map(daily);
+  }
+
   public find(id: string): DailyTask | undefined {
     const row = this.findStatement.get(id) as DailyTaskRow | undefined;
     return row === undefined ? undefined : daily(row);

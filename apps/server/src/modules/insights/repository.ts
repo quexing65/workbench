@@ -1,19 +1,5 @@
-import {
-  epochMillisecondsToIso,
-  type DailyTask,
-  type Note,
-  type ResumableLearning,
-} from '@workbench/shared';
+import { epochMillisecondsToIso, type Note, type ResumableLearning } from '@workbench/shared';
 import type { DatabaseSync } from 'node:sqlite';
-
-interface DailyTaskRow {
-  id: string;
-  title: string;
-  description: string;
-  task_date: string;
-  status: DailyTask['status'];
-  revision: number;
-}
 
 interface NoteRow {
   id: string;
@@ -38,18 +24,6 @@ interface SeriesLearningDurationRow {
   series_id: string | null;
   series_name: string;
   duration_seconds: number;
-}
-
-function task(row: DailyTaskRow): DailyTask {
-  return {
-    kind: 'daily',
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    date: row.task_date,
-    status: row.status,
-    revision: row.revision,
-  };
 }
 
 function note(row: NoteRow): Note {
@@ -77,18 +51,6 @@ function learning(row: LearningRow): ResumableLearning {
 
 export class InsightRepository {
   public constructor(private readonly database: DatabaseSync) {}
-
-  public listOverdue(date: string): DailyTask[] {
-    const rows = this.database
-      .prepare(
-        `SELECT id, title, description, task_date, status, revision
-         FROM tasks
-         WHERE task_date < ? AND status = 'active' AND deleted_at_ms IS NULL
-         ORDER BY task_date, created_at_ms, id`,
-      )
-      .all(date) as unknown as DailyTaskRow[];
-    return rows.map(task);
-  }
 
   public listRecentNotes(limit: number): Note[] {
     const rows = this.database

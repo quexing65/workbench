@@ -112,6 +112,7 @@ export type { ReviewResponse } from './contracts/review.js';
 export {
   createTaskSchema,
   dailyTaskSchema,
+  overdueTaskListResponseSchema,
   recurringTaskListItemSchema,
   taskListItemSchema,
   taskListQuerySchema,
@@ -122,6 +123,7 @@ export {
 export type {
   CreateTaskInput,
   DailyTask,
+  OverdueTaskListResponse,
   TaskListItem,
   TaskListResponse,
   TaskStatus,

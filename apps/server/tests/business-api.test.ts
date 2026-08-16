@@ -75,6 +75,42 @@ describe('daily task API', () => {
     expect((await read('/api/v1/tasks?date=2026-08-14')).body.items).toHaveLength(0);
   });
 
+  it('lists only past active tasks as overdue and clears them on reschedule', async () => {
+    const past = await write('post', '/api/v1/tasks').send({
+      title: '过期未完成',
+      description: '',
+      date: '2026-08-10',
+    });
+    const done = await write('post', '/api/v1/tasks').send({
+      title: '过期但已完成',
+      description: '',
+      date: '2026-08-11',
+    });
+    await write('patch', `/api/v1/tasks/${String(done.body.id)}`).send({
+      revision: 1,
+      status: 'completed',
+    });
+    await write('post', '/api/v1/tasks').send({
+      title: '未来任务',
+      description: '',
+      date: '2026-08-20',
+    });
+
+    const list = await read('/api/v1/tasks/overdue?date=2026-08-13');
+    expect(list.status).toBe(200);
+    expect(list.body.items).toEqual([
+      expect.objectContaining({ title: '过期未完成', date: '2026-08-10', status: 'active' }),
+    ]);
+
+    const moved = await write('patch', `/api/v1/tasks/${String(past.body.id)}`).send({
+      revision: 1,
+      date: '2026-08-13',
+    });
+    expect(moved.status).toBe(200);
+    expect((await read('/api/v1/tasks/overdue?date=2026-08-13')).body.items).toHaveLength(0);
+    expect((await read('/api/v1/tasks/overdue?date=not-a-date')).status).toBe(400);
+  });
+
   it('returns structured validation errors and atomically rejects a stale revision', async () => {
     const invalid = await write('post', '/api/v1/tasks').send({
       title: ' ',

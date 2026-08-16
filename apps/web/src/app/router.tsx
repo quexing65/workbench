@@ -8,6 +8,7 @@ function page<T extends string>(loader: () => Promise<Record<T, ComponentType>>,
 
 const OverviewPage = page(() => import('../pages/overview/OverviewPage'), 'OverviewPage');
 const TasksPage = page(() => import('../pages/tasks/TasksPage'), 'TasksPage');
+const OverduePage = page(() => import('../pages/overdue/OverduePage'), 'OverduePage');
 const RecurringPage = page(() => import('../pages/recurring/RecurringPage'), 'RecurringPage');
 const NotesPage = page(() => import('../pages/notes/NotesPage'), 'NotesPage');
 const LearningPage = page(() => import('../pages/learning/LearningPage'), 'LearningPage');
@@ -41,6 +42,14 @@ export function AppRouter() {
             element={
               <Suspense fallback={<PageLoader />}>
                 <TasksPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="overdue"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <OverduePage />
               </Suspense>
             }
           />

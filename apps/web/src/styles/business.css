@@ -38,7 +38,8 @@
 
 .editor-card h2,
 .list-panel h2,
-.work-item h2 {
+.work-item h2,
+.work-item h3 {
   margin-bottom: 0;
 }
 
@@ -139,7 +140,8 @@ button:disabled {
   margin-bottom: 1rem;
 }
 
-.work-item__body h2 {
+.work-item__body h2,
+.work-item__body h3 {
   margin-top: 0.65rem;
   font-size: 1.25rem;
 }
@@ -200,6 +202,50 @@ button:disabled {
   text-align: center;
 }
 
+.overdue-header {
+  display: flex;
+  max-width: none;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.overdue-summary {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.overdue-group {
+  max-width: 46rem;
+  margin-top: 1.5rem;
+}
+
+.overdue-group h2 {
+  display: flex;
+  margin-bottom: 0.75rem;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 1.05rem;
+}
+
+.overdue-group h2 small {
+  color: var(--warm);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.overdue-item__meta {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.overdue-link-row {
+  margin: 0.9rem 0 0;
+}
+
 @media (max-width: 980px) {
   .business-layout--wide-editor {
     grid-template-columns: minmax(0, 1fr);
@@ -222,6 +268,15 @@ button:disabled {
   .list-toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .overdue-header {
+    display: block;
+  }
+
+  .overdue-summary {
+    margin-top: 0.75rem;
+    white-space: normal;
   }
 }
 

@@ -1,8 +1,10 @@
 import {
   dailyTaskSchema,
+  overdueTaskListResponseSchema,
   taskListResponseSchema,
   type CreateTaskInput,
   type DailyTask,
+  type OverdueTaskListResponse,
   type TaskListResponse,
   type TaskStatus,
 } from '@workbench/shared';
@@ -14,6 +16,17 @@ export function getTasks(date: string, signal?: AbortSignal): Promise<TaskListRe
   return apiRequest(`/api/v1/tasks?date=${encodeURIComponent(date)}`, taskListResponseSchema, {
     ...(signal === undefined ? {} : { signal }),
   });
+}
+
+export function getOverdueTasks(
+  date: string,
+  signal?: AbortSignal,
+): Promise<OverdueTaskListResponse> {
+  return apiRequest(
+    `/api/v1/tasks/overdue?date=${encodeURIComponent(date)}`,
+    overdueTaskListResponseSchema,
+    { ...(signal === undefined ? {} : { signal }) },
+  );
 }
 
 export function createTask(input: CreateTaskInput): Promise<DailyTask> {

@@ -197,7 +197,7 @@ export function runPerformanceAudit(
     ),
     audit(
       'overdue-active-tasks',
-      () => insights.listOverdue('2026-08-13').length,
+      () => tasks.listOverdue('2026-08-13').length,
       explain(
         database,
         `SELECT id FROM tasks WHERE task_date < ? AND status = 'active'

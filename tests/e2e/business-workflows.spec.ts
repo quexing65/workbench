@@ -65,7 +65,15 @@ test('business pages fit a 360px viewport without page-level horizontal overflow
 }) => {
   await page.setViewportSize({ width: 360, height: 800 });
 
-  for (const path of ['/overview', '/tasks', '/recurring', '/notes', '/learning', '/review']) {
+  for (const path of [
+    '/overview',
+    '/tasks',
+    '/overdue',
+    '/recurring',
+    '/notes',
+    '/learning',
+    '/review',
+  ]) {
     await page.goto(path);
     await expect(page.locator('h1')).toBeVisible();
     const dimensions = await page.evaluate(() => ({
