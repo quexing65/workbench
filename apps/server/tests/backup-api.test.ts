@@ -55,6 +55,34 @@ describe('backup API', () => {
     expect(readdirSync(join(root, 'backups'))).toEqual([]);
   });
 
+  it('downloads from a data directory whose path contains a dot segment', async () => {
+    // Regression: res.download/send rejects dotfile path segments (such as the
+    // default data directory ".local") with a bare 404, so the route must
+    // stream the archive itself.
+    const outer = mkdtempSync(join(tmpdir(), 'workbench-backup-dot-'));
+    const root = join(outer, '.local');
+    const database = openWorkbenchDatabase({ dataDirectory: root });
+    fixtures.push({ root: outer, database });
+    const app = makeApp({ database: database.connection, dataDirectory: root, mountBackups: true });
+    const response = await request(app)
+      .post('/api/v1/data/backups')
+      .set('Host', allowedHost)
+      .set('X-Workbench-Request', '1')
+      .send({})
+      .buffer(true)
+      .parse((incoming, callback) => {
+        const chunks: Buffer[] = [];
+        incoming.on('data', (chunk: Buffer) => chunks.push(chunk));
+        incoming.on('end', () => callback(null, Buffer.concat(chunks)));
+      })
+      .expect(200);
+    expect(response.headers['content-disposition']).toMatch(/personal-workbench-.*\.pwbk/u);
+    const archive = join(outer, 'download.pwbk');
+    writeFileSync(archive, response.body as Buffer);
+    const extracted = await extractBackupArchive(archive, join(outer, 'extracted'));
+    expect(extracted.manifest).toMatchObject({ secretIncluded: false });
+  });
+
   it('requires the write marker and JSON content type', async () => {
     const { app } = fixture();
     await request(app).post('/api/v1/data/backups').set('Host', allowedHost).send({}).expect(403);

@@ -1,3 +1,6 @@
+import { createReadStream } from 'node:fs';
+import { pipeline } from 'node:stream/promises';
+
 import { type Router, Router as createRouter } from 'express';
 
 import { AppError } from '../../http/errors.js';
@@ -14,26 +17,24 @@ export function createBackupRouter(service: BackupCreator): Router {
       return;
     }
     creating = true;
+    let cleanup = () => {};
     try {
       const result = await service.create();
-      response.download(
-        result.path,
-        result.fileName,
-        {
-          headers: {
-            'Cache-Control': 'no-store',
-            'X-Content-Type-Options': 'nosniff',
-          },
-        },
-        (error) => {
-          creating = false;
-          result.cleanup();
-          if (error !== undefined) next(error);
-        },
-      );
+      cleanup = result.cleanup;
+      // Stream the archive manually: res.download relies on send, whose
+      // default dotfile policy rejects any path containing a dot segment
+      // (such as the default data directory ".local") with a bare 404.
+      response.status(200);
+      response.setHeader('Content-Type', 'application/octet-stream');
+      response.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+      response.setHeader('Cache-Control', 'no-store');
+      response.setHeader('X-Content-Type-Options', 'nosniff');
+      await pipeline(createReadStream(result.path), response);
     } catch (error) {
+      if (!response.headersSent) next(error);
+    } finally {
       creating = false;
-      next(error);
+      cleanup();
     }
   });
   return router;
