@@ -8,7 +8,7 @@ import request from 'supertest';
 import { openWorkbenchDatabase } from '../src/db/connection.js';
 import type { WorkbenchDatabase } from '../src/db/connection.js';
 import { allowedHost, makeApp } from './test-app.js';
-import { personalFixture, writePersonalFile } from './import-fixtures.js';
+import { personalFixture, writePersonalFile, createQoderFixture } from './import-fixtures.js';
 
 interface ApiFixture {
   readonly root: string;
@@ -96,6 +96,36 @@ describe('import API', () => {
     )
       .expect(400)
       .expect(({ body }) => expect(body.error.code).toBe('VALIDATION_ERROR'));
+  });
+
+  it('echoes a valid sourceTimezone through qoder preflight and report', async () => {
+    const { app, root } = apiFixture();
+    const source = createQoderFixture(join(root, 'qoder-tz.db'));
+    const preview = await writeHeaders(request(app).post('/api/v1/data/imports/preflight'))
+      .field('sourceType', 'qoder-sqlite')
+      .field('sourceTimezone', ' Asia/Shanghai ')
+      .attach('file', source, 'qoder.db')
+      .expect(201);
+    expect(preview.body.report).toMatchObject({ sourceTimezone: 'Asia/Shanghai' });
+
+    const report = await request(app)
+      .get(`/api/v1/data/imports/${String(preview.body.report.runId)}/report`)
+      .set('Host', allowedHost)
+      .expect(200);
+    expect(report.body).toMatchObject({ sourceTimezone: 'Asia/Shanghai' });
+  });
+
+  it('rejects an invalid sourceType after receiving the file and cleans the upload', async () => {
+    const { app, root } = apiFixture();
+    const source = writePersonalFile(join(root, 'source-bad-type'));
+    await writeHeaders(request(app).post('/api/v1/data/imports/preflight'))
+      .field('sourceType', 'not-a-source')
+      .attach('file', source, 'personal.json')
+      .expect(400)
+      .expect(({ body }) => expect(body.error.code).toBe('VALIDATION_ERROR'));
+    const uploadRoot = join(root, 'tmp', 'imports', 'uploads');
+    const { readdirSync } = await import('node:fs');
+    expect(readdirSync(uploadRoot)).toEqual([]);
   });
 
   it('rejects multipart on every non-import write route and missing write markers', async () => {

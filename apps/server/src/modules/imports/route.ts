@@ -25,7 +25,10 @@ function uploadMiddleware(root: string): RequestHandler {
       },
       filename: (_request, _file, callback) => callback(null, 'source.bin'),
     }),
-    limits: { fileSize: 50 * 1024 * 1024, files: 1, fields: 2, parts: 3 },
+    // busboy fires its limits when a count REACHES the configured value, so
+    // the values must exceed the real maximum: qoder preflight sends
+    // sourceType + sourceTimezone + file (2 fields, 3 parts).
+    limits: { fileSize: 50 * 1024 * 1024, files: 2, fields: 3, parts: 4 },
   }).single('file');
   return (request, response, next) => {
     upload(request, response, (error: unknown) => {
