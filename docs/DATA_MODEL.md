@@ -34,8 +34,9 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 
 ### 通用工作台
 
-- `tasks`：每日任务，状态为 active/completed/cancelled；更新使用 revision 原子乐观锁，
-  删除为软删除。
+- `tasks`：每日任务，状态为 active/completed/cancelled/expired；更新使用 revision 原子乐观锁，
+  删除为软删除。expired 仅适用于逾期任务处理：标记过期时同时置位 `cancelled_at_ms`，
+  统计上并入作废口径。固定任务 occurrence 不使用 expired，仅保留三态子集。
 - `recurring_task_templates`：每日固定任务的日期范围规则；查询任务列表时按日期合并，
   不预生成未来记录。
 - `recurring_task_occurrences`：仅在某天状态被修改时创建 override；不存在时 revision=0，
@@ -131,5 +132,6 @@ reset 门槛继续阻止旧历史复活进度。
 
 阶段 4 没有改变 schema。`GET /api/v1/overview` 和 `GET /api/v1/review` 仅对已有表做
 只读聚合：每日任务与有效固定任务按日期合并，缺少 occurrence 时状态为 active；小记按
-更新时间取最近三条；学习活动按 `last_observed_at_ms` 归属 Asia/Shanghai 业务日。没有计划
+更新时间取最近三条；学习活动按 `last_observed_at_ms` 归属 Asia/Shanghai 业务日。回顾页
+「取消」计数包含 expired（作废口径，见 `tasks` 条目）。没有计划
 的日期将完成率表示为 `null`，不伪造 0%。读取聚合不得创建 occurrence 或修改 revision。

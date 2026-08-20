@@ -8,6 +8,7 @@ import {
   type OverdueTaskListResponse,
   type TaskListResponse,
   type TaskStatus,
+  type UpdateOccurrenceInput,
 } from '@workbench/shared';
 import { z } from 'zod';
 
@@ -61,7 +62,7 @@ export function updateOccurrence(
   templateId: string,
   date: string,
   revision: number,
-  status: TaskStatus,
+  status: UpdateOccurrenceInput['status'],
 ) {
   return apiRequest(
     `/api/v1/recurring-tasks/${templateId}/occurrences/${date}`,

@@ -513,7 +513,7 @@ CREATE TABLE tasks (
   task_date TEXT NOT NULL CHECK (
     task_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
   ),
-  status TEXT NOT NULL CHECK (status IN ('active', 'completed', 'cancelled')),
+  status TEXT NOT NULL CHECK (status IN ('active', 'completed', 'cancelled', 'expired')),
   completed_at_ms INTEGER CHECK (completed_at_ms IS NULL OR completed_at_ms >= 0),
   cancelled_at_ms INTEGER CHECK (cancelled_at_ms IS NULL OR cancelled_at_ms >= 0),
   created_at_ms INTEGER NOT NULL CHECK (created_at_ms >= 0),
@@ -846,7 +846,7 @@ DELETE /api/v1/tasks/:id
 type TaskListItem =
   | {
       kind: 'daily'; id: string; title: string; description: string;
-      date: string; status: 'active'|'completed'|'cancelled'; revision: number;
+      date: string; status: 'active'|'completed'|'cancelled'|'expired'; revision: number;
     }
   | {
       kind: 'recurring'; id: string; templateId: string; title: string;
@@ -854,6 +854,9 @@ type TaskListItem =
       status: 'active'|'completed'|'cancelled'; revision: number;
     };
 ```
+
+注：expired 仅适用于每日任务的逾期处理（标记时同时置位 `cancelled_at_ms`）；固定任务
+occurrence 保持三态子集，服务端对 occurrence 传入 expired 返回 400。
 
 创建请求：
 

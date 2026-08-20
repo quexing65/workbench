@@ -26,8 +26,10 @@ function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
   const mutation = useMutation({
     mutationFn: async (action: 'save' | 'delete' | TaskStatus) => {
       if (item.kind === 'recurring') {
-        if (action !== 'save' && action !== 'delete')
+        if (action !== 'save' && action !== 'delete') {
+          if (action === 'expired') throw new Error('固定任务不支持过期状态');
           await updateOccurrence(item.templateId, item.date, item.revision, action);
+        }
       } else if (action === 'delete') await deleteTask(item.id, item.revision);
       else if (action === 'save')
         await updateTask(item.id, item.revision, { title, description, date: taskDate });
@@ -93,7 +95,9 @@ function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
                 ? '待完成'
                 : item.status === 'completed'
                   ? '已完成'
-                  : '已取消'}
+                  : item.status === 'expired'
+                    ? '已过期'
+                    : '已取消'}
             </span>
             <h2>{item.title}</h2>
             {item.description && <p>{item.description}</p>}
