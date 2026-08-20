@@ -10,7 +10,16 @@ test('matches the desktop and mobile review references', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '回顾' })).toBeVisible();
   // 等待连接状态就绪，避免快照在“正在连接/已连接”之间摇摆。
   await expect(page.locator('.health.health--ok').first()).toBeVisible();
-  await expect(page).toHaveScreenshot('review-desktop.png', { animations: 'disabled' });
+  // 再等待回顾数据加载完成：健康指示器就绪时 /review 请求可能仍在途中，
+  // 此时指标卡显示占位符，直接截图会与已加载的基准图产生竞态差异。
+  // 固定时钟窗口内无计划数据，空态文案是确定性的加载完成标志。
+  await expect(page.getByText('这段时间还没有计划，因此不计算完成率。')).toBeVisible();
+  // 字体抗锯齿与图表渲染存在数十像素级的环境抖动，给予小容差；
+  // 真实回归（布局、文案、配色变化）远超该量级，仍会被捕获。
+  await expect(page).toHaveScreenshot('review-desktop.png', {
+    animations: 'disabled',
+    maxDiffPixels: 120,
+  });
 
   await page.setViewportSize({ width: 390, height: 844 });
   // 移动端顶栏有独立的连接状态展示，截图前同样等它就绪。

@@ -37,7 +37,8 @@
 }
 
 .data-step {
-  color: var(--line);
+  /* 装饰序号仍需满足 WCAG 大字号 3:1 对比度；--line 在 --paper 上仅 1.34:1。 */
+  color: #85806f;
   font-family: Georgia, 'Noto Serif SC', serif;
   font-size: 2rem;
   line-height: 1;
