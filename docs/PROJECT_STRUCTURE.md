@@ -4,7 +4,7 @@
 
 ## 根目录
 
-- `apps/`：可独立运行的应用。前端放在 `apps/web`，本机服务放在 `apps/server`。
+- `apps/`：可独立运行的应用。前端放在 `apps/web`，本机服务放在 `apps/server`，桌面壳放在 `apps/desktop`。
 - `packages/`：被多个应用复用的包。跨前后端的数据契约和纯领域逻辑放在 `packages/shared`。
 - `tests/e2e/`：需要同时启动前后端的端到端与视觉回归测试。
 - `scripts/`：跨 workspace 的构建、检查和测试入口。只服务单个应用的脚本放回对应应用的 `scripts/`。
@@ -29,6 +29,16 @@
 - `src/performance/`：性能审计实现。
 - `tests/`：服务端集成测试与测试夹具。
 - `scripts/`：仅服务端使用的辅助脚本。
+
+## 桌面壳 `apps/desktop`
+
+- `src/main.ts`：Electron 主进程装配——单实例锁、内嵌服务启动、窗口生命周期与外链拦截。
+- `src/server-process.ts`：在当前进程内组装现有 server 的配置、锁、数据库与应用；
+  migrations、DPAPI 脚本与 web dist 的资源路径全部由此显式注入。
+- `scripts/build.mjs`：esbuild 单文件打包（server 源码内联）并复制 migrations、
+  `dpapi.ps1` 与 `apps/web/dist` 到 `dist/`。
+- `electron-builder.yml`：Windows NSIS/便携版打包配置；产物输出到 `release/`（不入库）。
+- `build/`：应用图标等打包资源。
 
 ## 文件去留规则
 

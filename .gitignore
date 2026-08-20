@@ -5,6 +5,7 @@ coverage/
 playwright-report/
 test-results/
 *.tsbuildinfo
+apps/desktop/release/
 
 # Local configuration
 .env

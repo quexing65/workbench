@@ -37,7 +37,9 @@
     "performance:audit": "npm run performance:audit -w @workbench/server --",
     "preperformance:browser": "npm run build",
     "performance:browser": "node scripts/audit-browser-performance.mjs",
-    "qoder:sanitize": "npm run qoder:sanitize -w @workbench/server --"
+    "qoder:sanitize": "npm run qoder:sanitize -w @workbench/server --",
+    "desktop:dev": "npm run dev -w @workbench/desktop",
+    "desktop:dist": "npm run build -w @workbench/shared && npm run build -w @workbench/web && npm run dist -w @workbench/desktop"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
@@ -63,5 +65,10 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.46.2",
     "vitest": "^3.2.4"
+  },
+  "allowScripts": {
+    "electron": true,
+    "electron-winstaller": true,
+    "esbuild": true
   }
 }

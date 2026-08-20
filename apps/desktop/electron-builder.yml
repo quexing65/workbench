@@ -1,0 +1,24 @@
+appId: com.quexing65.personal-workbench
+productName: Personal Workbench
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - package.json
+# dpapi.ps1 需要被外部进程 powershell.exe 读取，asar 内的虚拟文件系统
+# 只有 Node（Electron 补丁版 fs）能访问，因此必须释放为真实文件。
+asarUnpack:
+  - dist/dpapi.ps1
+win:
+  icon: build/icon.png
+  target:
+    - nsis
+    - portable
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  artifactName: PersonalWorkbench-Setup-${version}.${ext}
+portable:
+  artifactName: PersonalWorkbench-Portable-${version}.${ext}
