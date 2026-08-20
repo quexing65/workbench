@@ -125,6 +125,12 @@ async function audit(browser) {
       page.locator('.learning-card').first().waitFor(),
     ),
   );
+  // 系列面板默认收起，先展开才能看到每个系列的“编辑系列”按钮。
+  await page.getByRole('button', { name: '学习系列' }).click();
+  await page
+    .getByRole('button', { name: /编辑系列 Performance series/u })
+    .first()
+    .waitFor();
   const seriesEditMs = await measureInteraction(async () => {
     await page
       .getByRole('button', { name: /编辑系列 Performance series/u })
@@ -135,7 +141,7 @@ async function audit(browser) {
   const learningSeriesEditorDomElements = await page.locator('*').count();
   pages.push(
     await measurePage(page, '/review', '/api/v1/review', () =>
-      page.locator('.review-totals').waitFor(),
+      page.locator('.review-stats').waitFor(),
     ),
   );
   const reviewRangeChangeMs = await measureInteraction(async () => {
