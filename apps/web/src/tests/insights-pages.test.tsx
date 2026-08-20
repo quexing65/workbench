@@ -207,23 +207,22 @@ describe('review page', () => {
         completionRate: isCurrent ? 0.5 : 0,
         learningActivities: isCurrent ? span : 0,
       },
-      learningDuration: isCurrent
-        ? {
-            totalSeconds: 5400,
-            bySeries: [
-              {
-                seriesId: '10000000-0000-4000-8000-000000000001',
-                seriesName: '数据库',
-                durationSeconds: 3600,
-              },
-              {
-                seriesId: '10000000-0000-4000-8000-000000000002',
-                seriesName: '人工智能',
-                durationSeconds: 1800,
-              },
-            ],
-          }
-        : { totalSeconds: 0, bySeries: [] },
+      // 观看进度是当前状态快照，与区间无关，两期返回相同值。
+      learningDuration: {
+        totalSeconds: 5400,
+        bySeries: [
+          {
+            seriesId: '10000000-0000-4000-8000-000000000001',
+            seriesName: '数据库',
+            durationSeconds: 3600,
+          },
+          {
+            seriesId: '10000000-0000-4000-8000-000000000002',
+            seriesName: '人工智能',
+            durationSeconds: 1800,
+          },
+        ],
+      },
     };
   }
 
@@ -243,8 +242,8 @@ describe('review page', () => {
 
     expect(await screen.findByText('↑ 较上期 +50%')).toBeInTheDocument();
     expect(screen.getByText('↑ 较上期 +7 项')).toBeInTheDocument();
-    expect(screen.getByText('↑ 较上期 +1 小时 30 分钟')).toBeInTheDocument();
     expect(screen.getByText('↑ 较上期 +7 天')).toBeInTheDocument();
+    expect(screen.getByText('当前状态，不随区间变化')).toBeInTheDocument();
     expect(screen.getAllByText('50%').length).toBeGreaterThan(0);
     expect(screen.getByText('共计划 14 项：完成 7 · 取消 0 · 待完成 7。')).toBeInTheDocument();
 
@@ -263,7 +262,7 @@ describe('review page', () => {
     const rhythm = screen.getByRole('group', { name: '每日学习活动热度' });
     expect(within(rhythm).getAllByRole('img')).toHaveLength(7);
 
-    const durationPie = screen.getByRole('group', { name: /学习时长系列分布/ });
+    const durationPie = screen.getByRole('group', { name: /观看进度系列分布/ });
     expect(durationPie).toBeInTheDocument();
     expect(screen.getAllByText('1 小时 30 分钟').length).toBeGreaterThan(0);
     expect(screen.getByText('数据库')).toBeInTheDocument();
@@ -341,6 +340,7 @@ describe('review page', () => {
     expect(await screen.findByText('这段时间还没有计划，因此不计算完成率。')).toBeInTheDocument();
     expect(screen.queryByText('0%')).not.toBeInTheDocument();
     expect(screen.getAllByText('与上期持平').length).toBeGreaterThan(0);
+    expect(screen.getByText('还没有可统计的合集观看进度。')).toBeInTheDocument();
     expect(screen.getByText('所选范围内还没有学习活动记录。')).toBeInTheDocument();
   });
 });

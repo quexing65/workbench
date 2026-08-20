@@ -1,5 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
+import { baseCoverageThresholds } from './vitest.coverage-thresholds';
+
 export default defineConfig({
   test: {
     clearMocks: true,
@@ -22,10 +24,7 @@ export default defineConfig({
       reporter: ['text', 'json-summary', 'html'],
       reportsDirectory: 'coverage',
       thresholds: {
-        branches: 80,
-        functions: 85,
-        lines: 85,
-        statements: 85,
+        ...baseCoverageThresholds,
         'apps/server/src/modules/imports/**': {
           branches: 90,
           functions: 95,

@@ -4,6 +4,7 @@ import {
   taskListResponseSchema,
   type CreateTaskInput,
   type DailyTask,
+  type OverdueStatusFilter,
   type OverdueTaskListResponse,
   type TaskListResponse,
   type TaskStatus,
@@ -20,10 +21,11 @@ export function getTasks(date: string, signal?: AbortSignal): Promise<TaskListRe
 
 export function getOverdueTasks(
   date: string,
+  status: OverdueStatusFilter = 'active',
   signal?: AbortSignal,
 ): Promise<OverdueTaskListResponse> {
   return apiRequest(
-    `/api/v1/tasks/overdue?date=${encodeURIComponent(date)}`,
+    `/api/v1/tasks/overdue?date=${encodeURIComponent(date)}&status=${status}`,
     overdueTaskListResponseSchema,
     { ...(signal === undefined ? {} : { signal }) },
   );

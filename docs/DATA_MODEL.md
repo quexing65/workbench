@@ -52,9 +52,10 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 - `learning_resource_progress`：整部最远位置、真实续播位置、完成和手动门槛。
 - `learning_part_progress`：分P局部最远位置、实际观看累计（`watched_seconds`，按
   “间隔 × 3 + 15秒”封顶估算，拖动跳过不计）与完成状态。
-- `learning_watch_daily`：分P × 业务日（UTC+8）的实际观看秒数聚合，回顾页学习时长的唯一
-  数据源；`reset` 不清空该表。
-- `learning_series` / `learning_series_items`：系列及有序视频关系。
+- `learning_watch_daily`：分P × 业务日（UTC+8）的实际观看秒数聚合；`reset` 不清空该表。
+  回顾页不再读取该表（见 ADR 0006），仅作为每日实际观看的历史记录保留。
+- `learning_series` / `learning_series_items`：系列及有序视频关系。回顾页「观看进度」按
+  系列实时汇总：各资源取「续播分P之前分P全长 + resume 秒数」（手动完成按全长）求和。
 - `unresolved_learning_links`：尚不能离线解析的 b23 或普通链接。
 
 完整字段和约束以 `EXECUTION_PLAN.md` 第 7 节为实施合同。

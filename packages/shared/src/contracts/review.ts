@@ -29,7 +29,7 @@ export const reviewResponseSchema = z.object({
     learningActivities: z.number().int().nonnegative(),
   }),
   learningDuration: z.object({
-    /** 区间内实际播放的分 P 视频原速时长总和（拖动跳过不计）。 */
+    /** 各系列「当前观看时刻距合集开头」的秒数（续播位置之前分P全长 + resume 秒数；手动完成按全长计），与区间无关。 */
     totalSeconds: z.number().int().nonnegative(),
     bySeries: z.array(
       z.object({

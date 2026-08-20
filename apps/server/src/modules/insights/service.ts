@@ -19,7 +19,10 @@ function dateRange(from: string, to: string): string[] {
 function stats(date: string, items: TaskListItem[], learningActivities: number): DayStats {
   const planned = items.length;
   const completed = items.filter((item) => item.status === 'completed').length;
-  const cancelled = items.filter((item) => item.status === 'cancelled').length;
+  // 已取消与已过期都视为“作废”，避免过期任务被残留计算成待完成。
+  const cancelled = items.filter(
+    (item) => item.status === 'cancelled' || item.status === 'expired',
+  ).length;
   return {
     date,
     planned,
@@ -50,7 +53,8 @@ export class InsightService {
         planned: items.length,
         active: items.filter((item) => item.status === 'active').length,
         completed: items.filter((item) => item.status === 'completed').length,
-        cancelled: items.filter((item) => item.status === 'cancelled').length,
+        cancelled: items.filter((item) => item.status === 'cancelled' || item.status === 'expired')
+          .length,
       },
       overdueTasks: this.tasks.listOverdue(date),
       recentNotes: this.repository.listRecentNotes(3),
@@ -61,7 +65,8 @@ export class InsightService {
 
   public review(from: string, to: string): ReviewResponse {
     const activity = this.repository.learningActivityCounts(from, to);
-    const learningDurationBySeries = this.repository.learningDurationBySeries(from, to);
+    // 观看进度是当前状态快照，与 from/to 区间无关，两期查询返回相同值。
+    const learningPositionBySeries = this.repository.learningPositionBySeries();
     const days = dateRange(from, to).map((date) =>
       stats(date, this.tasks.list(date), activity.get(date) ?? 0),
     );
@@ -83,11 +88,11 @@ export class InsightService {
         completionRate: totals.planned === 0 ? null : totals.completed / totals.planned,
       },
       learningDuration: {
-        totalSeconds: learningDurationBySeries.reduce(
+        totalSeconds: learningPositionBySeries.reduce(
           (total, item) => total + item.durationSeconds,
           0,
         ),
-        bySeries: learningDurationBySeries,
+        bySeries: learningPositionBySeries,
       },
     };
   }

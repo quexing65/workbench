@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import { isBusinessDate } from '../domain/business-date.js';
-import { taskStatusSchema } from './tasks.js';
 
 const dateSchema = z.string().refine(isBusinessDate, '必须是有效的 YYYY-MM-DD 日期');
 const titleSchema = z.string().trim().min(1, '标题不能为空').max(500, '标题不能超过 500 个字符');
@@ -55,10 +54,17 @@ export const updateRecurringTaskSchema = z
 export const occurrenceParamsSchema = z
   .object({ id: z.string().uuid(), date: dateSchema })
   .strict();
+
+/**
+ * Occurrence statuses are a deliberate subset of taskStatusSchema: recurring
+ * occurrences have no "expired" semantics in the database, only daily tasks
+ * can be marked expired.
+ */
+const occurrenceStatusSchema = z.enum(['active', 'completed', 'cancelled']);
 export const updateOccurrenceSchema = z
   .object({
     revision: z.number().int().nonnegative(),
-    status: taskStatusSchema,
+    status: occurrenceStatusSchema,
   })
   .strict();
 

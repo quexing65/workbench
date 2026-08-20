@@ -10,6 +10,7 @@ import { errorHandler, notFound } from './http/errors.js';
 import { createLogger, requestLogger } from './http/logger.js';
 import { loopbackGuard } from './http/origin-guard.js';
 import { requestId } from './http/request-id.js';
+import { securityHeaders } from './http/security-headers.js';
 import { mountStaticWeb } from './http/static-web.js';
 import { createHealthRouter } from './modules/health/route.js';
 import type { HealthDatabaseState } from './modules/health/route.js';
@@ -79,6 +80,7 @@ export function createApp(options: CreateAppOptions): Express {
 
   app.disable('x-powered-by');
   app.set('trust proxy', false);
+  app.use(securityHeaders);
   app.use(requestId);
   app.use(requestLogger(logger));
   app.use(loopbackGuard(config));

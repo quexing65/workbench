@@ -51,7 +51,7 @@ describe('backup API', () => {
     const archive = join(root, 'download.pwbk');
     writeFileSync(archive, response.body as Buffer);
     const extracted = await extractBackupArchive(archive, join(root, 'extracted'));
-    expect(extracted.manifest).toMatchObject({ schemaVersion: 4, secretIncluded: false });
+    expect(extracted.manifest).toMatchObject({ schemaVersion: 5, secretIncluded: false });
     expect(readdirSync(join(root, 'backups'))).toEqual([]);
   });
 

@@ -20,7 +20,11 @@ test-results/
 *.db-wal
 *.db-shm
 *.pwbk
+# Real credential blobs must never be committed, wherever they appear.
+# The SOURCE module at apps/server/src/modules/credentials/ is code, not
+# secrets, and is explicitly re-included below.
 credentials/
+!apps/server/src/modules/credentials/
 /backups/
 logs/
 tmp/imports/
@@ -30,6 +34,10 @@ tmp/imports/
 Thumbs.db
 .idea/
 .vscode/
+
+# AI agent working files (personal, not project code)
+.workbuddy/
+.qoder/
 
 # Temporary work products
 work/

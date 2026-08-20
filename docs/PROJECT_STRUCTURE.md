@@ -33,6 +33,8 @@
 ## 文件去留规则
 
 - 不提交 `node_modules/`、`dist/`、`coverage/`、`playwright-report/`、`test-results/`、运行日志、本机数据库、凭据或临时导入文件；它们必须能够由安装、构建或测试重新生成。
+- “不提交凭据”指运行时凭据 blob（默认在 `.local/credentials/`）。`.gitignore` 的 `credentials/` 规则是防御性的宽匹配；`apps/server/src/modules/credentials/` 是源码模块，已通过 `!apps/server/src/modules/credentials/` 例外显式纳入版本控制。新增与凭据同名的源码目录时，必须同步检查 `git check-ignore` 确认未被误伤。
+- AI 助手的工作目录（`.workbuddy/`、`.qoder/`）属于个人工作痕迹，不提交；仓库级共享约定只写入 `docs/`。
 - 测试快照属于回归基线，应与对应测试放在一起并纳入版本控制。
 - 迁移脚本、ADR、审计基线和恢复演练记录属于可追溯资料，不因“当前运行时未直接导入”而删除。
 - 删除源码前必须确认没有代码、测试、脚本或文档引用；移动公共模块时同步更新导入路径与相关文档。

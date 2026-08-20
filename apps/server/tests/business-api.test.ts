@@ -95,12 +95,40 @@ describe('daily task API', () => {
       description: '',
       date: '2026-08-20',
     });
+    const stale = await write('post', '/api/v1/tasks').send({
+      title: '过期已失效',
+      description: '',
+      date: '2026-08-12',
+    });
+    const expired = await write('patch', `/api/v1/tasks/${String(stale.body.id)}`).send({
+      revision: 1,
+      status: 'expired',
+    });
+    expect(expired.body).toMatchObject({ status: 'expired', revision: 2 });
 
     const list = await read('/api/v1/tasks/overdue?date=2026-08-13');
     expect(list.status).toBe(200);
     expect(list.body.items).toEqual([
       expect.objectContaining({ title: '过期未完成', date: '2026-08-10', status: 'active' }),
     ]);
+
+    const completed = await read('/api/v1/tasks/overdue?date=2026-08-13&status=completed');
+    expect(completed.status).toBe(200);
+    expect(completed.body.items).toEqual([
+      expect.objectContaining({ title: '过期但已完成', date: '2026-08-11', status: 'completed' }),
+    ]);
+
+    const expiredList = await read('/api/v1/tasks/overdue?date=2026-08-13&status=expired');
+    expect(expiredList.status).toBe(200);
+    expect(expiredList.body.items).toEqual([
+      expect.objectContaining({ title: '过期已失效', date: '2026-08-12', status: 'expired' }),
+    ]);
+
+    const all = await read('/api/v1/tasks/overdue?date=2026-08-13&status=all');
+    expect(all.status).toBe(200);
+    expect(all.body.items).toHaveLength(3);
+
+    expect((await read('/api/v1/tasks/overdue?date=2026-08-13&status=bogus')).status).toBe(400);
 
     const moved = await write('patch', `/api/v1/tasks/${String(past.body.id)}`).send({
       revision: 1,
@@ -266,6 +294,12 @@ describe('recurring task API', () => {
       { revision: 0, status: 'completed' },
     );
     expect(outside.body.error.code).toBe('OCCURRENCE_NOT_FOUND');
+    const expiredOccurrence = await write(
+      'put',
+      `/api/v1/recurring-tasks/${id}/occurrences/2026-08-13`,
+    ).send({ revision: 0, status: 'expired' });
+    expect(expiredOccurrence.status).toBe(400);
+    expect(expiredOccurrence.body.error).toMatchObject({ code: 'VALIDATION_ERROR' });
     const missingOverride = await write(
       'put',
       `/api/v1/recurring-tasks/${id}/occurrences/2026-08-13`,

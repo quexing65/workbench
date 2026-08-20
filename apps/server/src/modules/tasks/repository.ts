@@ -1,4 +1,4 @@
-import type { DailyTask, TaskListItem, TaskStatus } from '@workbench/shared';
+import type { DailyTask, OverdueStatusFilter, TaskListItem, TaskStatus } from '@workbench/shared';
 import type { DatabaseSync, StatementSync } from 'node:sqlite';
 
 interface DailyTaskRow {
@@ -86,17 +86,20 @@ export class TaskRepository {
     return [...dailyRows.map(daily), ...recurringRows.map((row) => recurring(row, date))];
   }
 
-  public listOverdue(date: string): DailyTask[] {
+  public listOverdue(date: string, filter: OverdueStatusFilter = 'active'): DailyTask[] {
+    const statuses: readonly TaskStatus[] =
+      filter === 'all' ? ['active', 'completed', 'expired'] : [filter];
+    const placeholders = statuses.map(() => '?').join(', ');
     const rows = this.database
       .prepare(
         `
         SELECT id, title, description, task_date, status, revision
         FROM tasks
-        WHERE task_date < ? AND status = 'active' AND deleted_at_ms IS NULL
+        WHERE task_date < ? AND status IN (${placeholders}) AND deleted_at_ms IS NULL
         ORDER BY task_date, created_at_ms, id
       `,
       )
-      .all(date) as unknown as DailyTaskRow[];
+      .all(date, ...statuses) as unknown as DailyTaskRow[];
     return rows.map(daily);
   }
 
@@ -122,7 +125,7 @@ export class TaskRepository {
         input.date,
         input.status,
         input.status === 'completed' ? now : null,
-        input.status === 'cancelled' ? now : null,
+        input.status === 'cancelled' || input.status === 'expired' ? now : null,
         now,
         now,
       );
@@ -149,7 +152,7 @@ export class TaskRepository {
         input.date,
         input.status,
         input.status === 'completed' ? now : null,
-        input.status === 'cancelled' ? now : null,
+        input.status === 'cancelled' || input.status === 'expired' ? now : null,
         now,
         id,
         revision,

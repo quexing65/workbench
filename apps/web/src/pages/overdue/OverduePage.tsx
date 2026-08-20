@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { businessDateSpan, type DailyTask } from '@workbench/shared';
 
 import { isRevisionConflict } from '../../shared/api/client';
 import { queryKeys } from '../../shared/api/query-keys';
-import { getOverdueTasks, updateTask } from '../../shared/api/tasks';
+import { deleteTask, getOverdueTasks, updateTask } from '../../shared/api/tasks';
 
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
@@ -13,7 +14,23 @@ function overdueDays(date: string, today: string): number {
   return businessDateSpan(date, today) - 1;
 }
 
-type OverdueAction = 'move' | 'completed' | 'cancelled';
+type OverdueAction = 'move' | 'completed' | 'expired' | 'reopen' | 'delete';
+
+type StatusView = 'active' | 'completed' | 'expired' | 'all';
+
+const STATUS_VIEWS: ReadonlyArray<{ value: StatusView; label: string }> = [
+  { value: 'active', label: '未完成' },
+  { value: 'completed', label: '已完成' },
+  { value: 'expired', label: '已过期' },
+  { value: 'all', label: '全部' },
+];
+
+const STATUS_PILLS: Readonly<Record<DailyTask['status'], { label: string; className: string }>> = {
+  active: { label: '未完成', className: 'status-pill--active' },
+  completed: { label: '已完成', className: 'status-pill--completed' },
+  cancelled: { label: '已取消', className: 'status-pill--cancelled' },
+  expired: { label: '已过期', className: 'status-pill--expired' },
+};
 
 function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
   const client = useQueryClient();
@@ -26,18 +43,22 @@ function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
     ]);
   };
   const mutation = useMutation({
-    mutationFn: (action: OverdueAction) =>
-      action === 'move'
-        ? updateTask(task.id, task.revision, { date: today })
-        : updateTask(task.id, task.revision, { status: action }),
+    mutationFn: async (action: OverdueAction): Promise<unknown> => {
+      if (action === 'move') return updateTask(task.id, task.revision, { date: today });
+      if (action === 'reopen') return updateTask(task.id, task.revision, { status: 'active' });
+      if (action === 'delete') return deleteTask(task.id, task.revision);
+      return updateTask(task.id, task.revision, { status: action });
+    },
     onSuccess: refresh,
     onError: refresh,
   });
 
+  const pill = STATUS_PILLS[task.status];
+
   return (
     <li className="work-item">
       <div className="work-item__body">
-        <span className="status-pill status-pill--active">待完成</span>
+        <span className={`status-pill ${pill.className}`}>{pill.label}</span>
         <h3>{task.title}</h3>
         {task.description ? <p>{task.description}</p> : null}
         <small className="overdue-item__meta">
@@ -45,23 +66,44 @@ function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
         </small>
       </div>
       <div className="button-row">
-        <button disabled={mutation.isPending} onClick={() => mutation.mutate('move')}>
-          移到今天
-        </button>
-        <button
-          className="button-secondary"
-          disabled={mutation.isPending}
-          onClick={() => mutation.mutate('completed')}
-        >
-          完成
-        </button>
-        <button
-          className="button-secondary"
-          disabled={mutation.isPending}
-          onClick={() => mutation.mutate('cancelled')}
-        >
-          取消
-        </button>
+        {task.status === 'active' ? (
+          <>
+            <button disabled={mutation.isPending} onClick={() => mutation.mutate('move')}>
+              移到今天
+            </button>
+            <button
+              className="button-secondary"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate('completed')}
+            >
+              完成
+            </button>
+            <button
+              className="button-secondary"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate('expired')}
+            >
+              过期
+            </button>
+          </>
+        ) : (
+          <>
+            <button disabled={mutation.isPending} onClick={() => mutation.mutate('reopen')}>
+              标为未完成
+            </button>
+            {task.status === 'expired' && (
+              <button
+                className="button-danger"
+                disabled={mutation.isPending}
+                onClick={() =>
+                  window.confirm('确定删除这条已过期的任务吗？') && mutation.mutate('delete')
+                }
+              >
+                删除
+              </button>
+            )}
+          </>
+        )}
       </div>
       {mutation.error ? (
         <p role="alert" className="form-error">
@@ -76,17 +118,24 @@ function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
 
 export function OverduePage() {
   const date = today();
+  const [view, setView] = useState<StatusView>('active');
   const overdue = useQuery({
     queryKey: queryKeys.overdueTasks(date),
-    queryFn: ({ signal }) => getOverdueTasks(date, signal),
+    queryFn: ({ signal }) => getOverdueTasks(date, 'all', signal),
   });
+
+  const all = overdue.data?.items ?? [];
+  const activeCount = all.filter((task) => task.status === 'active').length;
+  const completedCount = all.filter((task) => task.status === 'completed').length;
+  const expiredCount = all.filter((task) => task.status === 'expired').length;
+  const visible = view === 'all' ? all : all.filter((task) => task.status === view);
+
   const groups = new Map<string, DailyTask[]>();
-  for (const task of overdue.data?.items ?? []) {
+  for (const task of visible) {
     const existing = groups.get(task.date);
     if (existing === undefined) groups.set(task.date, [task]);
     else existing.push(task);
   }
-  const oldestDate = overdue.data?.items.length ? overdue.data.items[0]!.date : null;
 
   return (
     <section className="page business-page" aria-labelledby="overdue-title">
@@ -95,13 +144,29 @@ export function OverduePage() {
           <p className="eyebrow">清理积压</p>
           <h1 id="overdue-title">逾期</h1>
           <p className="page-lead">
-            过去日期里仍未完成的任务都在这里：移回今天、直接完成，或干脆取消。
+            过去日期里的任务都在这里：移回今天、直接完成，或干脆取消；误标完成的可以改回未完成。
           </p>
         </div>
-        {overdue.data && overdue.data.items.length > 0 ? (
-          <p className="overdue-summary">
-            共 {overdue.data.items.length} 项 · 最早 {oldestDate}
-          </p>
+        {all.length > 0 ? (
+          <div className="overdue-header__meta">
+            <p className="overdue-summary">
+              共 {all.length} 项 · 未完成 {activeCount} · 已完成 {completedCount} · 已过期{' '}
+              {expiredCount}
+            </p>
+            <div className="filter-chip-row" role="group" aria-label="按完成状态筛选">
+              {STATUS_VIEWS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  className="filter-chip"
+                  aria-pressed={view === value}
+                  onClick={() => setView(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : null}
       </header>
       {overdue.isPending ? (
@@ -115,8 +180,11 @@ export function OverduePage() {
           <button onClick={() => overdue.refetch()}>重试</button>
         </div>
       ) : null}
-      {overdue.data?.items.length === 0 ? (
+      {overdue.data !== undefined && all.length === 0 ? (
         <p className="empty-state">没有过期待办，保持得很好。</p>
+      ) : null}
+      {overdue.data !== undefined && all.length > 0 && visible.length === 0 ? (
+        <p className="empty-state">当前筛选下没有任务。</p>
       ) : null}
       {[...groups.entries()].map(([groupDate, items]) => (
         <section className="overdue-group" key={groupDate} aria-labelledby={`overdue-${groupDate}`}>

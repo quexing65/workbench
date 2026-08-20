@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { isBusinessDate } from '../domain/business-date.js';
 
-export const taskStatusSchema = z.enum(['active', 'completed', 'cancelled']);
+export const taskStatusSchema = z.enum(['active', 'completed', 'cancelled', 'expired']);
 export type TaskStatus = z.infer<typeof taskStatusSchema>;
 
 const businessDateSchema = z.string().refine(isBusinessDate, '必须是有效的 YYYY-MM-DD 日期');
@@ -45,6 +45,22 @@ export const overdueTaskListResponseSchema = z.object({ items: z.array(dailyTask
 export type OverdueTaskListResponse = z.infer<typeof overdueTaskListResponseSchema>;
 
 export const taskListQuerySchema = z.object({ date: businessDateSchema }).strict();
+
+/**
+ * Overdue list filter. 'all' means active + completed + expired so callers can
+ * compute completion statistics; cancelled tasks stay hidden from the overdue
+ * surface.
+ */
+export const overdueStatusFilterSchema = z.enum(['active', 'completed', 'expired', 'all']);
+export type OverdueStatusFilter = z.infer<typeof overdueStatusFilterSchema>;
+
+export const overdueTaskListQuerySchema = z
+  .object({
+    date: businessDateSchema,
+    status: overdueStatusFilterSchema.default('active'),
+  })
+  .strict();
+
 export const createTaskSchema = z
   .object({
     title: titleSchema,

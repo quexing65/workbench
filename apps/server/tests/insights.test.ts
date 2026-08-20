@@ -63,6 +63,7 @@ function seedLearning() {
   const partId = '20000000-0000-4000-8000-000000000001';
   const seriesId = '30000000-0000-4000-8000-000000000001';
   const observedAt = Date.UTC(2026, 7, 13, 4);
+  const olderThan = Date.UTC(2026, 7, 10, 4);
   database.connection
     .prepare(
       `INSERT INTO learning_resources
@@ -109,6 +110,72 @@ function seedLearning() {
        VALUES (?, ?, 0, ?)`,
     )
     .run(seriesId, resourceId, observedAt);
+
+  // 手动完成的系列成员：观看进度按全长计。
+  const completedResourceId = '10000000-0000-4000-8000-000000000002';
+  const completedPartId = '20000000-0000-4000-8000-000000000002';
+  database.connection
+    .prepare(
+      `INSERT INTO learning_resources
+       (id, platform, source_url, title, duration_seconds, created_at_ms, updated_at_ms)
+       VALUES (?, 'bilibili', 'https://www.bilibili.com/video/BV1done', '类型系统练习', 600, ?, ?)`,
+    )
+    .run(completedResourceId, olderThan, olderThan);
+  database.connection
+    .prepare(
+      `INSERT INTO learning_parts
+       (id, resource_id, part_number, title, duration_seconds, created_at_ms, updated_at_ms)
+       VALUES (?, ?, 1, '练习课', 600, ?, ?)`,
+    )
+    .run(completedPartId, completedResourceId, olderThan, olderThan);
+  database.connection
+    .prepare(
+      `INSERT INTO learning_resource_progress
+       (resource_id, completed, completed_at_ms, last_observed_at_ms, updated_at_ms)
+       VALUES (?, 1, ?, ?, ?)`,
+    )
+    .run(completedResourceId, olderThan, olderThan, olderThan);
+  database.connection
+    .prepare(
+      `INSERT INTO learning_series_items (series_id, resource_id, position, created_at_ms)
+       VALUES (?, ?, 1, ?)`,
+    )
+    .run(seriesId, completedResourceId, olderThan);
+
+  // 未归入系列的多分P资源：进度 = 续播分P之前分P全长 + resume 秒数。
+  const soloResourceId = '10000000-0000-4000-8000-000000000003';
+  const soloPartOneId = '20000000-0000-4000-8000-000000000003';
+  const soloPartTwoId = '20000000-0000-4000-8000-000000000004';
+  database.connection
+    .prepare(
+      `INSERT INTO learning_resources
+       (id, platform, source_url, title, duration_seconds, created_at_ms, updated_at_ms)
+       VALUES (?, 'bilibili', 'https://www.bilibili.com/video/BV1solo', '独立讲座', 500, ?, ?)`,
+    )
+    .run(soloResourceId, olderThan, olderThan);
+  database.connection
+    .prepare(
+      `INSERT INTO learning_parts
+       (id, resource_id, part_number, title, duration_seconds, created_at_ms, updated_at_ms)
+       VALUES (?, ?, 1, '上', 100, ?, ?), (?, ?, 2, '下', 400, ?, ?)`,
+    )
+    .run(
+      soloPartOneId,
+      soloResourceId,
+      olderThan,
+      olderThan,
+      soloPartTwoId,
+      soloResourceId,
+      olderThan,
+      olderThan,
+    );
+  database.connection
+    .prepare(
+      `INSERT INTO learning_resource_progress
+       (resource_id, resume_part_id, resume_seconds, last_observed_at_ms, updated_at_ms)
+       VALUES (?, ?, 30, ?, ?)`,
+    )
+    .run(soloResourceId, soloPartTwoId, olderThan, olderThan);
 }
 
 describe('overview and review API', () => {
@@ -167,13 +234,20 @@ describe('overview and review API', () => {
       completionRate: 0.5,
       learningActivities: 1,
     });
+    // 观看进度与区间和实际播放增量无关：120+600 的系列位置与 130 的未分类位置，
+    // 而不是 learning_watch_daily 里的 120 秒。
     expect(review.body.learningDuration).toEqual({
-      totalSeconds: 120,
+      totalSeconds: 850,
       bySeries: [
         {
           seriesId: '30000000-0000-4000-8000-000000000001',
           seriesName: '类型系统',
-          durationSeconds: 120,
+          durationSeconds: 720,
+        },
+        {
+          seriesId: null,
+          seriesName: '未分类',
+          durationSeconds: 130,
         },
       ],
     });

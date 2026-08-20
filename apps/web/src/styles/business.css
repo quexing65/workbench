@@ -97,6 +97,29 @@ button:disabled {
   background: transparent;
 }
 
+.filter-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.filter-chip {
+  padding: 0.3rem 0.85rem;
+  border-radius: 99rem;
+  border-color: var(--line);
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.filter-chip[aria-pressed='true'] {
+  border-color: transparent;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
 .button-danger {
   border-color: transparent;
   color: var(--error);
@@ -177,6 +200,11 @@ button:disabled {
   background: var(--line);
 }
 
+.status-pill--expired {
+  color: var(--warm);
+  background: #fdeee6;
+}
+
 .inline-form {
   display: grid;
   gap: 0.8rem;
@@ -208,6 +236,14 @@ button:disabled {
   align-items: flex-end;
   justify-content: space-between;
   gap: 2rem;
+}
+
+.overdue-header__meta {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
 }
 
 .overdue-summary {
@@ -272,6 +308,14 @@ button:disabled {
 
   .overdue-header {
     display: block;
+  }
+
+  .overdue-header__meta {
+    align-items: flex-start;
+  }
+
+  .filter-chip-row {
+    justify-content: flex-start;
   }
 
   .overdue-summary {

@@ -105,7 +105,7 @@ function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
                 完成
               </button>
             )}
-            {item.status !== 'cancelled' && (
+            {(item.status === 'active' || item.status === 'completed') && (
               <button
                 className="button-secondary"
                 disabled={mutation.isPending}

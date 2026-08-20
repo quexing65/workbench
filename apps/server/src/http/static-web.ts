@@ -1,12 +1,27 @@
 import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve, sep } from 'node:path';
 
-import express, { type Express, type RequestHandler } from 'express';
+import express, { type Express, type RequestHandler, type Response } from 'express';
 
 import { AppError } from './errors.js';
 
 function isApiPath(path: string): boolean {
   return path === '/api' || path.startsWith('/api/');
+}
+
+/**
+ * Vite emits every fingerprinted file into assets/, so anything served from
+ * that directory is safe to cache forever. Everything else (notably
+ * index.html) must be revalidated so new deploys take effect immediately.
+ */
+function setStaticCacheHeaders(response: Response, filePath: string): void {
+  if (filePath.includes(`${sep}assets${sep}`)) {
+    response.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    return;
+  }
+  if (basename(filePath) === 'index.html') {
+    response.setHeader('Cache-Control', 'no-cache');
+  }
 }
 
 export function mountStaticWeb(app: Express, webDistDirectory: string): void {
@@ -19,6 +34,7 @@ export function mountStaticWeb(app: Express, webDistDirectory: string): void {
       fallthrough: true,
       index: false,
       redirect: false,
+      setHeaders: setStaticCacheHeaders,
     }),
   );
 
@@ -33,6 +49,7 @@ export function mountStaticWeb(app: Express, webDistDirectory: string): void {
       return;
     }
 
+    response.setHeader('Cache-Control', 'no-cache');
     response.sendFile(indexPath);
   };
 

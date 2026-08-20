@@ -1,4 +1,9 @@
-import { createTaskSchema, taskListQuerySchema, updateTaskSchema } from '@workbench/shared';
+import {
+  createTaskSchema,
+  overdueTaskListQuerySchema,
+  taskListQuerySchema,
+  updateTaskSchema,
+} from '@workbench/shared';
 import { Router } from 'express';
 
 import {
@@ -18,8 +23,8 @@ export function createTaskRouter(service: TaskService): Router {
   });
 
   router.get('/overdue', (request, response) => {
-    const { date } = parseInput(taskListQuerySchema, request.query);
-    response.json({ items: service.listOverdue(date) });
+    const { date, status } = parseInput(overdueTaskListQuerySchema, request.query);
+    response.json({ items: service.listOverdue(date, status) });
   });
 
   router.post('/', (request, response) => {

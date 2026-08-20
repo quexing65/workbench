@@ -11,6 +11,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --root ../.. --config vitest.config.ts packages/shared",
     "test:coverage": "vitest run --coverage --root ../.. --config vitest.config.ts packages/shared --coverage.include=packages/shared/src/**/*.ts"

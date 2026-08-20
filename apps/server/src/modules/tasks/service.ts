@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import type { CreateTaskInput, DailyTask, TaskListItem, UpdateTaskInput } from '@workbench/shared';
+import type {
+  CreateTaskInput,
+  DailyTask,
+  OverdueStatusFilter,
+  TaskListItem,
+  UpdateTaskInput,
+} from '@workbench/shared';
 
 import { ResourceNotFoundError, RevisionConflictError } from '../domain-errors.js';
 import type { TaskRepository } from './repository.js';
@@ -15,8 +21,8 @@ export class TaskService {
     return this.repository.list(date);
   }
 
-  public listOverdue(date: string): DailyTask[] {
-    return this.repository.listOverdue(date);
+  public listOverdue(date: string, filter: OverdueStatusFilter = 'active'): DailyTask[] {
+    return this.repository.listOverdue(date, filter);
   }
 
   public create(input: CreateTaskInput): DailyTask {

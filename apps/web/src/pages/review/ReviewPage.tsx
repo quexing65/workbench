@@ -23,11 +23,6 @@ function durationLabel(seconds: number): string {
   return hours > 0 ? `${hours} 小时 ${minutes} 分钟` : `${minutes} 分钟`;
 }
 
-function signedDurationLabel(delta: number): string {
-  const sign = delta > 0 ? '+' : '-';
-  return `${sign}${durationLabel(Math.abs(delta))}`;
-}
-
 function DeltaBadge({
   delta,
   format,
@@ -77,18 +72,18 @@ function StudyDurationPie({ data }: { data: ReviewResponse['learningDuration'] }
       <div className="review-study-card__header">
         <div>
           <p className="eyebrow">学习投入</p>
-          <h2 id="study-duration-title">学习时长</h2>
+          <h2 id="study-duration-title">观看进度</h2>
         </div>
-        <p>按实际播放估算：倍速观看按原速时长计，拖动跳过不计，并按学习系列归类。</p>
+        <p>按合集统计当前观看时刻距合集开头的时长；回看回退、跳过的内容按位置直接计。</p>
       </div>
       {slices.length === 0 ? (
-        <p className="review-empty">所选范围内还没有可统计的学习时长。</p>
+        <p className="review-empty">还没有可统计的合集观看进度。</p>
       ) : (
         <div className="review-study-content">
           <div
             className={`review-study-pie${activeIndex === null ? '' : ' has-active'}`}
             role="group"
-            aria-label={`学习时长系列分布，总计 ${durationLabel(data.totalSeconds)}`}
+            aria-label={`观看进度系列分布，总计 ${durationLabel(data.totalSeconds)}`}
           >
             <svg viewBox="0 0 100 100" aria-hidden="false">
               <circle className="review-study-pie__track" cx="50" cy="50" r="40" />
@@ -124,11 +119,11 @@ function StudyDurationPie({ data }: { data: ReviewResponse['learningDuration'] }
             <div>
               <strong>{activeSlice?.seriesName ?? durationLabel(data.totalSeconds)}</strong>
               <small>
-                {activeSlice === null ? '实际观看总时长' : `占比 ${percent(activeSlice.share)}`}
+                {activeSlice === null ? '各合集当前进度合计' : `占比 ${percent(activeSlice.share)}`}
               </small>
             </div>
           </div>
-          <ul className="review-study-legend" aria-label="学习系列时长图例">
+          <ul className="review-study-legend" aria-label="学习系列进度图例">
             {slices.map((slice) => (
               <li key={slice.seriesId ?? 'uncategorized'}>
                 <span className="review-study-swatch" style={{ background: slice.color }} />
@@ -321,9 +316,6 @@ export function ReviewPage() {
               ? (totals.completionRate - previousData.totals.completionRate) * 100
               : null,
           completed: totals.completed - previousData.totals.completed,
-          duration:
-            (review.data?.learningDuration.totalSeconds ?? 0) -
-            previousData.learningDuration.totalSeconds,
           activeDays: activeDays - previousActiveDays,
         }
       : null;
@@ -386,13 +378,9 @@ export function ReviewPage() {
               />
             </div>
             <div className="review-stat">
-              <dt>学习时长</dt>
+              <dt>观看进度</dt>
               <dd>{durationLabel(review.data.learningDuration.totalSeconds)}</dd>
-              <DeltaBadge
-                delta={deltas === null ? null : deltas.duration}
-                format={signedDurationLabel}
-                threshold={60}
-              />
+              <small className="review-stat__delta is-flat">当前状态，不随区间变化</small>
             </div>
             <div className="review-stat">
               <dt>活跃天数</dt>
