@@ -1,17 +1,29 @@
 # Personal Workbench vNext 运维手册
 
-## 启动与数据目录
+## 运行形态
 
-开发运行：
+项目有两种运行形态，共用同一份 server 源码、schema 和安全边界：
+
+|          | Web 开发模式                                      | 桌面应用模式                                        |
+| -------- | ------------------------------------------------- | --------------------------------------------------- |
+| 启动方式 | `npm run dev`                                     | 开始菜单 / 快捷方式（安装版或便携版 exe）           |
+| 进程拓扑 | Vite `127.0.0.1:5190` + tsx 服务 `127.0.0.1:8790` | 单 Electron 进程，内嵌正式 Express `127.0.0.1:8790` |
+| NODE_ENV | development                                       | production                                          |
+| 数据目录 | `apps/server/.local`                              | `%LOCALAPPDATA%\PersonalWorkbenchVNext`             |
+| 适用场景 | 开发调试、运行测试                                | 日常使用                                            |
+
+一个数据目录同一时间只允许一个 server / restore / 桌面应用持有者；桌面应用启动时
+同样获取数据目录排他锁，与 CLI 互斥。
+
+## 开发运行
 
 ```powershell
 npm ci
 npm run dev
 ```
 
-Web 只监听 `127.0.0.1:5190`，API 只监听 `127.0.0.1:8790`。正式数据目录默认为
-`%LOCALAPPDATA%\PersonalWorkbenchVNext`；开发默认 `.local`，也可通过
-`WORKBENCH_DATA_DIR` 指定。一个数据目录同一时间只允许一个 server 或 restore 持有者。
+Web 只监听 `127.0.0.1:5190`，API 只监听 `127.0.0.1:8790`。开发默认数据目录 `.local`，
+也可通过 `WORKBENCH_DATA_DIR` 指定。
 
 数据目录包括：
 
@@ -22,9 +34,57 @@ Web 只监听 `127.0.0.1:5190`，API 只监听 `127.0.0.1:8790`。正式数据�
 
 不要手工复制正在使用的 SQLite 主库，也不要把运行目录、日志、凭据或真实备份提交到 Git。
 
+## 桌面应用
+
+安装版（NSIS 向导）可选择安装位置，写入开始菜单与可选桌面快捷方式；便携版双击即用。
+两者功能与数据目录完全一致。桌面壳特性见 ADR 0007：
+
+- 单实例：重复启动聚焦已有窗口；
+- 启动失败（端口占用、数据目录被锁）弹出原生错误对话框并退出；
+- 卸载不删除用户数据（`deleteAppDataOnUninstall: false`）；
+- 未签名分发：首次运行 Windows SmartScreen 提示未知发布者，"更多信息 → 仍要运行"即可；
+  可用版本台账中的 SHA-256 校验安装包完整性。
+
+开发调试桌面壳：`npm run desktop:dev`（需先 `npm run dev` 启动 Vite）。
+
+## 桌面应用发布
+
+1. 确定版本号并更新 `apps/desktop/package.json` 与根 `package.json` 的 `version`
+   （规则见 `docs/RELEASES.md`：修 bug 升 patch，加功能或 schema 变更升 minor）。
+2. 构建：`npm run desktop:dist`。产物归档到 `apps/desktop/release/v<version>/`：
+   - `PersonalWorkbench-Setup-<version>.exe`（安装版）
+   - `PersonalWorkbench-Portable-<version>.exe`（便携版）
+   - `SHA256SUMS.txt`（全部产物的 SHA-256 与字节数，自动生成）
+   - `win-unpacked/`（解包目录，仅供本地快速验证，可删）
+3. 打 tag 并推送：`git tag -a v<version> -m "<摘要>" && git push origin v<version>`。
+4. 在 GitHub Releases 基于 tag 创建发布，拖入两个 exe 作为附件（安装包不进 Git）。
+5. 在 `docs/RELEASES.md` 登记版本：变更摘要、commit 基线、GitHub Release 链接与
+   SHA-256，随代码一起提交。
+
+安装包二进制永不进入 Git；版本的可追溯性由 RELEASES.md 台账 + 校验和 + tag 承载。
+
+## 跨数据目录迁移
+
+把开发数据（`.local`）迁移到桌面正式目录，或换机迁移，流程一致：
+
+1. 启动旧数据目录上的服务（dev 或 `npm run start -w @workbench/server`），在"数据"页
+   创建并下载 `.pwbk` 备份。
+2. 停止服务并确认 8790 不再响应。
+3. 以正式模式恢复（写入 `%LOCALAPPDATA%\PersonalWorkbenchVNext`）：
+
+   ```powershell
+   $env:NODE_ENV='production'
+   npm run data:restore -- --file '<备份文件>.pwbk'
+   ```
+
+4. B站凭据不在备份内：同一 Windows 用户下可复制
+   `<旧目录>\credentials\credentials.bin` 到 `<新目录>\credentials\`；换用户或换机
+   需在学习页重新连接登录态。
+5. 启动桌面应用验证：数据页正常、`GET /api/v1/bili/credential/status` 返回预期状态。
+
 ## 普通备份
 
-在“数据”页选择“创建并下载备份”。下载的 `.pwbk` 是受控 ZIP，只包含：
+在"数据"页选择"创建并下载备份"。下载的 `.pwbk` 是受控 ZIP，只包含：
 
 ```text
 manifest.json
@@ -40,7 +100,7 @@ SESSDATA key，备份会 fail closed。下载完成或失败都会清理服务�
 ## 整库时间点恢复
 
 恢复不是导入、合并或撤销单条修改，它会把整库回到备份时间点。先停止 `npm run dev`/正式
-服务并确认 8790 不再响应，再运行：
+服务/桌面应用并确认 8790 不再响应，再运行：
 
 ```powershell
 npm run data:restore -- --file 'D:\Backup\personal-workbench-....pwbk'
@@ -60,7 +120,7 @@ hash、integrity、foreign keys 和 app ID；在 staging 副本应用可兼容 m
 - 替换后的失败副本保存在 `backups/failed-restore-*`，可供离线诊断；不要上传含个人数据的文件。
 - 每次正式恢复前生成的 `personal-workbench-*.pwbk` 保存在 `backups/`。如需人工回退，保持服务
   停止，使用同一 `data:restore` 命令恢复这份 pre-restore 备份，不要手工移动 WAL/SHM。
-- `.workbench.lock` 只在能确认对应进程已结束时才处理；格式损坏的锁默认按“仍在使用”拒绝，
+- `.workbench.lock` 只在能确认对应进程已结束时才处理；格式损坏的锁默认按"仍在使用"拒绝，
   不应盲删。
 
 ## 数据库与性能检查
@@ -82,10 +142,13 @@ npm run performance:browser -- --output docs/reports/browser-performance-audit.j
 
 ## 故障处理
 
-- `Workbench data directory is already in use`：停止另一个 server/restore，确认进程退出后重试。
+- `Workbench data directory is already in use`：停止另一个 server/restore/桌面应用，确认进程退出后重试。
 - migration checksum mismatch：不要修改历史 SQL；从代码与数据的匹配版本启动，或先恢复备份。
 - backup/restore validation failed：保留原文件，重新生成备份；不要用解压重打包来绕过校验。
 - B站凭据错误：任务、小记和学习库仍可离线使用；清除并重新捕获凭据，不要写入 settings。
+- 桌面应用窗口未弹出：查看是否弹出错误对话框（端口 8790 被占用最常见，结束旧进程后重试）。
+- 桌面应用 B站连接报"登录态已失效"：先在状态页确认凭据 present；若解密失败为 CredentialProtectionError，
+  说明凭据文件与当前 Windows 用户不匹配，清除后重新登录。
 
 ## 最终切换与保留
 

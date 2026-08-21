@@ -11,7 +11,7 @@
     "build": "node scripts/build.mjs",
     "dev": "node scripts/build.mjs && electron . --dev",
     "start": "electron .",
-    "dist": "npm run build && electron-builder --win nsis portable"
+    "dist": "npm run build && node scripts/dist.mjs"
   },
   "devDependencies": {
     "electron": "43.4.1",

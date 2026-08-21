@@ -1,6 +1,7 @@
 appId: com.quexing65.personal-workbench
 productName: Personal Workbench
 directories:
+  # dist.mjs 会按版本覆盖输出目录（release/v<version>），这里只是 IDE 提示用的默认值。
   output: release
   buildResources: build
 files:

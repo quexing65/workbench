@@ -11,8 +11,8 @@
 - 通过：`npm run lint` 以 `--max-warnings 0` 通过。
 - 通过：本机 Windows 上 `npm run check:all` 包含格式、lint、类型、测试、build、Chromium E2E
   和目标数据量浏览器性能审计。
-- 待完成：`.github/workflows/ci.yml` 已定义 `windows-latest` 门禁，但仓库没有 remote，尚无远程
-  GitHub Actions 成功记录。
+- 待完成：`.github/workflows/ci.yml` 已定义 `windows-latest` 门禁，仓库已配置 remote 并
+  推送（含桌面壳），远程 GitHub Actions 成功运行记录待确认。
 - 通过：Personal HEAD/status 与 qoder manifest/数据库 hash 均保持阶段 0 基线。
 
 ## 数据（6/6）

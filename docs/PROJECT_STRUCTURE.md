@@ -37,8 +37,18 @@
   migrations、DPAPI 脚本与 web dist 的资源路径全部由此显式注入。
 - `scripts/build.mjs`：esbuild 单文件打包（server 源码内联）并复制 migrations、
   `dpapi.ps1` 与 `apps/web/dist` 到 `dist/`。
-- `electron-builder.yml`：Windows NSIS/便携版打包配置；产物输出到 `release/`（不入库）。
+- `scripts/dist.mjs`：调用 electron-builder 产出 NSIS/便携版并按版本归档到
+  `release/v<version>/`，自动生成 `SHA256SUMS.txt`。
+- `electron-builder.yml`：Windows NSIS/便携版打包配置。
 - `build/`：应用图标等打包资源。
+
+## 发版产物与版本控制
+
+- 安装包二进制（`apps/desktop/release/`）不入库，但按版本子目录归档，多版本不混放。
+- `docs/RELEASES.md` 是发版台账（变更摘要、tag、SHA-256、GitHub Release 链接），
+  随代码提交，是安装包在 Git 侧的版本控制载体。
+- 版本号唯一事实源是 `apps/desktop/package.json` 的 `version`；发版流程见
+  `docs/OPERATIONS.md`"桌面应用发布"。
 
 ## 文件去留规则
 

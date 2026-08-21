@@ -20,6 +20,18 @@
 |    7 | 旧数据导入         | 完成   | `d637eeb` `feat: add auditable legacy imports`           |
 |    8 | 备份/恢复/切换     | 进行中 | `de6005e`；性能补强 `83db8c5`                            |
 
+## 桌面分发（2026-08-21，阶段 8 附加交付）
+
+- 新增 `apps/desktop` Electron 桌面壳（ADR 0007）：主进程内嵌正式 Express 服务，
+  esbuild 单文件打包，单实例窗口，启动失败原生对话框反馈；migrations/DPAPI/web dist
+  资源路径显式注入，`dpapi.ps1` asarUnpack 释放以支持外部 powershell 读取。
+- 发版机制：`npm run desktop:dist` 按 `release/v<version>/` 归档 NSIS 安装版与便携版，
+  自动生成 `SHA256SUMS.txt`；`docs/RELEASES.md` 台账入库，安装包二进制不入库，
+  分发走 GitHub Releases。
+- v0.1.0 已发布（tag `v0.1.0`，commit `2177c3d`）；开发数据已完整迁移到正式数据目录
+  `%LOCALAPPDATA%\PersonalWorkbenchVNext`（备份→停服恢复→凭据复制→桌面验证）。
+- 仓库已配置 remote `github.com/quexing65/workbench` 并推送 main 与 tag。
+
 ## 本阶段变更
 
 - 新增最终 `.pwbk`：`VACUUM INTO` 一致快照，受控 ZIP 只允许 manifest/SQLite；校验 app、format、schema、bytes、SHA-256、integrity、foreign keys，并扫描禁用 credential/settings key 与已删除秘密残页。
@@ -76,7 +88,7 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 
 ## 未完成项
 
-- 为仓库配置远程并取得 `windows-latest` CI 的实际成功运行记录；仅存在 workflow 配置不算通过。
+- 确认远程 GitHub Actions（windows-latest）在推送后实际成功运行并保留记录。
 - 用户提供真实 Personal v1/v2/v3 业务导出后，按 `docs/MIGRATION_GUIDE.md` 完成 preflight、apply、重复 no-op、抽样和报告保存。
 - 并行使用旧项目与 vNext 3–7 天，记录并处理真实工作流差异。
 - 用户确认每日任务、固定任务、小记、总览、回顾、单/多P学习、系列、同步和备份恢复没有核心缺失。

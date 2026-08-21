@@ -6,6 +6,9 @@ Personal JSON 与 qoder SQLite 都先 preflight，再审阅 machine-readable 报
 来源永远只读，缺行不等于删除；apply 前创建一致快照并在单事务中写入。导入是合并，
 `data:restore` 是整库时间点替换，两者不能混用。
 
+本文只覆盖"旧项目数据 → vNext"。开发数据目录与桌面正式数据目录之间的迁移（`.local` ↔
+`%LOCALAPPDATA%\PersonalWorkbenchVNext`）见 `docs/OPERATIONS.md`"跨数据目录迁移"。
+
 真实迁移建议始终使用一个新的 vNext 数据目录演练，确认后再切换正式目录。旧项目至少保留
 30 天，不把旧目录加入 workspace、symlink 或运行时依赖。
 

@@ -84,6 +84,18 @@ zip bomb、manifest/hash 不匹配、秘密残页、5 个恢复故障点以及�
 allowlist 和 409 二次确认流程。测试通过注入进程适配器验证控制参数，不操作真实浏览器；正式
 CurrentUser DPAPI 使用随机合成秘密完成 roundtrip，测试秘密扫描覆盖 API、日志和 SQLite。
 
+## 桌面壳（ADR 0007）
+
+- Electron 窗口 `contextIsolation: true`、`nodeIntegration: false`、`sandbox: true`；
+  渲染进程与 Web 开发模式完全一致，不注入桌面特权。
+- 窗口 `will-navigate` 仅放行同源地址；`window.open` 与外链一律经
+  `shell.openExternal` 交给系统浏览器，且仅接受 http/https。
+- 桌面壳启动时强制校验内置 Node 主版本 ≥24，与 `node:sqlite` 运行时要求一致。
+- `dpapi.ps1` 通过 asarUnpack 释放为真实文件（外部进程 powershell.exe 无法读取
+  asar 虚拟文件系统）；释放文件与 asar 内资源同样参与安装包完整性。
+- 未签名安装包依赖 SmartScreen 提示 + `docs/RELEASES.md` 的 SHA-256 台账做分发
+  完整性验证；安装包不进入 Git，不存在凭据或个人数据。
+
 ## CI 与安全验证
 
 - CI 不含真实 Cookie、数据库、备份或日志，不调用真实 B站。
