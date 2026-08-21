@@ -45,6 +45,8 @@ export default defineConfig({
     ],
     mockReset: true,
     restoreMocks: true,
-    testTimeout: 10_000,
+    // Real DPAPI/PowerShell subprocesses and large import fixtures can exceed
+    // 10s on shared CI runners even though they finish in 1-2s locally.
+    testTimeout: 30_000,
   },
 });
