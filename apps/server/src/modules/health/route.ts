@@ -8,7 +8,11 @@ export interface HealthDatabaseState {
   readonly schemaVersion: number;
 }
 
-export function createHealthRouter(config: ServerConfig, database: HealthDatabaseState): Router {
+export function createHealthRouter(
+  config: ServerConfig,
+  database: HealthDatabaseState,
+  version: string,
+): Router {
   const router = Router();
 
   router.get('/', (_request, response) => {
@@ -16,7 +20,7 @@ export function createHealthRouter(config: ServerConfig, database: HealthDatabas
     response.json(
       healthResponseSchema.parse({
         status: 'ok',
-        version: '0.1.0',
+        version,
         database: 'ok',
         schemaVersion: database.schemaVersion,
         timeZone: config.timeZone,

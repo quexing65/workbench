@@ -143,6 +143,7 @@ async function bootstrap(): Promise<void> {
         migrationDirectory: join(DIST_DIRECTORY, 'migrations'),
         dpapiScriptPath: dpapiScriptPath(),
         webDistDirectory: join(DIST_DIRECTORY, 'web'),
+        version: app.getVersion(),
       });
       targetUrl = `http://${server.host}:${server.port}/`;
     } catch (error) {

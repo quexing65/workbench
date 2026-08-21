@@ -48,6 +48,7 @@ import { createLearningSyncRouter } from './modules/sync/route.js';
 import { LearningSyncService } from './modules/sync/service.js';
 import { BackupService } from './modules/backups/service.js';
 import { createBackupRouter } from './modules/backups/route.js';
+import { resolveServerVersion } from './version.js';
 
 export interface CreateAppOptions {
   readonly config: ServerConfig;
@@ -64,9 +65,11 @@ export interface CreateAppOptions {
   readonly backupService?: Pick<BackupService, 'create'>;
   readonly serveWeb?: boolean;
   readonly webDistDirectory?: string;
+  readonly version?: string;
 }
 
 const DEFAULT_WEB_DIST = fileURLToPath(new URL('../../web/dist', import.meta.url));
+const SERVER_VERSION = resolveServerVersion();
 
 export function createApp(options: CreateAppOptions): Express {
   const { config } = options;
@@ -87,7 +90,10 @@ export function createApp(options: CreateAppOptions): Express {
   app.use(express.json({ limit: '1mb', type: ['application/json', 'application/*+json'] }));
 
   const api = express.Router();
-  api.use('/health', createHealthRouter(config, options.database));
+  api.use(
+    '/health',
+    createHealthRouter(config, options.database, options.version ?? SERVER_VERSION),
+  );
   api.use(
     '/bili/credential',
     createCredentialRouter(new CredentialService(credentialStore, sessionClient, browserAdapter)),

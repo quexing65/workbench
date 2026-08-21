@@ -35,6 +35,7 @@ export function makeApp(
     mountBackups?: boolean;
     backupService?: Pick<BackupService, 'create'>;
     dataDirectory?: string;
+    version?: string;
   } = {},
 ) {
   return createApp({
@@ -62,6 +63,7 @@ export function makeApp(
     ...(options.webDistDirectory === undefined
       ? {}
       : { webDistDirectory: options.webDistDirectory }),
+    ...(options.version === undefined ? {} : { version: options.version }),
   });
 }
 

@@ -13,6 +13,7 @@ export interface EmbeddedServerOptions {
   readonly migrationDirectory: string;
   readonly dpapiScriptPath: string;
   readonly webDistDirectory: string;
+  readonly version?: string;
 }
 
 export interface EmbeddedServer {
@@ -54,6 +55,7 @@ export async function startEmbeddedServer(options: EmbeddedServerOptions): Promi
     serveWeb: true,
     webDistDirectory: options.webDistDirectory,
     credentialStore,
+    ...(options.version === undefined ? {} : { version: options.version }),
   });
 
   const server = createServer(app);
