@@ -121,9 +121,8 @@ npm run desktop:dist
 ## 当前状态与核心原则
 
 当前版本：**v1.0.0 正式版**（2026-08-21）。阶段 8 全部门槛通过：备份恢复、远程 Windows CI、
-桌面分发、真实并行使用 7 天与用户核心工作流确认均已完成，正式宣布切换。旧项目保留期
-运行中（2026-08-21 → 2026-09-20），完整验收台账见
-`docs/FINAL_ACCEPTANCE.md` 与 `docs/STATUS.md`。
+桌面分发、真实并行使用 7 天与用户核心工作流确认均已完成，vNext 已正式上线。
+完整验收台账见 `docs/FINAL_ACCEPTANCE.md` 与 `docs/STATUS.md`。
 
 核心原则：SQLite 是唯一业务数据源；本机 Node 服务是唯一后端；浏览器只通过
 `/api/v1` 读写业务数据；B站凭据不进入 SQLite、日志、API 响应或普通备份。

@@ -98,9 +98,9 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 
 ## 未完成项
 
-- 全部完成。
-- 日历保留期：两个旧项目（Personal-Workbench / Personl-Workbench-qoder）只读保留期
-  自 2026-08-21 起至 2026-09-20，由用户自行保证；期限届满后如需删除旧项目可自行处理。
+- 全部完成。vNext v1.0.0 已于 2026-08-21 正式上线。
+- 旧项目（Personal-Workbench / Personl-Workbench-qoder）由用户 quexing65 主动声明
+  取消 30 天保留期，可由用户自行处置。
 
 ## 已知风险
 
@@ -111,7 +111,7 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 - 性能数据来自本机合成 fixture；虽然已覆盖 10 个系列和正式浏览器路径，真实长文本、更多分P或
   较慢磁盘仍应持续观察。
 - npm 的间接依赖弃用/allow-scripts 提示及 Chromium 字体截图基线风险延续；自动门禁当前通过。
-- 30 天保留期内若发现回归，可随时用 pre-restore `.pwbk` 回退，或切换回只读旧项目。
+- 回退路径：任何时候发现回归，用已验证的 pre-restore `.pwbk` 备份执行 `npm run data:restore` 即可整库回退。
 
 ## 兼容性影响
 
@@ -137,6 +137,6 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
   安装版/便携版冒烟测试均通过。
 - 阶段 8 使用/用户门槛全部通过：并行使用满 7 天（用户 2026-08-21 确认无缺陷）、用户确认核心
   工作流无缺失、Personal 导入项按用户声明标记不适用。
-- 独立日历门槛：30 天旧项目只读保留期自 2026-08-21 至 2026-09-20，运行中不阻塞正式切换宣告，
-  期限结束后关闭 STATUS.md 并归档。
+- 独立日历门槛：用户 quexing65 于 2026-08-21 主动声明取消 30 天旧项目只读保留期，
+  立即生效；vNext v1.0.0 当日正式上线。
 - 满足上述条件，vNext 宣布正式完成，版本号由 0.x 升为 1.0.0。
