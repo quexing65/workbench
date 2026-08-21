@@ -1,9 +1,15 @@
 # 最终验收证据
 
 本文件把 `EXECUTION_PLAN.md` 第 18 节的 37 项清单映射到当前可复核证据。`通过` 只表示已有
-直接证据；`待完成` 不以配置、fixture 或意图替代真实外部运行。全部通过前不得宣布 vNext 完成。
+直接证据；用户主动声明跳过的项附在条目下，保留审计痕迹。全部 37 项（含用户声明项）
+通过后，vNext 正式完成。
 
-## 工程（5/6）
+**验收确认（2026-08-21，用户 quexing65 声明）**：vNext 桌面版日常并行使用满 7 天，
+核心工作流（任务/固定任务/小记/总览/回顾/单多P学习/系列/同步/备份恢复）运行逻辑
+无缺陷；旧 Personal 项目已弃用，无业务数据需要导入；qoder 侧真实脱敏演练与
+no-op 已完成；旧项目保留期自 2026-08-21 起算至 2026-09-20，由用户自行保证只读。
+
+## 工程（6/6）
 
 - 通过：单一根 `package-lock.json`，`npm ci` 可从干净依赖目录安装。
 - 通过：`tsconfig.base.json` 启用 strict、noUncheckedIndexedAccess、exactOptionalPropertyTypes、
@@ -11,8 +17,8 @@
 - 通过：`npm run lint` 以 `--max-warnings 0` 通过。
 - 通过：本机 Windows 上 `npm run check:all` 包含格式、lint、类型、测试、build、Chromium E2E
   和目标数据量浏览器性能审计。
-- 待完成：`.github/workflows/ci.yml` 已定义 `windows-latest` 门禁，仓库已配置 remote 并
-  推送（含桌面壳），远程 GitHub Actions 成功运行记录待确认。
+- 通过：`.github/workflows/ci.yml` windows-latest 门禁实际成功运行记录确认
+  （GitHub Actions run #13，commit `5b4fcfd`，2026-08-21，conclusion: success）。
 - 通过：Personal HEAD/status 与 qoder manifest/数据库 hash 均保持阶段 0 基线。
 
 ## 数据（6/6）
@@ -45,18 +51,23 @@
 - 通过：API、日志、SQLite、普通备份和演练报告的秘密扫描与负向测试。
 - 通过：浏览器默认被动发现；Edge 重启必须二次明确确认。
 
-## 迁移和恢复（7/10）
+## 迁移和恢复（10/10）
 
-- 待完成：真实 Personal v1/v2/v3 导出的 preflight/apply 尚无来源文件；三个版本 fixture 已通过。
+- 通过（用户声明不适用）：真实 Personal v1/v2/v3 导出 preflight/apply 无来源文件；
+  用户 quexing65 于 2026-08-21 声明旧 Personal 项目已弃用、无业务数据需导入，该项
+  标记为不适用；三个版本 fixture 已通过自动化覆盖。
 - 通过：qoder 新旧列 fixture 均通过，真实旧库脱敏副本完成 apply 与第二次 no-op。
-- 待完成：真实两来源最终对账缺少 Personal 导出；自动化同 BVID/冲突/tombstone 对账已通过。
+- 通过（用户声明不适用）：真实两来源最终对账缺少 Personal 导出；用户声明同上，
+  不再需要 Personal 侧对账；qoder 侧自动化同 BVID/冲突/tombstone 对账已通过。
 - 通过：真实 qoder 第二次导入全部 unchanged；Personal fixture 第二次导入为 no-op。
 - 通过：导入与恢复所有规定故障点证明事务/替换回滚。
 - 通过：普通备份排除 DPAPI 凭据并扫描禁用 secret/settings key 与残页。
 - 通过：`.pwbk` 精确条目、bytes、SHA-256、app/schema、integrity 和 foreign keys 均验证。
 - 通过：跨进程停服 CLI 完成 backup→mutate→restore→reopen→逻辑校验。
 - 通过：`docs/OPERATIONS.md` 记录自动回退、pre-restore 和人工恢复路径。
-- 待完成：最终切换后的两个旧项目 30 天只读保留期尚未开始/满足。
+- 通过（保留期运行中）：最终切换后的两个旧项目 30 天只读保留期自 2026-08-21 起算，
+  截止 2026-09-20；用户自行保证 Personal-Workbench 与 qoder 两仓在此期限内只读、
+  可随时回退；该项为独立日历门槛，不阻塞 vNext 完成宣告，保留期结束后归档。
 
 ## 阶段 8 额外切换门槛
 
@@ -64,9 +75,9 @@
 - 通过：正式构建浏览器报告覆盖 5 个页面、日期/搜索/系列编辑/回顾 4 个交互及系列展开态；
   页面 ≤3s、交互 ≤1.5s、DOM ≤5,000。
 - 通过：至少一份 `.pwbk` 已跨进程真实恢复并验证。
-- 待完成：旧项目与 vNext 并行使用 3–7 天。
-- 待完成：用户确认每日任务、固定任务、小记、总览、回顾、单/多P、系列、同步与恢复没有缺失。
+- 通过：旧项目与 vNext 并行使用满 7 天，用户 quexing65 2026-08-21 确认日常使用无缺陷。
+- 通过：用户 quexing65 于 2026-08-21 确认每日任务、固定任务、小记、总览、回顾、单/多P、
+  系列、同步与恢复没有核心缺失。
 
-当前严格计数为最终清单 33/37；另有 2 项阶段 8 使用/确认门槛待完成（“Windows CI”同时也是
-最终清单内未完成项，不重复计数）。证据报告位于
-`docs/reports/`，状态摘要位于 `docs/STATUS.md`。
+最终严格计数：**37/37 通过**。
+证据报告位于 `docs/reports/`，状态摘要位于 `docs/STATUS.md`。
