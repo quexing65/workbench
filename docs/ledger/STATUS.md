@@ -4,7 +4,7 @@
 
 - 阶段：8（完成）
 - 状态：已完成。工程实现、自动验收、远程 CI、桌面分发、并行使用与用户确认均通过；
-  30 天旧项目保留期运行中（2026-08-21 → 2026-09-20）。
+  30 天旧项目保留期已由用户于 2026-08-21 主动声明取消，旧项目可自行处置。
 - 最后更新：2026-08-21
 
 ## 阶段状态
@@ -27,14 +27,15 @@
   esbuild 单文件打包，单实例窗口，启动失败原生对话框反馈；migrations/DPAPI/web dist
   资源路径显式注入，`dpapi.ps1` asarUnpack 释放以支持外部 powershell 读取。
 - 发版机制：`npm run desktop:dist` 按 `release/v<version>/` 归档 NSIS 安装版与便携版，
-  自动生成 `SHA256SUMS.txt`；`docs/RELEASES.md` 台账入库，安装包二进制不入库，
+  自动生成 `SHA256SUMS.txt`；`docs/operations/RELEASES.md` 台账入库，安装包二进制不入库，
   分发走 GitHub Releases。
 - v0.1.0 首版发布（tag `v0.1.0`，commit `2177c3d`）：验证了安装向导/便携版启动、
   开发数据迁移到正式目录、凭据复制与桌面验证链路。
 - v1.0.0 正式切换（本次）：阶段 8 全部门槛满足，版本从 0.x 升级到 1.0.0。
 - 仓库 remote `github.com/quexing65/workbench` 已配置并推送 main 与 tag。
 - 用户 quexing65 于 2026-08-21 声明：并行使用满 7 天无缺陷，旧 Personal 已弃用不需要
-  导入；旧项目保留期自 2026-08-21 至 2026-09-20。
+  导入；旧项目保留期自 2026-08-21 起算，同日用户主动声明取消（见「退出条件」），
+  旧项目可自行处置。
 
 ## 本阶段变更（阶段 8 至验收）
 
@@ -120,7 +121,8 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 - server 启动和 restore 共用数据目录排他锁；同一数据目录重复启动会 fail closed。
 - 普通备份不会替换或包含 DPAPI credential；恢复后凭据状态保持当前机器/用户的独立文件状态。
 - qoder sanitize 仅是显式运维 CLI，不是运行时依赖；输出默认被 `.gitignore` 的 SQLite 规则排除。
-- 两个旧项目不是 workspace、链接或运行时依赖，保留期内不应写入、移动或删除旧来源。
+- 两个旧项目不是 workspace、链接或运行时依赖；保留期已由用户于 2026-08-21 取消，
+  旧来源可由用户自行处置。
 - 总览逾期任务和学习资源仍全部从 API 读取，但首屏只渲染 20 项并允许逐步展开；系列只在用户
   点"编辑系列"后渲染资源选择器，避免目标数据量下超大 DOM。
 
@@ -128,7 +130,7 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 
 - Personal-Workbench 被修改：否（HEAD `3f2ebf38a1609625dee62163b9af0f0f6128d81e`；status 仍仅原有未跟踪文档）
 - Personl-Workbench-qoder 被修改：否（20/20 manifest；DB 94,208 bytes，SHA-256 `ae8e79700fe53bec0557720c1c00d68e5b60795694495202364d49dad4517b7e`）
-- 保留期截止：2026-09-20（此后可由用户自行处置）
+- 保留期：原定至 2026-09-20，用户已于 2026-08-21 主动声明取消，旧项目可立即自行处置
 
 ## 退出条件
 

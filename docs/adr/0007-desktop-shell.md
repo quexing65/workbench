@@ -41,7 +41,7 @@ vNext 的正式运行方式是本机 Node 服务在 `127.0.0.1:8790` 同源托�
 ## Migration and rollback
 
 首次使用桌面版时业务库为空：在旧运行方式下创建 `.pwbk` 备份，停服后按
-`docs/OPERATIONS.md` 用 `data:restore` 恢复到正式数据目录。回滚即卸载桌面壳，
+`docs/operations/OPERATIONS.md` 用 `data:restore` 恢复到正式数据目录。回滚即卸载桌面壳，
 CLI 启动方式不受任何影响。
 
 ## Testing and verification
@@ -52,4 +52,4 @@ CLI 启动方式不受任何影响。
 
 ## Related
 
-ARCHITECTURE.md 运行拓扑、ADR 0001、ADR 0004、`docs/OPERATIONS.md`。
+ARCHITECTURE.md 运行拓扑、ADR 0001、ADR 0004、`docs/operations/OPERATIONS.md`。

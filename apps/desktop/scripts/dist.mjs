@@ -16,7 +16,7 @@ await electronBuilder.build({
   },
 });
 
-// 为本版本全部分发产物生成 SHA-256 清单，与 docs/RELEASES.md 台账配合：
+// 为本版本全部分发产物生成 SHA-256 清单，与 docs/operations/RELEASES.md 台账配合：
 // 安装包本体不入库，校验和进库，用于验证 GitHub Release 下载或本地归档是否完好。
 const checksumEntries = [];
 for (const entry of await readdir(outputDirectory, { withFileTypes: true })) {

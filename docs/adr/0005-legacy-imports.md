@@ -46,4 +46,4 @@ apply 前创建一致快照；任一点失败回滚。旧项目至少保留 30 �
 
 ## Related
 
-`EXECUTION_PLAN.md` 第 11 节、`docs/DATA_MODEL.md`、`docs/SECURITY.md`。
+`EXECUTION_PLAN.md` 第 11 节、`docs/baseline/DATA_MODEL.md`、`docs/baseline/SECURITY.md`。

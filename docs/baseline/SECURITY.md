@@ -93,7 +93,7 @@ CurrentUser DPAPI 使用随机合成秘密完成 roundtrip，测试秘密扫描�
 - 桌面壳启动时强制校验内置 Node 主版本 ≥24，与 `node:sqlite` 运行时要求一致。
 - `dpapi.ps1` 通过 asarUnpack 释放为真实文件（外部进程 powershell.exe 无法读取
   asar 虚拟文件系统）；释放文件与 asar 内资源同样参与安装包完整性。
-- 未签名安装包依赖 SmartScreen 提示 + `docs/RELEASES.md` 的 SHA-256 台账做分发
+- 未签名安装包依赖 SmartScreen 提示 + `docs/operations/RELEASES.md` 的 SHA-256 台账做分发
   完整性验证；安装包不进入 Git，不存在凭据或个人数据。
 
 ## CI 与安全验证

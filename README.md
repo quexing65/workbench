@@ -25,7 +25,7 @@
 - 系统要求：Windows 10/11（64 位）
 - 应用未做代码签名，首次运行 Windows SmartScreen 会提示"未知发布者"：
   点击**更多信息 → 仍要运行**即可
-- 可用版本台账（[docs/RELEASES.md](docs/RELEASES.md)）中的 SHA-256 校验安装包完整性
+- 可用版本台账（[docs/operations/RELEASES.md](docs/operations/RELEASES.md)）中的 SHA-256 校验安装包完整性
 - 卸载后用户数据仍保留在数据目录（见下），可随时重装继续使用
 
 ## 数据保存在哪
@@ -73,7 +73,7 @@
   建议保存到独立磁盘
 - **恢复备份**：先退出应用，然后运行
   `npm run data:restore -- --file '<备份文件>.pwbk'`
-  （详见 [docs/OPERATIONS.md](docs/OPERATIONS.md)）
+  （详见 [docs/operations/OPERATIONS.md](docs/operations/OPERATIONS.md)）
 - B站凭据不在备份内；换机后需按上节教程重新连接
 
 ## 从源码运行
@@ -95,7 +95,7 @@ npm run desktop:dist
 ```
 
 发版流程（打 tag → GitHub Release → 登记台账）见
-[docs/OPERATIONS.md](docs/OPERATIONS.md)。
+[docs/operations/OPERATIONS.md](docs/operations/OPERATIONS.md)。
 
 ## 仓库结构
 
@@ -108,21 +108,20 @@ npm run desktop:dist
 开始开发前必须阅读：
 
 - `EXECUTION_PLAN.md`
-- `docs/STATUS.md`
-- `docs/ARCHITECTURE.md`
-- `docs/PROJECT_STRUCTURE.md`
-- `docs/DATA_MODEL.md`
-- `docs/SECURITY.md`
-- `docs/OPERATIONS.md`
-- `docs/MIGRATION_GUIDE.md`
-- `docs/RELEASES.md`
-- `docs/FINAL_ACCEPTANCE.md`
+- `docs/ledger/STATUS.md`
+- `docs/baseline/ARCHITECTURE.md`
+- `docs/baseline/PROJECT_STRUCTURE.md`
+- `docs/baseline/DATA_MODEL.md`
+- `docs/baseline/SECURITY.md`
+- `docs/operations/OPERATIONS.md`
+- `docs/operations/RELEASES.md`
+- `docs/ledger/FINAL_ACCEPTANCE.md`
 
 ## 当前状态与核心原则
 
 当前版本：**v1.0.0 正式版**（2026-08-21）。阶段 8 全部门槛通过：备份恢复、远程 Windows CI、
 桌面分发、真实并行使用 7 天与用户核心工作流确认均已完成，vNext 已正式上线。
-完整验收台账见 `docs/FINAL_ACCEPTANCE.md` 与 `docs/STATUS.md`。
+完整验收台账见 `docs/ledger/FINAL_ACCEPTANCE.md` 与 `docs/ledger/STATUS.md`。
 
 核心原则：SQLite 是唯一业务数据源；本机 Node 服务是唯一后端；浏览器只通过
 `/api/v1` 读写业务数据；B站凭据不进入 SQLite、日志、API 响应或普通备份。

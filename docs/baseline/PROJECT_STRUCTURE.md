@@ -8,7 +8,7 @@
 - `packages/`：被多个应用复用的包。跨前后端的数据契约和纯领域逻辑放在 `packages/shared`。
 - `tests/e2e/`：需要同时启动前后端的端到端与视觉回归测试。
 - `scripts/`：跨 workspace 的构建、检查和测试入口。只服务单个应用的脚本放回对应应用的 `scripts/`。
-- `docs/`：架构、数据模型、安全、运维、迁移和决策记录。机器生成但需要长期保留的审计结果放在 `docs/reports/`。
+- `docs/`：文档根目录，按职能分目录——`baseline/` 放架构、数据模型、安全与目录规范等长期基线；`operations/` 放运维手册与发版台账；`ledger/` 放实施状态与验收等历史台账；`adr/` 放架构决策记录；机器生成但需要长期保留的审计结果放在 `docs/reports/`。
 - `.github/`：持续集成与仓库自动化。
 - 根目录配置文件：只放整个 workspace 共用的工具配置、包管理文件和项目入口文档。
 
@@ -45,10 +45,10 @@
 ## 发版产物与版本控制
 
 - 安装包二进制（`apps/desktop/release/`）不入库，但按版本子目录归档，多版本不混放。
-- `docs/RELEASES.md` 是发版台账（变更摘要、tag、SHA-256、GitHub Release 链接），
+- `docs/operations/RELEASES.md` 是发版台账（变更摘要、tag、SHA-256、GitHub Release 链接），
   随代码提交，是安装包在 Git 侧的版本控制载体。
 - 版本号唯一事实源是 `apps/desktop/package.json` 的 `version`；发版流程见
-  `docs/OPERATIONS.md`"桌面应用发布"。
+  `docs/operations/OPERATIONS.md`"桌面应用发布"。
 
 ## 文件去留规则
 

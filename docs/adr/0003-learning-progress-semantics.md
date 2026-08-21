@@ -58,4 +58,4 @@ qoder progress/resume/override 分别映射；Personal BV:pN 映射到指定分P
 
 ## Related
 
-`docs/DATA_MODEL.md`、`EXECUTION_PLAN.md` 第 7.3 节。
+`docs/baseline/DATA_MODEL.md`、`EXECUTION_PLAN.md` 第 7.3 节。

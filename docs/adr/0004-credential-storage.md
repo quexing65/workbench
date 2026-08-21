@@ -33,4 +33,4 @@ Memory/DPAPI roundtrip、清除、错误脱敏；扫描 API、日志、SQLite、
 
 ## Related
 
-`docs/SECURITY.md`、ADR 0001、ADR 0005。
+`docs/baseline/SECURITY.md`、ADR 0001、ADR 0005。

@@ -6,7 +6,7 @@
 `apps/desktop/release/v<version>/`（不入库），构建时由
 `apps/desktop/scripts/dist.mjs` 自动生成同目录 `SHA256SUMS.txt`。
 
-发版流程见 `docs/OPERATIONS.md` 的"桌面应用发布"一节。版本号规则：语义化
+发版流程见 `docs/operations/OPERATIONS.md` 的"桌面应用发布"一节。版本号规则：语义化
 X.Y.Z——修 bug 升 patch、加功能或数据库 schema 变更升 minor、不兼容改动升
 major；阶段 8 验收通过、正式切换完成后升 1.0。
 

@@ -64,7 +64,7 @@ no-op 已完成；旧项目保留期自 2026-08-21 起算至 2026-09-20，由用
 - 通过：普通备份排除 DPAPI 凭据并扫描禁用 secret/settings key 与残页。
 - 通过：`.pwbk` 精确条目、bytes、SHA-256、app/schema、integrity 和 foreign keys 均验证。
 - 通过：跨进程停服 CLI 完成 backup→mutate→restore→reopen→逻辑校验。
-- 通过：`docs/OPERATIONS.md` 记录自动回退、pre-restore 和人工恢复路径。
+- 通过：`docs/operations/OPERATIONS.md` 记录自动回退、pre-restore 和人工恢复路径。
 - 通过（用户主动取消）：最终切换后的两个旧项目 30 天只读保留期由用户 quexing65 于
   2026-08-21 主动声明取消；用户已可自行处置旧项目文件，vNext 立即正式上线。
 
@@ -79,4 +79,4 @@ no-op 已完成；旧项目保留期自 2026-08-21 起算至 2026-09-20，由用
   系列、同步与恢复没有核心缺失。
 
 最终严格计数：**37/37 通过**。
-证据报告位于 `docs/reports/`，状态摘要位于 `docs/STATUS.md`。
+证据报告位于 `docs/reports/`，状态摘要位于 `docs/ledger/STATUS.md`。

@@ -34,4 +34,4 @@ WAL、foreign_keys、busy_timeout；开发数据放 `.local`，稳定版放 LOCA
 
 ## Related
 
-`EXECUTION_PLAN.md`、`docs/ARCHITECTURE.md`、`docs/DATA_MODEL.md`。
+`EXECUTION_PLAN.md`、`docs/baseline/ARCHITECTURE.md`、`docs/baseline/DATA_MODEL.md`。

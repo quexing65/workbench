@@ -103,5 +103,5 @@ ADR 0007）在 Electron 主进程内嵌同一 Express 服务并加载同源地�
 - `docs/adr/0003-learning-progress-semantics.md`
 - `docs/adr/0004-credential-storage.md`
 - `docs/adr/0005-legacy-imports.md`
-- `docs/DATA_MODEL.md`
-- `docs/SECURITY.md`
+- `docs/baseline/DATA_MODEL.md`
+- `docs/baseline/SECURITY.md`

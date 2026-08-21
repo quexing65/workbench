@@ -33,4 +33,4 @@ localStorage 与 SQLite 双写会产生冲突、失败顺序和恢复语义问�
 
 ## Related
 
-`docs/ARCHITECTURE.md`、`docs/DATA_MODEL.md`、ADR 0005。
+`docs/baseline/ARCHITECTURE.md`、`docs/baseline/DATA_MODEL.md`、ADR 0005。

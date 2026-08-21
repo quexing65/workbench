@@ -39,4 +39,4 @@ ADR 0003（2026-08-15 增补）把回顾页学习时长定义为累计实际播�
 ## Related
 
 取代 ADR 0003 增补节中「回顾区间统计只汇总 learning_watch_daily」的口径；
-`docs/DATA_MODEL.md` 学习小节。
+`docs/baseline/DATA_MODEL.md` 学习小节。

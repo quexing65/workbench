@@ -50,7 +50,7 @@ Web 只监听 `127.0.0.1:5190`，API 只监听 `127.0.0.1:8790`。开发默认�
 ## 桌面应用发布
 
 1. 确定版本号并更新 `apps/desktop/package.json` 与根 `package.json` 的 `version`
-   （规则见 `docs/RELEASES.md`：修 bug 升 patch，加功能或 schema 变更升 minor）。
+   （规则见 `docs/operations/RELEASES.md`：修 bug 升 patch，加功能或 schema 变更升 minor）。
 2. 构建：`npm run desktop:dist`。产物归档到 `apps/desktop/release/v<version>/`：
    - `PersonalWorkbench-Setup-<version>.exe`（安装版）
    - `PersonalWorkbench-Portable-<version>.exe`（便携版）
@@ -58,7 +58,7 @@ Web 只监听 `127.0.0.1:5190`，API 只监听 `127.0.0.1:8790`。开发默认�
    - `win-unpacked/`（解包目录，仅供本地快速验证，可删）
 3. 打 tag 并推送：`git tag -a v<version> -m "<摘要>" && git push origin v<version>`。
 4. 在 GitHub Releases 基于 tag 创建发布，拖入两个 exe 作为附件（安装包不进 Git）。
-5. 在 `docs/RELEASES.md` 登记版本：变更摘要、commit 基线、GitHub Release 链接与
+5. 在 `docs/operations/RELEASES.md` 登记版本：变更摘要、commit 基线、GitHub Release 链接与
    SHA-256，随代码一起提交。
 
 安装包二进制永不进入 Git；版本的可追溯性由 RELEASES.md 台账 + 校验和 + tag 承载。
@@ -152,6 +152,7 @@ npm run performance:browser -- --output docs/reports/browser-performance-audit.j
 
 ## 最终切换与保留
 
-正式切换前必须完成 `npm ci`、`npm run check:all`、真实 Personal/qoder 对账、一次真实恢复、
-3–7 天并行使用和用户核心工作流确认。两个旧项目切换后至少保留 30 天，只读且可回退；未经
-确认不得删除、移动或修改旧数据。
+正式切换已于 2026-08-21 完成：`npm ci`、`npm run check:all`、真实 qoder 脱敏对账、真实恢复
+演练、3–7 天并行使用和用户核心工作流确认均通过，vNext v1.0.0 当日上线。原定的旧项目
+30 天只读保留期由用户 quexing65 于同日主动声明取消，旧项目文件可由用户自行处置；vNext
+不依赖旧项目，回退任何时候都用已验证的 `.pwbk` 备份执行 `npm run data:restore` 整库恢复。
