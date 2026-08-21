@@ -8,7 +8,25 @@
 
 发版流程见 `docs/OPERATIONS.md` 的"桌面应用发布"一节。版本号规则：语义化
 X.Y.Z——修 bug 升 patch、加功能或数据库 schema 变更升 minor、不兼容改动升
-major；正式切换验收完成前保持 0.x。
+major；阶段 8 验收通过、正式切换完成后升 1.0。
+
+## v1.0.0（2026-08-21）
+
+正式版。阶段 8 全部门槛通过（工程实现、远程 CI、桌面分发、7 天并行使用、用户确认），
+vNext 正式上线；用户 quexing65 主动取消旧项目 30 天保留期，立即发布。
+
+- 变更基线：commit `6037fc6`（chore: final acceptance passed, bump version to 1.0.0；与 tag `v1.0.0` 一致）
+- 配套文档提交：`22e9b20`（取消保留期并宣布 GA）+ 本次 RELEASES.md 登记
+- GitHub Release：<https://github.com/quexing65/workbench/releases/tag/v1.0.0>
+
+| 产物                                 | SHA-256                                                            |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| PersonalWorkbench-Setup-1.0.0.exe    | `aaa10d89d7973d6033e38f412b64b4d40428570f96444c492c8e9e846845d07f` |
+| PersonalWorkbench-Portable-1.0.0.exe | `2d68a563414535bbbbce00afeed90074924044f1d9cdf1f9c0c671eb261d1a5b` |
+
+注意：NSIS 打包非确定性（内嵌时间戳），同代码重新构建字节会不同；本表以
+`apps/desktop/release/v1.0.0/` 归档产物及其 `SHA256SUMS.txt` 为准。若 GitHub Release
+上是更早的构建（哈希不符），重新上传该目录的两个 exe 即可对齐。
 
 ## v0.1.0（2026-08-21）
 
