@@ -7,6 +7,7 @@ import {
   importLearningResource,
 } from '../../shared/api/learning';
 import { queryKeys } from '../../shared/api/query-keys';
+import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 import { LearningResourceCard } from './LearningResourceCard';
 import { LearningSeriesPanel } from './LearningSeriesPanel';
 import { BiliSyncPanel } from './BiliSyncPanel';
@@ -15,6 +16,7 @@ const RESOURCE_BATCH_SIZE = 20;
 
 export function LearningPage() {
   const [showBiliTools, setShowBiliTools] = useState(false);
+  const learningList = useAnimatedList<HTMLDivElement>();
   const [showImport, setShowImport] = useState(false);
   const [showSeries, setShowSeries] = useState(false);
   const [url, setUrl] = useState('');
@@ -176,7 +178,7 @@ export function LearningPage() {
             {resources.data.items.length === 0 && (
               <p className="empty-state">还没有学习资源，从上方导入一个 B站视频。</p>
             )}
-            <div className="learning-list">
+            <div className="learning-list" ref={learningList}>
               {visibleResources.map((resource) => (
                 <LearningResourceCard key={resource.id} resource={resource} />
               ))}

@@ -10,6 +10,7 @@ import {
   getRecurringTasks,
   updateRecurringTask,
 } from '../../shared/api/recurring';
+import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
@@ -106,6 +107,7 @@ function RecurringRow({ item }: { item: RecurringTask }) {
 
 export function RecurringPage() {
   const client = useQueryClient();
+  const workList = useAnimatedList<HTMLUListElement>();
   const list = useQuery({
     queryKey: queryKeys.recurringTasks,
     queryFn: ({ signal }) => getRecurringTasks(signal),
@@ -193,7 +195,7 @@ export function RecurringPage() {
             </div>
           )}
           {list.data?.items.length === 0 && <p className="empty-state">还没有固定任务。</p>}
-          <ul className="work-list">
+          <ul className="work-list" ref={workList}>
             {list.data?.items.map((item) => (
               <RecurringRow key={item.id} item={item} />
             ))}

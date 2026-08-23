@@ -45,8 +45,8 @@ h1 {
   min-width: 8.5rem;
   padding: 1rem 1.25rem;
   border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: rgb(248 246 239 / 60%);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 55%);
   text-align: center;
   flex: 0 0 auto;
 }
@@ -61,9 +61,10 @@ h1 {
 .date-card strong {
   margin: -0.1rem 0;
   color: var(--ink);
-  font-family: Georgia, serif;
+  font-family: var(--font-mono);
   font-size: 2.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .overview-grid {
@@ -77,9 +78,9 @@ h1 {
   min-height: 13.5rem;
   padding: clamp(1.4rem, 3vw, 2.4rem);
   border: 1px solid var(--line);
-  border-radius: 1.1rem;
+  border-radius: var(--radius-lg);
   background: var(--paper);
-  box-shadow: 0 8px 30px rgb(42 44 39 / 4%);
+  box-shadow: var(--shadow-sm);
 }
 
 .surface--primary {
@@ -87,8 +88,7 @@ h1 {
   min-height: 28rem;
   color: white;
   background:
-    radial-gradient(circle at 85% 15%, rgb(210 231 218 / 16%), transparent 32%),
-    var(--accent-strong);
+    radial-gradient(circle at 85% 15%, rgb(255 255 255 / 9%), transparent 32%), var(--accent-strong);
   grid-row: span 2;
   flex-direction: column;
 }
@@ -102,7 +102,7 @@ h1 {
 }
 
 .surface--primary .surface__label {
-  color: #b5ccbf;
+  color: rgb(255 255 255 / 75%);
 }
 
 .surface h2 {
@@ -124,13 +124,13 @@ h1 {
 }
 
 .surface--primary p:not(.surface__label) {
-  color: #c6d2cc;
+  color: rgb(255 255 255 / 78%);
 }
 
 .surface__meta {
   margin-top: auto;
   padding-top: 2rem;
-  color: #9fb5a9;
+  color: rgb(255 255 255 / 62%);
   font-size: 0.78rem;
 }
 
@@ -142,7 +142,7 @@ h1 {
   padding: clamp(1.5rem, 4vw, 3rem);
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 1.25rem;
+  border-radius: var(--radius-lg);
   background: var(--paper);
   box-shadow: var(--shadow);
   align-items: flex-end;
@@ -153,7 +153,8 @@ h1 {
   top: -1.8rem;
   right: 1rem;
   color: var(--accent-soft);
-  font-family: Georgia, serif;
+  font-family: var(--font-mono);
+  font-weight: 600;
   font-size: clamp(7rem, 18vw, 14rem);
   line-height: 1;
   user-select: none;

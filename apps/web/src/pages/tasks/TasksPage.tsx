@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TaskListItem, TaskStatus } from '@workbench/shared';
 import { useState, type FormEvent } from 'react';
 
@@ -11,6 +11,7 @@ import {
   updateOccurrence,
   updateTask,
 } from '../../shared/api/tasks';
+import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
@@ -159,10 +160,13 @@ export function TasksPage() {
   const [date, setDate] = useState(today);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const workList = useAnimatedList<HTMLUListElement>();
   const client = useQueryClient();
   const tasks = useQuery({
     queryKey: queryKeys.tasks(date),
     queryFn: ({ signal }) => getTasks(date, signal),
+    // 切换日期即切换缓存键：保留上一份数据，避免清单闪空与双节点。
+    placeholderData: keepPreviousData,
   });
   const create = useMutation({
     mutationFn: () => createTask({ title, description, date }),
@@ -237,7 +241,7 @@ export function TasksPage() {
             </div>
           )}
           {tasks.data?.items.length === 0 && <p className="empty-state">今天还没有任务。</p>}
-          <ul className="work-list">
+          <ul className="work-list" ref={workList}>
             {tasks.data?.items.map((item) => (
               <TaskRow key={item.id} item={item} date={date} />
             ))}

@@ -4,8 +4,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const host = '127.0.0.1';
-const webPort = 5190;
-const apiPort = 8790;
+// e2e 默认占用 dev 端口；开发机 dev 常驻时可经 E2E_WEB_PORT/E2E_API_PORT
+// 指定备用端口，与正在运行的服务完全隔离地跑全量用例。
+// 端口占用守卫在 scripts/run-e2e.mjs 中执行——不能放本文件：
+// Playwright 的 worker 进程会重新加载配置，把主进程刚拉起的 webServer 误判为占用。
+const webPort = Number(process.env['E2E_WEB_PORT'] ?? 5190);
+const apiPort = Number(process.env['E2E_API_PORT'] ?? 8790);
 const baseURL = `http://${host}:${webPort}`;
 const isCi = Boolean(process.env['CI']);
 const dataDirectory =
@@ -54,6 +58,8 @@ export default defineConfig({
       command: 'npm run dev -w @workbench/web',
       env: {
         HOST: host,
+        WORKBENCH_DEV_PORT: String(webPort),
+        WORKBENCH_DEV_API_PORT: String(apiPort),
       },
       reuseExistingServer: !isCi,
       stderr: 'pipe',

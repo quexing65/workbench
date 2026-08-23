@@ -42,14 +42,14 @@
 
 .surface--primary .status-pill {
   color: var(--accent-strong);
-  background: #dfece4;
+  background: var(--accent-soft);
 }
 
 .today-progress {
   overflow: hidden;
   height: 0.55rem;
   margin-top: 2rem;
-  border-radius: 99rem;
+  border-radius: var(--radius-full);
   background: rgb(255 255 255 / 18%);
 }
 
@@ -57,8 +57,8 @@
   display: block;
   height: 100%;
   min-width: 2px;
-  border-radius: 99rem;
-  background: #dfece4;
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
   transition: width 300ms ease;
 }
 
@@ -83,8 +83,10 @@
 
 .summary-stats dd {
   margin: 0.2rem 0 0;
-  font-family: Georgia, serif;
+  font-family: var(--font-mono);
   font-size: 2rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .compact-list,
@@ -159,7 +161,7 @@
   min-width: 0;
   padding: 0.9rem 1rem;
   border: 1px solid var(--line);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-md);
   background: var(--paper);
   gap: 0.2rem;
   align-content: start;
@@ -167,8 +169,10 @@
 
 .review-stat dd {
   margin: 0.1rem 0 0;
-  font-family: Georgia, serif;
+  font-family: var(--font-mono);
   font-size: 1.55rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   line-height: 1.2;
 }
 
@@ -184,7 +188,7 @@
 }
 
 .review-stat__delta.is-down {
-  color: var(--warm);
+  color: var(--warm-ink);
 }
 
 .review-stat__delta.is-flat {
@@ -207,9 +211,9 @@
 .review-detail-card,
 .review-study-card {
   border: 1px solid var(--line);
-  border-radius: 0.8rem;
+  border-radius: var(--radius-lg);
   background: var(--paper);
-  box-shadow: 0 5px 18px rgb(42 44 39 / 4%);
+  box-shadow: var(--shadow-sm);
 }
 
 .review-detail-card {
@@ -325,8 +329,10 @@
 .review-study-pie strong {
   max-width: 4.5rem;
   overflow-wrap: anywhere;
-  font-family: Georgia, serif;
+  font-family: var(--font-mono);
   font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   line-height: 1.15;
 }
 
@@ -435,7 +441,7 @@
 .day-chart__col:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 0.3rem;
+  border-radius: var(--radius-sm);
 }
 
 .day-chart__stack {
@@ -444,7 +450,7 @@
   flex-direction: column;
   width: 100%;
   min-height: 3px;
-  border-radius: 0.3rem 0.3rem 0 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .day-chart__stack.is-empty {
@@ -467,7 +473,7 @@
 }
 
 .day-chart__seg.is-pending {
-  background: rgb(113 137 155 / 38%);
+  background: rgb(90 94 88 / 32%);
 }
 
 .day-chart__col b {
@@ -508,7 +514,7 @@
 .day-chart-legend__dot {
   width: 0.62rem;
   height: 0.62rem;
-  border-radius: 0.2rem;
+  border-radius: var(--radius-sm);
 }
 
 .day-chart-legend__dot.is-completed {
@@ -520,7 +526,7 @@
 }
 
 .day-chart-legend__dot.is-pending {
-  background: rgb(113 137 155 / 38%);
+  background: rgb(90 94 88 / 32%);
 }
 
 .review-rhythm__grid {
@@ -533,7 +539,7 @@
 .review-rhythm__cell {
   display: block;
   aspect-ratio: 1;
-  border-radius: 0.3rem;
+  border-radius: var(--radius-sm);
   background: var(--line);
 }
 

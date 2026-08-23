@@ -1,10 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Note } from '@workbench/shared';
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react';
 
 import { isRevisionConflict } from '../../shared/api/client';
 import { createNote, deleteNote, getNotes, updateNote } from '../../shared/api/notes';
 import { queryKeys } from '../../shared/api/query-keys';
+import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 
 function useDebounced(value: string, delay = 300): string {
   const [debounced, setDebounced] = useState(value);
@@ -108,10 +109,14 @@ export function NotesPage() {
   const client = useQueryClient();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounced(query);
+  const noteGrid = useAnimatedList<HTMLUListElement>();
   const [content, setContent] = useState('');
   const notes = useQuery({
     queryKey: queryKeys.notes(debouncedQuery),
     queryFn: ({ signal }) => getNotes(debouncedQuery, signal),
+    // 搜索词即缓存键：保留上一份数据可避免列表闪空，
+    // 也避免 auto-animate 在新旧两份列表间产生同文本双节点。
+    placeholderData: keepPreviousData,
   });
   const create = useMutation({
     mutationFn: () => createNote({ content, pinned: false }),
@@ -179,7 +184,7 @@ export function NotesPage() {
             </div>
           )}
           {notes.data?.items.length === 0 && <p className="empty-state">还没有匹配的小记。</p>}
-          <ul className="note-grid">
+          <ul className="note-grid" ref={noteGrid}>
             {notes.data?.items.map((note) => (
               <NoteRow key={note.id} note={note} query={debouncedQuery} />
             ))}
