@@ -87,7 +87,7 @@ export function AppShell() {
               aria-expanded={!sidebarCollapsed}
               onClick={toggleSidebar}
             >
-              <SidebarSimple aria-hidden="true" size={18} weight="regular" />
+              <SidebarSimple aria-hidden="true" size={18} weight="fill" />
             </button>
           </div>
           <Navigation />

@@ -19,19 +19,22 @@ const dataDirectory =
 function assertDevPortsIdle(): void {
   if (isCi) return;
   const output = spawnSync('netstat', ['-ano', '-p', 'tcp'], { encoding: 'utf8' }).stdout ?? '';
-  const listening = output
+  const occupiedRows = output
     .split('\n')
-    .filter((line) => line.trim().startsWith('TCP') && /\sLISTENING\s/.test(line))
-    .map((line) => line.trim().split(/\s+/)[1] ?? '');
-  const occupied = [apiPort, webPort].filter((port) =>
-    listening.some((address) => address.endsWith(`:${port}`)),
-  );
-  if (occupied.length > 0) {
+    .filter(
+      (line) =>
+        line.trim().startsWith('TCP') &&
+        /\sLISTENING\s/.test(line) &&
+        [apiPort, webPort].some((port) => (line.trim().split(/\s+/)[1] ?? '').endsWith(`:${port}`)),
+    );
+  if (occupiedRows.length > 0) {
     throw new Error(
       [
-        `端口 ${occupied.join('、')} 正被占用（通常是正在运行的 dev 服务）。`,
+        `端口 ${[apiPort, webPort].join('、')} 正被占用（通常是正在运行的 dev 服务）。`,
         'Playwright 的 reuseExistingServer 会复用它，把端到端测试数据写进真实数据库。',
         '请先停止 dev 服务再运行 e2e。',
+        '占用明细：',
+        ...occupiedRows.map((line) => line.trim()),
       ].join('\n'),
     );
   }
