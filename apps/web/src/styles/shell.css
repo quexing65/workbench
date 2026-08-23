@@ -25,34 +25,42 @@
   gap: 0.8rem;
 }
 
-.sidebar-toggle {
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  min-height: 2rem;
-  margin-left: auto;
+/* 收起态会隐藏品牌文字使品牌区变矮，导航整体上移；两态等高保证导航纵向位置恒定。 */
+.sidebar .brand {
+  min-height: 3.75rem;
+}
+
+.brand-toggle {
   padding: 0;
-  border: 1px solid rgb(255 255 255 / 24%);
-  border-radius: var(--radius-md);
-  color: var(--sidebar-ink);
-  background: transparent;
-  font: inherit;
   cursor: pointer;
-  place-items: center;
-  flex: 0 0 auto;
 }
 
-.sidebar-toggle svg {
-  display: block;
-  transition: transform var(--motion-base) var(--ease-out);
+.brand-toggle:hover {
+  border-color: rgb(255 255 255 / 32%);
 }
 
-.app-shell--sidebar-collapsed .sidebar-toggle svg {
-  transform: scaleX(-1);
+.brand-toggle__glyph {
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--motion-fast) ease,
+    transform var(--motion-fast) var(--ease-out);
 }
 
-.sidebar-toggle:hover {
-  background: var(--sidebar-hover);
+.brand-toggle__glyph--action {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+.brand-toggle:hover .brand-toggle__glyph--mark,
+.brand-toggle:focus-visible .brand-toggle__glyph--mark {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+.brand-toggle:hover .brand-toggle__glyph--action,
+.brand-toggle:focus-visible .brand-toggle__glyph--action {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .brand__mark {
@@ -68,24 +76,16 @@
   place-items: center;
 }
 
-.brand > span:last-child {
+.brand__name {
   display: flex;
   min-width: 0;
+  align-items: center;
   flex: 1;
-  flex-direction: column;
 }
 
 .brand strong {
   font-size: 1.2rem;
   letter-spacing: 0.01em;
-}
-
-.brand small {
-  margin-top: 0.15rem;
-  color: var(--sidebar-muted);
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-  white-space: nowrap;
 }
 
 .side-nav {
@@ -271,7 +271,7 @@
   justify-content: center;
 }
 
-.app-shell--sidebar-collapsed .brand > span:not(.brand__mark),
+.app-shell--sidebar-collapsed .brand__name,
 .app-shell--sidebar-collapsed .sidebar__footer {
   display: none;
 }
@@ -279,14 +279,6 @@
 .app-shell--sidebar-collapsed .nav-link__label-wrap {
   grid-template-columns: 0fr;
   opacity: 0;
-}
-
-.app-shell--sidebar-collapsed .brand__mark {
-  display: none;
-}
-
-.app-shell--sidebar-collapsed .sidebar-toggle {
-  margin-left: 0;
 }
 
 .app-shell--sidebar-collapsed .side-nav {

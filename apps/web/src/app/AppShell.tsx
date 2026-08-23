@@ -1,4 +1,4 @@
-import { ArrowLineLeft } from '@phosphor-icons/react';
+import { ArrowLineLeft, ArrowLineRight } from '@phosphor-icons/react';
 import { MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
@@ -73,22 +73,35 @@ export function AppShell() {
         </a>
         <aside className="sidebar">
           <div className="brand" aria-label="Personal Workbench">
-            <span className="brand__mark" aria-hidden="true">
-              W
-            </span>
-            <span>
-              <strong>Workbench</strong>
-              <small>个人工作台</small>
-            </span>
             <button
               type="button"
-              className="sidebar-toggle"
+              className="brand__mark brand-toggle"
               aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
               aria-expanded={!sidebarCollapsed}
               onClick={toggleSidebar}
             >
-              <ArrowLineLeft aria-hidden="true" size={18} weight="fill" />
+              <span className="brand-toggle__glyph brand-toggle__glyph--mark" aria-hidden="true">
+                W
+              </span>
+              {sidebarCollapsed ? (
+                <ArrowLineRight
+                  aria-hidden="true"
+                  className="brand-toggle__glyph brand-toggle__glyph--action"
+                  size={18}
+                  weight="fill"
+                />
+              ) : (
+                <ArrowLineLeft
+                  aria-hidden="true"
+                  className="brand-toggle__glyph brand-toggle__glyph--action"
+                  size={18}
+                  weight="fill"
+                />
+              )}
             </button>
+            <span className="brand__name">
+              <strong>Workbench</strong>
+            </span>
           </div>
           <Navigation />
           <div className="sidebar__footer">
