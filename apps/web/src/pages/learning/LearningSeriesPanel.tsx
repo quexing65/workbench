@@ -10,6 +10,7 @@ import {
   updateLearningSeries,
 } from '../../shared/api/learning';
 import { queryKeys } from '../../shared/api/query-keys';
+import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 
 type SeriesAction =
   { readonly kind: 'save-name' } | { readonly kind: 'save-items' } | { readonly kind: 'delete' };
@@ -182,6 +183,7 @@ export function LearningSeriesPanel({
 }) {
   const [name, setName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const seriesList = useAnimatedList<HTMLUListElement>();
   const client = useQueryClient();
   const create = useMutation({
     mutationFn: () => createLearningSeries(name),
@@ -220,7 +222,7 @@ export function LearningSeriesPanel({
         </p>
       )}
       {series.length === 0 && <p className="empty-state">还没有学习系列。</p>}
-      <ul className="series-list">
+      <ul className="series-list" ref={seriesList}>
         {series.map((item) => (
           <li className="series-summary" key={item.id}>
             <div className="series-summary__header">
