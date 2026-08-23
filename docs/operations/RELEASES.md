@@ -10,6 +10,27 @@
 X.Y.Z——修 bug 升 patch、加功能或数据库 schema 变更升 minor、不兼容改动升
 major；阶段 8 验收通过、正式切换完成后升 1.0。
 
+## v1.1.0（2026-08-23）
+
+次要版。移除遗留数据导入功能（minor 功能移除，无数据库 schema 变更，可直接覆盖安装）：
+qoder 脱敏数据已两次导入并验证幂等、Personal 旧项目已于终验时声明弃用，一次性迁移
+引擎完成使命后退役（`f1c648a`，净删约 5,900 行）。数据页仅保留备份下载；
+`/api/v1/data/imports` 端点与 `import:*`、`qoder:sanitize` 脚本一并移除，
+imports 的 90%/95% 覆盖率阈值随模块删除。桌面壳沿用 v1.0.1 的内存优化。
+
+- 功能移除提交：`f1c648a`（refactor: retire legacy imports module）
+- 变更基线：commit `e0d4996`（chore: bump version to 1.1.0；与 tag `v1.1.0` 一致）
+- GitHub Release：<https://github.com/quexing65/workbench/releases/tag/v1.1.0>
+
+| 产物                                 | SHA-256                                                            |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| PersonalWorkbench-Setup-1.1.0.exe    | `f953f2c8dc98418544dbc7eb3be0a363b382a372642a06055080d6686ea23a56` |
+| PersonalWorkbench-Portable-1.1.0.exe | `d46e8b1042b194165b1ecc64a3dd2bf706ab29e7eb02a5e53ecc5e2546be5f97` |
+
+注意：NSIS 打包非确定性（内嵌时间戳），同代码重新构建字节会不同；本表以
+`apps/desktop/release/v1.1.0/` 归档产物及其 `SHA256SUMS.txt` 为准。若 GitHub Release
+上是更早的构建（哈希不符），重新上传该目录的两个 exe 即可对齐。
+
 ## v1.0.1（2026-08-23）
 
 补丁版。桌面壳内存优化，无功能、API 与数据库 schema 变更，可直接覆盖安装：
