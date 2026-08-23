@@ -11,7 +11,7 @@ import {
 } from '@workbench/shared';
 
 import { logicalDatabaseChecksum } from '../../db/logical-checksum.js';
-import { hashFile } from '../imports/source-hash.js';
+import { hashFile } from '../../db/source-hash.js';
 import { createBackupArchive } from './archive.js';
 import { inspectSnapshot } from './snapshot.js';
 

@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 
-import { hashValue } from '../modules/imports/source-hash.js';
+import { hashValue } from './source-hash.js';
 
 const BUSINESS_PROJECTIONS = {
   tasks: 'SELECT * FROM tasks ORDER BY id',

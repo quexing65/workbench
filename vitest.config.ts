@@ -12,12 +12,8 @@ export default defineConfig({
         '**/dist/**',
         'apps/server/src/index.ts',
         'apps/server/src/db/cli-migrate.ts',
-        'apps/server/src/modules/imports/cli-import.ts',
-        // Type-only module: emits no runtime code, so coverage is always 0%.
-        'apps/server/src/modules/imports/contracts.ts',
         'apps/server/src/modules/backups/cli-restore.ts',
         'apps/server/src/performance/cli-audit.ts',
-        'apps/server/src/modules/imports/qoder/cli-sanitize.ts',
         'apps/web/src/main.tsx',
         'packages/shared/src/index.ts',
       ],
@@ -27,12 +23,6 @@ export default defineConfig({
       reportsDirectory: 'coverage',
       thresholds: {
         ...baseCoverageThresholds,
-        'apps/server/src/modules/imports/**': {
-          branches: 90,
-          functions: 95,
-          lines: 95,
-          statements: 95,
-        },
       },
     },
     environment: 'node',

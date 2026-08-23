@@ -31,7 +31,6 @@ export function makeApp(
     biliSessionClient?: BiliSessionClient;
     credentialStore?: BiliCredentialStore;
     browserCredentialAdapter?: BrowserCredentialAdapter;
-    mountImports?: boolean;
     mountBackups?: boolean;
     backupService?: Pick<BackupService, 'create'>;
     dataDirectory?: string;
@@ -56,7 +55,6 @@ export function makeApp(
     ...(options.browserCredentialAdapter === undefined
       ? {}
       : { browserCredentialAdapter: options.browserCredentialAdapter }),
-    mountImports: options.mountImports ?? false,
     mountBackups: options.mountBackups ?? false,
     ...(options.backupService === undefined ? {} : { backupService: options.backupService }),
     ...(options.serveWeb === undefined ? {} : { serveWeb: options.serveWeb }),

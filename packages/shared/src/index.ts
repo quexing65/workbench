@@ -3,27 +3,6 @@ export type { HealthResponse } from './contracts/health.js';
 export { BACKUP_APP_ID, BACKUP_FORMAT_VERSION, backupManifestSchema } from './contracts/backups.js';
 export type { BackupManifest } from './contracts/backups.js';
 export {
-  applyImportSchema,
-  importConflictSchema,
-  importCountSchema,
-  importFatalSchema,
-  importPreflightResponseSchema,
-  importReportSchema,
-  importResolutionSchema,
-  importSourceTypeSchema,
-  importWarningSchema,
-} from './contracts/imports.js';
-export type {
-  ApplyImportInput,
-  ImportConflict,
-  ImportCount,
-  ImportFatal,
-  ImportPreflightResponse,
-  ImportReport,
-  ImportSourceType,
-  ImportWarning,
-} from './contracts/imports.js';
-export {
   biliBrowserSchema,
   biliCredentialStatusSchema,
   fetchBiliCredentialSchema,

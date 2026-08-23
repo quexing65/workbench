@@ -6,23 +6,10 @@ import { AppError } from './errors.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const JSON_MEDIA_TYPE = /^application\/(?:json|[a-z0-9!#$&^_.+-]+\+json)$/iu;
-const MULTIPART_MEDIA_TYPE = /^multipart\/form-data\s*;.*\bboundary=[^;\s]+/iu;
 
 function isJsonRequest(contentType: string | undefined): boolean {
   const mediaType = contentType?.split(';', 1)[0]?.trim();
   return mediaType !== undefined && JSON_MEDIA_TYPE.test(mediaType);
-}
-
-function isControlledMultipart(
-  method: string,
-  originalUrl: string,
-  contentType: string | undefined,
-): boolean {
-  return (
-    method === 'POST' &&
-    originalUrl.split('?', 1)[0] === '/api/v1/data/imports/preflight' &&
-    MULTIPART_MEDIA_TYPE.test(contentType ?? '')
-  );
 }
 
 function allowedOrigin(config: ServerConfig): string {
@@ -64,10 +51,7 @@ export function loopbackGuard(config: ServerConfig): RequestHandler {
         return;
       }
 
-      if (
-        !isJsonRequest(request.headers['content-type']) &&
-        !isControlledMultipart(request.method, request.originalUrl, request.headers['content-type'])
-      ) {
+      if (!isJsonRequest(request.headers['content-type'])) {
         next(new AppError(415, 'UNSUPPORTED_MEDIA_TYPE', '写请求必须使用 JSON'));
         return;
       }
