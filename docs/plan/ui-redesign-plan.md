@@ -1,6 +1,6 @@
 # UI 改版计划（2026-08）
 
-> 状态：**Phase 1–4 已实施完毕**（2026-08-24，提交 5ac9391 / 64e7dd9 / 6de36aa / dd701f7），全量 e2e 与性能门禁通过，待用户目测验收后执行合并。
+> 状态：**已完结并发布**（2026-08-24 用户验收通过；merge `b63bf00`，tag `v1.2.0`，GitHub Release 已上线）。
 > 回退基线：git tag `pre-ui-redesign`（回退操作手册见 [ui-redesign-rollback.md](./ui-redesign-rollback.md)）。
 > 工作分支：`ui-redesign`（从基线拉出；`main` 始终保持改版前状态，验收合格后才合并）。
 > 改版前检查点提交：`c0c2c40`。
@@ -134,7 +134,7 @@ main 上两个提交：检查点 `c0c2c40` + 本计划文档；打 tag `pre-ui-r
 - [x] `npm run test:e2e` 全量（仅端口空闲时跑）
 - [x] `npm run performance:browser`
 - [x] axe 重点复核：桌面 `/overview`、390×844 `/review`、360×800 `/data`
-- [ ] 全部通过后：合并 `ui-redesign` → `main`（建议 `--no-ff` 保留阶段历史），推送 origin
+- [x] 全部通过后：合并 `ui-redesign` → `main`（`b63bf00`），推送 origin 并发布 v1.2.0
 
 ### 增补（2026-08-24）：第三方动效增强
 

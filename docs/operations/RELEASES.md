@@ -10,6 +10,28 @@
 X.Y.Z——修 bug 升 patch、加功能或数据库 schema 变更升 minor、不兼容改动升
 major；阶段 8 验收通过、正式切换完成后升 1.0。
 
+## v1.2.0（2026-08-24）
+
+次要版。界面改版与动效增强（无数据库 schema 变更，可直接覆盖安装）：视觉切换为
+极简生产力风格（浅灰白画布、纯白卡片、1px 细线分层、去衬线标题，保留深绿侧栏与
+品牌绿），设计令牌全面重构；Inter Variable + Noto Sans SC + JetBrains Mono 全部
+本地打包（产物增大约 5MB）；侧边栏启用 Phosphor 线稿/填充双态图标与弹簧滑动指示条，
+列表接入 auto-animate 增删动效，页面切换启用 viewTransition（均尊重系统减动效偏好）。
+e2e 新增端口占用守卫（防测试数据写入真实库）与备用端口并行运行支持。
+
+- 改版基线：merge commit `b63bf00`（feat: 合并界面改版；阶段明细见 `docs/plan/ui-redesign-plan.md`）
+- 变更基线：commit `e9614f3`（chore: bump version to 1.2.0；与 tag `v1.2.0` 一致）
+- GitHub Release：<https://github.com/quexing65/workbench/releases/tag/v1.2.0>
+
+| 产物                                 | SHA-256                                                            |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| PersonalWorkbench-Setup-1.2.0.exe    | `8e1c489381e8bfee7279adff42488a83b46317cec039159ff8ba180e088238ff` |
+| PersonalWorkbench-Portable-1.2.0.exe | `86a2979ec880c92160a594a94b50aa9cdc0b4436fa2ec8b077df7a09b7f86a17` |
+
+注意：NSIS 打包非确定性（内嵌时间戳），同代码重新构建字节会不同；本表以
+`apps/desktop/release/v1.2.0/` 归档产物及其 `SHA256SUMS.txt` 为准。若 GitHub Release
+上是更早的构建（哈希不符），重新上传该目录的两个 exe 即可对齐。
+
 ## v1.1.0（2026-08-23）
 
 次要版。移除遗留数据导入功能（minor 功能移除，无数据库 schema 变更，可直接覆盖安装）：
