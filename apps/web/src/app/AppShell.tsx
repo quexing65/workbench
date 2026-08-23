@@ -1,4 +1,4 @@
-import { SidebarSimple } from '@phosphor-icons/react';
+import { ArrowLineLeft } from '@phosphor-icons/react';
 import { MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
@@ -87,18 +87,7 @@ export function AppShell() {
               aria-expanded={!sidebarCollapsed}
               onClick={toggleSidebar}
             >
-              <SidebarSimple
-                aria-hidden="true"
-                className="sidebar-toggle__glyph sidebar-toggle__glyph--outline"
-                size={18}
-                weight="regular"
-              />
-              <SidebarSimple
-                aria-hidden="true"
-                className="sidebar-toggle__glyph sidebar-toggle__glyph--fill"
-                size={18}
-                weight="fill"
-              />
+              <ArrowLineLeft aria-hidden="true" size={18} weight="fill" />
             </button>
           </div>
           <Navigation />
