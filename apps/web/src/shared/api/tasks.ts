@@ -51,7 +51,7 @@ export function deleteTask(id: string, revision: number): Promise<void> {
   return apiRequest(`/api/v1/tasks/${id}`, z.void(), { method: 'DELETE', revision });
 }
 
-export const occurrenceResponseSchema = z.object({
+const occurrenceResponseSchema = z.object({
   templateId: z.string().uuid(),
   date: z.string(),
   status: z.enum(['active', 'completed', 'cancelled']),

@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { ExternalServiceError } from '../domain-errors.js';
 
-export interface BiliPartMetadata {
+interface BiliPartMetadata {
   readonly cid: string;
   readonly partNumber: number;
   readonly title: string;

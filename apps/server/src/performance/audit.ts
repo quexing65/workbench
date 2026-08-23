@@ -18,7 +18,7 @@ interface PlanRow {
   detail: string;
 }
 
-export interface QueryAudit {
+interface QueryAudit {
   readonly name: string;
   readonly elapsedMs: number;
   readonly resultRows: number;

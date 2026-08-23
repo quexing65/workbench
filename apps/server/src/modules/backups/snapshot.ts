@@ -23,7 +23,7 @@ function schemaVersion(database: DatabaseSync): number {
   return Number(row?.['version']);
 }
 
-export function assertNoStoredSecrets(database: DatabaseSync): void {
+function assertNoStoredSecrets(database: DatabaseSync): void {
   const keys = database.prepare('SELECT lower(key) AS key FROM settings').all();
   if (
     keys.some((row) =>

@@ -13,11 +13,11 @@ function canonicalize(value: unknown): unknown {
   return value;
 }
 
-export function stableJson(value: unknown): string {
+function stableJson(value: unknown): string {
   return JSON.stringify(canonicalize(value));
 }
 
-export function hashText(value: string): string {
+function hashText(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
 }
 
