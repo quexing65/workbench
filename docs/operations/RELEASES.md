@@ -10,6 +10,27 @@
 X.Y.Z——修 bug 升 patch、加功能或数据库 schema 变更升 minor、不兼容改动升
 major；阶段 8 验收通过、正式切换完成后升 1.0。
 
+## v1.2.1（2026-08-24）
+
+补丁版。侧边栏交互与布局打磨（无功能、API 与数据库 schema 变更，可直接覆盖安装）：
+W 徽标与收起按钮合一，悬停或键盘聚焦时 W 与方向箭头交叉淡化（展开态左箭头、
+收起态右箭头）；修复收起侧边栏时品牌文字隐藏导致导航整体上移 28px 的跳动，
+两态品牌区等高、导航纵向位置逐像素一致；删除"个人工作台"副标题，Workbench
+与品牌区垂直居中。
+
+- 功能提交：`0ffbdcf`（feat(web): 侧边栏品牌区与收起按钮合一）
+- 变更基线：commit `5c25186`（chore: bump version to 1.2.1；与 tag `v1.2.1` 一致）
+- GitHub Release：<https://github.com/quexing65/workbench/releases/tag/v1.2.1>
+
+| 产物                                 | SHA-256                                                            |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| PersonalWorkbench-Setup-1.2.1.exe    | `d7ba68f0bdc5831573288a1350469578c2ede900644408c807666a70b76ce0a8` |
+| PersonalWorkbench-Portable-1.2.1.exe | `72cb544eb8c92fdf03e4ac04f4e3cc92310b67d6b935b424f4d986795eab9326` |
+
+注意：NSIS 打包非确定性（内嵌时间戳），同代码重新构建字节会不同；本表以
+`apps/desktop/release/v1.2.1/` 归档产物及其 `SHA256SUMS.txt` 为准。若 GitHub Release
+上是更早的构建（哈希不符），重新上传该目录的两个 exe 即可对齐。
+
 ## v1.2.0（2026-08-24）
 
 次要版。界面改版与动效增强（无数据库 schema 变更，可直接覆盖安装）：视觉切换为
