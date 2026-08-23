@@ -25,10 +25,10 @@ export default defineConfig({
   },
   server: {
     host: '127.0.0.1',
-    port: 5190,
+    port: Number(process.env['WORKBENCH_DEV_PORT'] ?? 5190),
     strictPort: true,
     proxy: {
-      '/api': 'http://127.0.0.1:8790',
+      '/api': `http://127.0.0.1:${process.env['WORKBENCH_DEV_API_PORT'] ?? 8790}`,
     },
   },
   test: {
