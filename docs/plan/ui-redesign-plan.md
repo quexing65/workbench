@@ -14,7 +14,7 @@
 | 决策点 | 选择 | 落选原因 |
 | --- | --- | --- |
 | 风格方向 | B 极简生产力风，以令牌化精修打底 | 玻璃拟态：桌面端软件渲染扛不住 backdrop-filter；新粗野主义：与表单/表格/图表的内容密度冲突，对比度风险大 |
-| 中文黑体 | MiSans，经 npm 包 `misans-webfont`（Apache-2.0，按 unicode-range 切片） | 无官方 fontsource 包；备选 `@fontsource-variable/noto-sans-sc`，集成受阻时切换 |
+| 中文黑体 | `@fontsource-variable/noto-sans-sc`（单一可变家族，真实 100–900 字重） | MiSans：`misans-webfont` 把每个字重做成独立家族名且声明均为 weight 400，与 `font-synthesis: none` + 650~800 字重的现有用法不兼容。实施时（2026-08-24）确认受阻，按预案切换到备选项 |
 | 拉丁/数字 | `@fontsource-variable/inter`（Inter Variable） | — |
 | 等宽 | `@fontsource/jetbrains-mono`（400/500/600 静态字重） | Maple Mono 中英对齐好但需手动管文件，维护性差一档 |
 | 标题字体 | 去衬线，统一 `--font-sans`，600/400 字重分层 | 思源宋体仅在保留旧风格时才需要 |

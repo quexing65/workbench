@@ -1,0 +1,8 @@
+/* 本地打包字体，不依赖系统字体与外部 CDN。
+   拉丁/数字用 Inter Variable，中文用 Noto Sans SC Variable（101 个 unicode-range 切片，按需加载），
+   等宽用 JetBrains Mono。 */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/noto-sans-sc';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
