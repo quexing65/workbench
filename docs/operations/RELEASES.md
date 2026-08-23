@@ -10,6 +10,26 @@
 X.Y.Z——修 bug 升 patch、加功能或数据库 schema 变更升 minor、不兼容改动升
 major；阶段 8 验收通过、正式切换完成后升 1.0。
 
+## v1.0.1（2026-08-23）
+
+补丁版。桌面壳内存优化，无功能、API 与数据库 schema 变更，可直接覆盖安装：
+窗口默认软件渲染（GPU 进程约 140MB → 80MB，四进程总内存约 398MB → 345MB，实测；
+掉帧时可设 `WORKBENCH_SOFTWARE_RENDERING=false` 恢复硬件加速）、关闭纯中文界面
+用不上的内置拼写检查。
+
+- 优化提交：`08f7e49`（perf(desktop): enable software rendering and disable spellcheck to cut memory）
+- 变更基线：commit `ad16ce5`（chore: bump version to 1.0.1；与 tag `v1.0.1` 一致）
+- GitHub Release：<https://github.com/quexing65/workbench/releases/tag/v1.0.1>
+
+| 产物                                 | SHA-256                                                            |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| PersonalWorkbench-Setup-1.0.1.exe    | `5d6be8e9ee8902b63ce139df4d140728988fdad78f2287d69c942708ad12d1bd` |
+| PersonalWorkbench-Portable-1.0.1.exe | `f078ed25c18964d256f078efe47bb0be107b38bb54c2bc4135cb0a392a0deb52` |
+
+注意：NSIS 打包非确定性（内嵌时间戳），同代码重新构建字节会不同；本表以
+`apps/desktop/release/v1.0.1/` 归档产物及其 `SHA256SUMS.txt` 为准。若 GitHub Release
+上是更早的构建（哈希不符），重新上传该目录的两个 exe 即可对齐。
+
 ## v1.0.0（2026-08-21）
 
 正式版。阶段 8 全部门槛通过（工程实现、远程 CI、桌面分发、7 天并行使用、用户确认），
