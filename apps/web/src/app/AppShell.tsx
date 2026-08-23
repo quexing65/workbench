@@ -1,24 +1,41 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { useState } from 'react';
+import { SidebarSimple } from '@phosphor-icons/react';
+import { useState, type CSSProperties } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { HealthStatus } from '../shared/ui/HealthStatus';
 import { navigationItems } from './navigation';
 
 function Navigation({ mobile = false }: { mobile?: boolean }) {
+  const { pathname } = useLocation();
+  const activeIndex = navigationItems.findIndex((item) => item.to === pathname);
+
   return (
     <nav className={mobile ? 'mobile-nav' : 'side-nav'} aria-label="主要导航">
-      {navigationItems.map((item) => (
-        <NavLink
-          className={({ isActive }) => (isActive ? 'nav-link nav-link--active' : 'nav-link')}
-          end
-          key={item.to}
-          to={item.to}
-        >
-          <span className="nav-link__icon" aria-hidden="true">
-            {item.icon}
-          </span>
-          <span className="nav-link__label">{mobile ? item.shortLabel : item.label}</span>
-        </NavLink>
-      ))}
+      {!mobile && (
+        <span
+          aria-hidden="true"
+          className={`side-nav__glider${activeIndex < 0 ? ' side-nav__glider--hidden' : ''}`}
+          style={{ '--glider-index': Math.max(activeIndex, 0) } as CSSProperties}
+        />
+      )}
+      {navigationItems.map((item) => {
+        const Glyph = item.icon;
+        return (
+          <NavLink
+            className={({ isActive }) => (isActive ? 'nav-link nav-link--active' : 'nav-link')}
+            end
+            key={item.to}
+            to={item.to}
+          >
+            <span className="nav-link__icon" aria-hidden="true">
+              <Glyph className="nav-link__glyph nav-link__glyph--outline" weight="regular" />
+              <Glyph className="nav-link__glyph nav-link__glyph--fill" weight="fill" />
+            </span>
+            <span className="nav-link__label-wrap">
+              <span className="nav-link__label">{mobile ? item.shortLabel : item.label}</span>
+            </span>
+          </NavLink>
+        );
+      })}
     </nav>
   );
 }
@@ -65,20 +82,7 @@ export function AppShell() {
             aria-expanded={!sidebarCollapsed}
             onClick={toggleSidebar}
           >
-            <svg
-              aria-hidden="true"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="3" y="4" width="18" height="16" rx="3" />
-              <path d="M9 4v16" />
-            </svg>
+            <SidebarSimple aria-hidden="true" size={18} weight="regular" />
           </button>
         </div>
         <Navigation />
