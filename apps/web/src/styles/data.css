@@ -38,4 +38,6 @@
 
 .backup-card code {
   overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
 }

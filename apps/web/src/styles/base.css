@@ -21,6 +21,10 @@
   --warm: #c96a42;
   --error: #b0413d;
   --success: #326b48;
+  --warm-ink: #9c4a26;
+  --status-ok: #77ba8d;
+  --status-warn: #d6a151;
+  --status-error: #d97870;
 
   --sidebar-bg: #1f2e29;
   --sidebar-ink: #f2f4f1;
@@ -44,6 +48,8 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(28 31 26 / 22%) transparent;
 }
 
 html,
@@ -107,6 +113,5 @@ h1,
 h2 {
   margin-top: 0;
   color: var(--ink);
-  font-family: Georgia, 'Noto Serif SC', 'Songti SC', serif;
-  font-weight: 550;
+  font-weight: 600;
 }

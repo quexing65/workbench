@@ -14,7 +14,7 @@ function percent(value: number | null): string {
   return value === null ? '—' : `${Math.round(value * 100)}%`;
 }
 
-const PIE_COLORS = ['#315f50', '#d3794d', '#71899b', '#a2865f', '#74658d', '#5f8b75'];
+const PIE_COLORS = ['#315f50', '#c96a42', '#7a7d78', '#a2865f', '#74658d', '#5f8b75'];
 
 function durationLabel(seconds: number): string {
   if (seconds < 60) return `${seconds} 秒`;

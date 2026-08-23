@@ -9,9 +9,9 @@
   display: flex;
   width: 16.5rem;
   padding: 2rem 1.25rem 1.5rem;
-  border-right: 1px solid rgb(255 255 255 / 8%);
-  color: #f2f1eb;
-  background: #22322d;
+  border-right: 1px solid var(--sidebar-line);
+  color: var(--sidebar-ink);
+  background: var(--sidebar-bg);
   flex-direction: column;
   transition:
     width 180ms ease,
@@ -32,8 +32,8 @@
   margin-left: auto;
   padding: 0;
   border: 1px solid rgb(255 255 255 / 24%);
-  border-radius: 0.55rem;
-  color: #f2f1eb;
+  border-radius: var(--radius-md);
+  color: var(--sidebar-ink);
   background: transparent;
   font: inherit;
   cursor: pointer;
@@ -46,7 +46,7 @@
 }
 
 .sidebar-toggle:hover {
-  background: rgb(255 255 255 / 8%);
+  background: var(--sidebar-hover);
 }
 
 .brand__mark {
@@ -54,10 +54,9 @@
   width: 2.5rem;
   height: 2.5rem;
   border: 1px solid rgb(255 255 255 / 18%);
-  border-radius: 0.75rem;
-  color: #17372d;
-  background: #cbe0d3;
-  font-family: Georgia, 'Times New Roman', serif;
+  border-radius: var(--radius-md);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
   font-size: 1.3rem;
   font-weight: 700;
   place-items: center;
@@ -71,14 +70,13 @@
 }
 
 .brand strong {
-  font-family: Georgia, 'Times New Roman', serif;
   font-size: 1.2rem;
   letter-spacing: 0.01em;
 }
 
 .brand small {
   margin-top: 0.15rem;
-  color: #aebbb5;
+  color: var(--sidebar-muted);
   font-size: 0.75rem;
   letter-spacing: 0.1em;
   white-space: nowrap;
@@ -200,12 +198,12 @@
 
 .sidebar__footer {
   padding-top: 1rem;
-  border-top: 1px solid rgb(255 255 255 / 10%);
+  border-top: 1px solid var(--sidebar-line);
 }
 
 .sidebar__footer > p {
   margin: 0.75rem 0 0;
-  color: #91a099;
+  color: var(--sidebar-muted);
   font-size: 0.72rem;
 }
 
@@ -214,7 +212,7 @@
   min-height: 2rem;
   align-items: center;
   gap: 0.5rem;
-  color: #bdc8c2;
+  color: var(--sidebar-muted);
   font-size: 0.75rem;
 }
 
@@ -222,24 +220,24 @@
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: #d6a151;
+  background: var(--status-warn);
   box-shadow: 0 0 0 0.2rem rgb(214 161 81 / 12%);
   flex: 0 0 auto;
 }
 
 .health--ok .health__dot {
-  background: #77ba8d;
+  background: var(--status-ok);
   box-shadow: 0 0 0 0.2rem rgb(119 186 141 / 12%);
 }
 
 .health--error .health__dot {
-  background: #d97870;
+  background: var(--status-error);
   box-shadow: 0 0 0 0.2rem rgb(217 120 112 / 12%);
 }
 
 .health__version {
   margin-left: auto;
-  color: #91a099;
+  color: var(--sidebar-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -247,7 +245,7 @@
   min-height: 2rem;
   padding: 0.2rem 0.5rem;
   border: 1px solid rgb(255 255 255 / 16%);
-  border-radius: 0.4rem;
+  border-radius: var(--radius-sm);
   color: inherit;
   background: transparent;
   cursor: pointer;

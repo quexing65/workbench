@@ -19,9 +19,9 @@
 .work-item,
 .note-card {
   border: 1px solid var(--line);
-  border-radius: 1rem;
+  border-radius: var(--radius-lg);
   background: var(--paper);
-  box-shadow: 0 8px 30px rgb(42 44 39 / 4%);
+  box-shadow: var(--shadow-sm);
 }
 
 .editor-card,
@@ -60,9 +60,9 @@ textarea {
   min-height: 2.75rem;
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--line);
-  border-radius: 0.65rem;
+  border-radius: var(--radius-md);
   color: var(--ink);
-  background: #fffefa;
+  background: var(--paper);
   font: inherit;
 }
 
@@ -75,10 +75,10 @@ button {
   min-height: 2.75rem;
   padding: 0.65rem 1rem;
   border: 1px solid var(--accent-strong);
-  border-radius: 0.65rem;
+  border-radius: var(--radius-md);
   color: white;
   background: var(--accent-strong);
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -106,7 +106,7 @@ button:disabled {
 
 .filter-chip {
   padding: 0.3rem 0.85rem;
-  border-radius: 99rem;
+  border-radius: var(--radius-full);
   border-color: var(--line);
   color: var(--muted);
   background: transparent;
@@ -183,7 +183,7 @@ button:disabled {
 .status-pill {
   display: inline-flex;
   padding: 0.25rem 0.55rem;
-  border-radius: 99rem;
+  border-radius: var(--radius-full);
   color: var(--accent-strong);
   background: var(--accent-soft);
   font-size: 0.75rem;
@@ -201,7 +201,8 @@ button:disabled {
 }
 
 .status-pill--expired {
-  color: var(--warm);
+  /* 0.75rem 小字要求 4.5:1，--warm 在浅底约 3.4:1 不达标 */
+  color: var(--warm-ink);
   background: #fdeee6;
 }
 

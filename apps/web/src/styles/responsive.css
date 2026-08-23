@@ -29,7 +29,7 @@
     min-height: 4.5rem;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--line);
-    background: rgb(238 236 228 / 92%);
+    background: rgb(246 246 243 / 92%);
     backdrop-filter: blur(14px);
     align-items: center;
     justify-content: space-between;
@@ -78,8 +78,8 @@
     min-height: calc(4.6rem + env(safe-area-inset-bottom));
     padding: 0.35rem 0.3rem env(safe-area-inset-bottom);
     border-top: 1px solid var(--line);
-    background: rgb(248 246 239 / 96%);
-    box-shadow: 0 -8px 30px rgb(42 44 39 / 7%);
+    background: rgb(255 255 255 / 96%);
+    box-shadow: 0 -8px 30px rgb(20 23 18 / 7%);
     backdrop-filter: blur(16px);
   }
 

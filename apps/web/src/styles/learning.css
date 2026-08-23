@@ -9,9 +9,9 @@
 .learning-card,
 .series-card {
   border: 1px solid var(--line);
-  border-radius: 1rem;
+  border-radius: var(--radius-lg);
   background: var(--paper);
-  box-shadow: 0 8px 30px rgb(42 44 39 / 4%);
+  box-shadow: var(--shadow-sm);
 }
 
 .bili-sync-panel {
@@ -63,13 +63,13 @@
 .connection-state {
   padding: 0.45rem 0.7rem;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   color: var(--muted);
   white-space: nowrap;
 }
 
 .connection-state.is-connected {
-  color: var(--success, #326b48);
+  color: var(--success);
   border-color: currentColor;
 }
 
@@ -161,9 +161,9 @@ select {
   min-height: 2.75rem;
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--line);
-  border-radius: 0.65rem;
+  border-radius: var(--radius-md);
   color: var(--ink);
-  background: #fffefa;
+  background: var(--paper);
   font: inherit;
 }
 
@@ -228,7 +228,7 @@ select {
 
 .resume-note {
   padding: 0.7rem 0.85rem;
-  border-radius: 0.65rem;
+  border-radius: var(--radius-md);
   background: var(--accent-soft);
 }
 
@@ -268,7 +268,7 @@ select {
   margin: 1rem 0;
   padding: 1rem;
   border: 1px solid var(--line);
-  border-radius: 0.8rem;
+  border-radius: var(--radius-lg);
   gap: 0.55rem;
   background: var(--accent-soft);
 }
@@ -311,7 +311,7 @@ select {
   min-width: 9rem;
   border-color: var(--line);
   color: var(--ink);
-  background: #fffefa;
+  background: var(--paper);
   white-space: nowrap;
 }
 
@@ -324,7 +324,7 @@ select {
 .learning-actions .learning-action-button--danger {
   border-color: color-mix(in srgb, var(--error) 45%, var(--line));
   color: var(--error);
-  background: color-mix(in srgb, var(--error) 7%, #fffefa);
+  background: color-mix(in srgb, var(--error) 7%, var(--paper));
 }
 
 .learning-actions .learning-action-button:hover:not(:disabled) {
@@ -367,14 +367,14 @@ select {
 }
 
 .series-card {
-  background: #fffefa;
+  background: var(--paper);
 }
 
 .series-summary {
   padding: 1rem;
   border: 1px solid var(--line);
-  border-radius: 0.8rem;
-  background: #fffefa;
+  border-radius: var(--radius-lg);
+  background: var(--paper);
 }
 
 .series-summary__header {
