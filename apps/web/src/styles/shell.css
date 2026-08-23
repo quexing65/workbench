@@ -42,8 +42,28 @@
   flex: 0 0 auto;
 }
 
-.sidebar-toggle svg {
-  display: block;
+.sidebar-toggle__glyph {
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--motion-fast) ease,
+    transform var(--motion-fast) var(--ease-out);
+}
+
+.sidebar-toggle__glyph--fill {
+  opacity: 0;
+  transform: scale(0.88);
+}
+
+.sidebar-toggle:hover .sidebar-toggle__glyph--outline,
+.sidebar-toggle:focus-visible .sidebar-toggle__glyph--outline {
+  opacity: 0;
+  transform: scale(1.1);
+}
+
+.sidebar-toggle:hover .sidebar-toggle__glyph--fill,
+.sidebar-toggle:focus-visible .sidebar-toggle__glyph--fill {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .sidebar-toggle:hover {
