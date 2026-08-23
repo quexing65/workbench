@@ -10,6 +10,12 @@ const MINIMUM_EMBEDDED_NODE_MAJOR = 24;
 
 const isDevelopment = process.argv.includes('--dev');
 
+// 纯表单/列表 UI 无 GPU 加速需求，软件渲染可为 GPU 进程省约 60MB 内存；
+// 若个别机器出现滚动/动画掉帧，可设 WORKBENCH_SOFTWARE_RENDERING=false 恢复硬件加速。
+if (process.env['WORKBENCH_SOFTWARE_RENDERING'] !== 'false') {
+  app.disableHardwareAcceleration();
+}
+
 /**
  * dpapi.ps1 由外部进程 powershell.exe 读取，asar 虚拟文件系统对外部进程不可见，
  * 因此打包产物把它释放到 app.asar.unpacked 并在这里解析真实磁盘路径。
@@ -76,6 +82,8 @@ async function createMainWindow(targetUrl: string): Promise<void> {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      // 纯中文界面，内置拼写检查（默认开启）只会白白加载字典占用内存。
+      spellcheck: false,
     },
   });
 
