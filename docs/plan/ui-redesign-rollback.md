@@ -54,13 +54,19 @@ git checkout main
 git reset --hard pre-ui-redesign
 ```
 
-已经推送过了——用"反向提交"安全回退，不改写历史，之后正常 push 即可：
+已经推送过了——改版经 --no-ff 合并进 main（合并提交 `b63bf00`），**一条命令反向整个合并**，
+不改写历史，之后正常 push 即可：
 
 ```bash
 git checkout main
-git revert --no-edit pre-ui-redesign..HEAD
+git revert --no-edit -m 1 b63bf00
 git push
 ```
+
+说明：`-m 1` 表示沿着 main 这一侧反向，一次性抵消合并带来的全部改版代码。
+注意不要用 `git revert pre-ui-redesign..HEAD`——范围里含合并提交，git 会因缺少
+`-m` 参数直接报错。版本号 bump 与本手册的登记提交（`e9614f3`、`9f00526`）不含
+改版代码，可留着不动；回退后若要恢复旧界面分发，需按台账流程再发一个补丁版。
 
 （进阶可选：`git reset --hard pre-ui-redesign` + `git push --force-with-lease`
 可以把远程历史也抹干净，但会改写远程记录，非必要不碰。）
