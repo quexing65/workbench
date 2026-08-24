@@ -107,7 +107,6 @@ npm run desktop:dist
 
 开始开发前必须阅读：
 
-- `EXECUTION_PLAN.md`
 - `docs/ledger/STATUS.md`
 - `docs/baseline/ARCHITECTURE.md`
 - `docs/baseline/PROJECT_STRUCTURE.md`
@@ -116,12 +115,15 @@ npm run desktop:dist
 - `docs/operations/OPERATIONS.md`
 - `docs/operations/RELEASES.md`
 - `docs/ledger/FINAL_ACCEPTANCE.md`
+- `EXECUTION_PLAN.md`（已归档的历史实施合同，仅供了解重建过程）
 
 ## 当前状态与核心原则
 
-当前版本：**v1.0.0 正式版**（2026-08-21）。阶段 8 全部门槛通过：备份恢复、远程 Windows CI、
-桌面分发、真实并行使用 7 天与用户核心工作流确认均已完成，vNext 已正式上线。
-完整验收台账见 `docs/ledger/FINAL_ACCEPTANCE.md` 与 `docs/ledger/STATUS.md`。
+当前版本：**v1.2.1**（2026-08-24）。v1.0.0 已通过阶段 8 全部门槛（备份恢复、远程
+Windows CI、桌面分发、真实并行使用 7 天与用户核心工作流确认）正式上线；此后迭代：
+v1.0.1 桌面内存优化、v1.1.0 退役遗留数据导入模块、v1.2.x 极简生产力风格界面改版。
+完整验收台账见 `docs/ledger/FINAL_ACCEPTANCE.md` 与 `docs/ledger/STATUS.md`，
+各版本变更明细见 `docs/operations/RELEASES.md`。
 
 核心原则：SQLite 是唯一业务数据源；本机 Node 服务是唯一后端；浏览器只通过
 `/api/v1` 读写业务数据；B站凭据不进入 SQLite、日志、API 响应或普通备份。

@@ -1,7 +1,7 @@
 # vNext 架构基线
 
-- 状态：阶段 8 已实施，最终切换门槛待真实运行确认
-- 日期：2026-08-13
+- 状态：现行基线。阶段 0–8 已全部实施，v1.0.0（2026-08-21）通过最终验收正式上线
+- 日期：2026-08-13 制定，2026-08-24 更新
 - 默认时区：Asia/Shanghai
 
 本文件定义 vNext 的架构边界。任何实质变化都必须先新增 ADR。
@@ -9,8 +9,8 @@
 ## 目标与非目标
 
 vNext 是运行在当前 Windows 用户环境中的 local-first 工作台，覆盖任务、固定任务、小记、
-总览、回顾和 B站学习。第一版不做云同步、账号、多用户、D1/R2、Electron、公网监听、
-局域网共享或任意网站学习追踪。
+总览、回顾和 B站学习。不做云同步、账号、多用户、D1/R2、公网监听、局域网共享或任意网站
+学习追踪。桌面壳（Electron）已由 ADR 0007 引入，是当前主要分发形态。
 
 两个旧项目只用于只读参考和一次性导入，不得成为 workspace、软链接或运行时依赖。
 
@@ -61,6 +61,8 @@ ADR 0007）在 Electron 主进程内嵌同一 Express 服务并加载同源地�
 - 业务日使用 `YYYY-MM-DD`，按 `APP_TIME_ZONE`（默认 Asia/Shanghai）解释，不做 UTC 换日。
 - 时长统一使用非负整数秒；ID 由服务端生成 UUID。
 - 可编辑实体使用 revision 乐观并发控制，冲突返回 409。
+- 创建返回 201，异步任务（如 B站同步）返回 202，删除成功返回 204。
+- 列表返回对象而不是裸数组，便于将来扩展分页与元数据。
 - 错误统一为 `{error:{code,message,requestId,details}}`，不暴露 SQL、栈、路径或秘密。
 
 ## 运行时数据
@@ -85,16 +87,50 @@ ADR 0007）在 Electron 主进程内嵌同一 Express 服务并加载同源地�
 - Legacy import：Personal v1/v2/v3 JSON 与 qoder SQLite 只经复制到随机临时目录后读取；
   preflight 生成有 TTL 的不可变计划，apply 重新校验源、计划和目标基线，先做一致快照再以
   `BEGIN IMMEDIATE` 单事务写入。来源贡献与 tombstone 分开记录，冲突默认保留本地。
+  **该模块已于 v1.1.0 退役**（ADR 0005 使命完成，运行时代码移除）；相关数据表保留在
+  schema 中用于历史审计，详见 `docs/baseline/DATA_MODEL.md`。
 - Performance：查询计划审计与正式构建浏览器审计共用 10k tasks、10k notes、1k videos 隔离
   fixture；首屏列表必须有界，用户可显式逐步展开全部数据，自动门禁检查完成加载、交互和 DOM
   预算。
 
 ## 质量门槛
 
-阶段 1 建立 TypeScript strict、ESLint 0 warning、Vitest、Playwright 和 Windows CI。
-阶段 3 起全局覆盖率 lines/functions/statements ≥85%、branches ≥80%；关键迁移、导入、
-进度和凭据模块要求更高覆盖率。`check:all` 还必须运行 Chromium E2E 和目标数据量浏览器性能
-审计。完整要求以 `EXECUTION_PLAN.md` 为准。
+静态检查：TypeScript strict、ESLint 0 warning、Prettier 格式检查，全部通过 Windows CI
+（`.github/workflows/ci.yml`）。
+
+覆盖率（全局）：lines/functions/statements ≥ 85%，branches ≥ 80%；migration、进度合并
+（progress merge）和凭据（credential）模块要求 lines ≥ 95%、branches ≥ 90%。不得用无意义
+断言或排除关键文件追求数字。原 import 模块的独立覆盖率阈值已随 v1.1.0 模块退役移除。
+
+测试矩阵（改动对应区域时必须覆盖的最低面）：
+
+| 层级           | 必测内容                                           |
+| -------------- | -------------------------------------------------- |
+| Shared 纯函数  | 日期、固定任务范围、URL、进度合并、字段校验        |
+| Repository     | CRUD、软删除、唯一约束、事务、revision 冲突        |
+| Migration      | 空库、逐版本升级、checksum、重复启动、失败回滚     |
+| API            | 正常、4xx、404、409、Host/Origin、并发、重启持久化 |
+| Web            | loading、empty、error、retry、busy、409、草稿保留  |
+| Bili fixture   | 单/多P、下架、限流、超时、坏响应、旧历史、重置     |
+| Credential     | DPAPI roundtrip、清除、日志脱敏、备份排除          |
+| Backup/restore | 快照、manifest、hash、integrity、失败自动回退      |
+| Security       | SSRF、路径穿越、跨站写、SQL 参数化、秘密扫描       |
+| E2E            | 任务、小记、固定任务、总览、学习、备份、移动导航   |
+| Accessibility  | 键盘、焦点、标签、对比、reduced motion、axe        |
+
+提交前最低命令集：
+
+```powershell
+npm run check          # format:check + lint + typecheck + test + build
+npm run test:e2e       # 涉及页面/交互改动时
+npm run check:all      # 发版或大改动前（另含浏览器性能审计）
+```
+
+CI 约束：Windows runner 必需；CI 禁止访问真实 B站，禁止包含真实数据库、Cookie、日志或
+备份；新迁移必须带迁移测试。
+
+> 原 `EXECUTION_PLAN.md` §14 为本节来源，该文件已于 2026-08-24 归档为历史文档；
+> 其测试要求以本节为现行版本。
 
 ## 关联决策
 

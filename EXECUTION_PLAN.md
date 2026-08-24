@@ -2,9 +2,35 @@
 
 > 目标路径：`E:\Workspace\Personal-Workbench-vNext`  
 > 本文件在新项目中的最终文件名：`EXECUTION_PLAN.md`  
-> 文档状态：实施基线（Baseline）  
+> 文档状态：**已归档（历史文档，不再更新）**  
 > 制定日期：2026-08-13  
+> 归档日期：2026-08-24  
 > 默认时区：`Asia/Shanghai`
+
+---
+
+## 归档说明（2026-08-24）
+
+本文件是 vNext 重建期（阶段 0–8）的实施合同。全部阶段已于 2026-08-21 通过最终验收并
+发布 v1.0.0（见 `docs/ledger/FINAL_ACCEPTANCE.md`），本文件自此归档为历史记录，
+**不再作为现行规范被引用**。现行权威文档：
+
+- 架构边界：`docs/baseline/ARCHITECTURE.md`
+- 数据模型与字段约束：`docs/baseline/DATA_MODEL.md` + `apps/server/src/db/migrations/`
+  （迁移 SQL 是字段级唯一事实源）
+- 安全基线：`docs/baseline/SECURITY.md`
+- 目录规范：`docs/baseline/PROJECT_STRUCTURE.md`
+- 架构决策：`docs/adr/`（新增）
+
+阅读本文时注意已被后续决策废止的条款：
+
+- §1.2/§17 中"第一版不做 Electron"——已由 ADR 0007（桌面壳）废止；
+- §8.8/§11（导入 API 与旧数据迁移规范）及 §13 阶段 7——导入模块已完成历史使命，
+  于 v1.1.0 退役（数据表保留用于审计，运行时代码已删除）；
+- §11.4 中"旧项目保留 30 天"——用户已于 v1.0.0 发布时主动取消保留期；
+- §15 的 STATUS 模板已由 `docs/ledger/STATUS.md` 接替。
+
+以下各节内容保持原样，仅作历史记录。
 
 ---
 

@@ -1,8 +1,8 @@
 # vNext 数据模型基线
 
-- 状态：阶段 8 已实施，最终切换门槛待真实运行确认
-- 当前 schema version：3
-- 日期：2026-08-13
+- 状态：现行基线。阶段 0–8 已全部实施，v1.0.0（2026-08-21）通过最终验收正式上线
+- 当前 schema version：5
+- 日期：2026-08-13 制定，2026-08-24 更新
 
 SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态等非业务偏好；凭据不属于
 业务数据库，也不得保存到 settings。
@@ -32,6 +32,10 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
   用于多来源共享目标及只撤销单一来源贡献。
 - `deletion_markers`：Personal tombstone 的来源级删除事实。
 
+> `import_runs`、`source_refs`、`source_contributions`、`deletion_markers` 四表属于已退役的
+> 旧数据导入模块（v1.1.0 移除运行时代码，ADR 0005）：表结构保留在 schema 中用于历史
+> 审计，新功能不得读写它们。
+
 ### 通用工作台
 
 - `tasks`：每日任务，状态为 active/completed/cancelled/expired；更新使用 revision 原子乐观锁，
@@ -59,7 +63,8 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
   系列实时汇总：各资源取「续播分P之前分P全长 + resume 秒数」（手动完成按全长）求和。
 - `unresolved_learning_links`：尚不能离线解析的 b23 或普通链接。
 
-完整字段和约束以 `EXECUTION_PLAN.md` 第 7 节为实施合同。
+完整字段和约束以 `apps/server/src/db/migrations/` 的编号迁移 SQL 为唯一事实源
+（`EXECUTION_PLAN.md` 第 7 节系其历史草稿，该文件已归档）。
 
 ## 固定任务不变量
 
@@ -92,6 +97,9 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 
 ## Import 不变量
 
+> 本节描述的导入模块已于 v1.1.0 退役（ADR 0005），运行时代码已删除；以下语义仅作为
+> 保留数据表的解释存档。
+
 - preflight 与 apply 是两条不可变运行记录或等价父子模型。
 - apply 必须引用 preflight；source_refs/deletion_markers 只能指向成功 apply。
 - confirmation token 绑定 runId、sourceHash、sourceType、sourceTimezone 与 planHash，并有 TTL；
@@ -119,6 +127,14 @@ SHA-256 为 `103858fe38bbdfdc4ed2af86fa5894b71b0203aa2ab756ded9c859eabbfd08ac`�
 学习库更新时间、继续学习和学习活动时间区间补充部分/表达式索引。学习活动查询改用
 Asia/Shanghai 日界对应的 UTC epoch 毫秒范围，避免在索引列上逐行执行 `date()`。该迁移只新增
 索引，不改变业务字段或数据语义；schema version 升至 3，`0001`/`0002` 未修改。
+
+新增 `0004-watched-seconds.sql`：`learning_part_progress` 增加 `watched_seconds`（实际观看
+累计估算）与 `last_seconds`（最近一次观察秒数）两列，并新建 `learning_watch_daily`
+（分P × 业务日实际观看秒数聚合，带 watch_date 索引）；schema version 升至 4。
+
+新增 `0005-task-expired-status.sql`：`tasks.status` CHECK 约束正式纳入 `expired`
+（0001 中原为三态），通过表重建复制数据完成；同时重建 `tasks_by_date` 并新增
+`tasks_day_order`、`tasks_active_overdue` 索引。schema version 升至 5。
 
 ## B站同步
 
