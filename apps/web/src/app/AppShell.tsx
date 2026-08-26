@@ -25,7 +25,7 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
                     aria-hidden="true"
                     className="side-nav__glider"
                     layoutId="side-nav-glider"
-                    transition={{ type: 'spring', stiffness: 480, damping: 42 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.9 }}
                   />
                 )}
                 <span className="nav-link__icon" aria-hidden="true">

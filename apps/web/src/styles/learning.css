@@ -201,6 +201,18 @@ select {
 .learning-card,
 .series-card {
   padding: 1.15rem;
+  transition:
+    border-color var(--motion-base) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out);
+}
+
+/* 与清单卡片一致的悬停浮起反馈 */
+.learning-card:hover,
+.series-card:hover {
+  border-color: #d8d6cf;
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
 }
 
 .learning-card__header {

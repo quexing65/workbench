@@ -17,6 +17,13 @@ function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
 }
 
+const STATUS_LABELS: Record<TaskStatus, string> = {
+  active: '待完成',
+  completed: '已完成',
+  expired: '已过期',
+  cancelled: '已取消',
+};
+
 function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
   const client = useQueryClient();
   const [editing, setEditing] = useState(false);
@@ -46,7 +53,7 @@ function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
   });
 
   return (
-    <li className="work-item">
+    <li className={`work-item work-item--${item.status} task-card`}>
       {editing && item.kind === 'daily' ? (
         <form
           className="inline-form"
@@ -90,21 +97,21 @@ function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
         </form>
       ) : (
         <>
-          <div className="work-item__body">
-            <span className={`status-pill status-pill--${item.status}`}>
-              {item.status === 'active'
-                ? '待完成'
-                : item.status === 'completed'
-                  ? '已完成'
-                  : item.status === 'expired'
-                    ? '已过期'
-                    : '已取消'}
-            </span>
-            <h2>{item.title}</h2>
-            {item.description && <p>{item.description}</p>}
-            {item.kind === 'recurring' && <small>固定任务 · 当天状态独立</small>}
+          <div className="task-card__content">
+            <div className="task-card__head">
+              <span className={`status-pill status-pill--${item.status}`}>
+                {STATUS_LABELS[item.status]}
+              </span>
+              <h2>{item.title}</h2>
+              {item.kind === 'recurring' && (
+                <span className="task-card__tag" title="当天状态独立，不影响其他日期">
+                  固定任务
+                </span>
+              )}
+            </div>
+            {item.description && <p className="task-card__desc">{item.description}</p>}
           </div>
-          <div className="button-row">
+          <div className="button-row task-card__actions">
             {item.status !== 'completed' && (
               <button disabled={mutation.isPending} onClick={() => mutation.mutate('completed')}>
                 完成
@@ -182,8 +189,11 @@ export function TasksPage() {
     create.mutate();
   }
 
+  const items = tasks.data?.items ?? [];
+  const doneCount = items.filter((item) => item.status === 'completed').length;
+
   return (
-    <section className="page business-page">
+    <section className="page business-page tasks-page">
       <header className="page-header">
         <p className="eyebrow">每日安排</p>
         <h1>任务</h1>
@@ -227,7 +237,14 @@ export function TasksPage() {
         </form>
         <div className="list-panel">
           <div className="list-toolbar">
-            <h2>{date} 的清单</h2>
+            <div className="list-toolbar__title">
+              <h2>{date} 的清单</h2>
+              {items.length > 0 && (
+                <p className="list-toolbar__meta">
+                  {items.length - doneCount} 项进行中 · {doneCount} 项已完成
+                </p>
+              )}
+            </div>
             <label>
               切换日期
               <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />

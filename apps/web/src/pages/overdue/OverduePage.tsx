@@ -56,16 +56,18 @@ function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
   const pill = STATUS_PILLS[task.status];
 
   return (
-    <li className="work-item">
-      <div className="work-item__body">
-        <span className={`status-pill ${pill.className}`}>{pill.label}</span>
-        <h3>{task.title}</h3>
-        {task.description ? <p>{task.description}</p> : null}
-        <small className="overdue-item__meta">
-          {task.date} · 逾期 {overdueDays(task.date, today)} 天
-        </small>
+    <li className={`work-item work-item--${task.status} task-card`}>
+      <div className="task-card__content">
+        <div className="task-card__head">
+          <span className={`status-pill ${pill.className}`}>{pill.label}</span>
+          <h3>{task.title}</h3>
+          <span className="task-card__tag">
+            {task.date} · 逾期 {overdueDays(task.date, today)} 天
+          </span>
+        </div>
+        {task.description ? <p className="task-card__desc">{task.description}</p> : null}
       </div>
-      <div className="button-row">
+      <div className="button-row task-card__actions">
         {task.status === 'active' ? (
           <>
             <button disabled={mutation.isPending} onClick={() => mutation.mutate('move')}>

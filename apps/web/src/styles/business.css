@@ -160,7 +160,7 @@ button:disabled {
 }
 
 .work-item__body {
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .work-item__body h2,
@@ -182,12 +182,23 @@ button:disabled {
 
 .status-pill {
   display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
   padding: 0.25rem 0.55rem;
   border-radius: var(--radius-full);
   color: var(--accent-strong);
   background: var(--accent-soft);
   font-size: 0.75rem;
   font-weight: 800;
+}
+
+.status-pill::before {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  content: '';
 }
 
 .status-pill--completed {
@@ -226,7 +237,10 @@ button:disabled {
 }
 
 .empty-state {
-  padding: 2rem 0;
+  margin: 0;
+  padding: 2rem 1rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
   color: var(--muted);
   text-align: center;
 }
@@ -274,13 +288,248 @@ button:disabled {
   font-weight: 650;
 }
 
-.overdue-item__meta {
-  display: block;
-  margin-top: 0.35rem;
-}
-
 .overdue-link-row {
   margin: 0.9rem 0 0;
+}
+
+/* ===== 清单卡片通用风格（任务 / 逾期 / 固定任务 / 小记共用） ===== */
+
+/* 卡片本体：左侧状态条 + 悬停浮起 */
+.work-item {
+  position: relative;
+  padding: 1.1rem 1.25rem 1rem 1.4rem;
+  transition:
+    border-color var(--motion-base) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out);
+}
+
+.work-item::before {
+  position: absolute;
+  top: 1.15rem;
+  bottom: 1.15rem;
+  left: 0;
+  width: 3px;
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+  background: var(--accent);
+  content: '';
+}
+
+.work-item--completed::before {
+  background: var(--status-ok);
+}
+
+.work-item--cancelled::before {
+  background: var(--line);
+}
+
+.work-item--expired::before {
+  background: var(--warm);
+}
+
+.work-item:hover,
+.note-card:hover {
+  border-color: #d8d6cf;
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+
+/* 完成态：标题划线、卡片降噪 */
+.work-item--completed {
+  background: #fbfbf9;
+}
+
+.work-item--completed .work-item__body h2,
+.work-item--completed .work-item__body h3 {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: rgb(92 96 90 / 45%);
+  text-decoration-thickness: 1.5px;
+}
+
+.work-item--completed .work-item__body p {
+  opacity: 0.75;
+}
+
+/* 卡片内操作区：细分隔线 + 小型胶囊按钮 */
+.work-item .button-row,
+.note-card .button-row {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+  gap: 0.5rem;
+}
+
+.work-item .button-row button,
+.note-card .button-row button {
+  min-height: 2.15rem;
+  padding: 0.3rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  transition:
+    color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    background var(--motion-fast) ease;
+}
+
+.work-item .button-row .button-secondary:hover:not(:disabled),
+.note-card .button-row .button-secondary:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  filter: none;
+}
+
+.work-item .button-row .button-danger:hover:not(:disabled),
+.note-card .button-row .button-danger:hover:not(:disabled) {
+  background: #f9eae9;
+  filter: none;
+}
+
+/* 小记卡片：与清单卡片一致的浮起反馈，置顶卡加暖色侧条 */
+.note-card {
+  position: relative;
+  transition:
+    border-color var(--motion-base) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out);
+}
+
+.note-card--pinned::before {
+  position: absolute;
+  top: 1.15rem;
+  bottom: 1.15rem;
+  left: 0;
+  width: 3px;
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+  background: var(--warm);
+  content: '';
+}
+
+/* ===== 任务页特有：工具栏与紧凑卡片排版 ===== */
+
+.tasks-page .business-layout {
+  gap: 1.5rem;
+}
+
+.tasks-page .editor-card h2,
+.tasks-page .list-panel h2 {
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.tasks-page .list-toolbar__title h2 {
+  margin: 0;
+}
+
+.tasks-page .list-toolbar__meta {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.tasks-page .work-list {
+  gap: 0.6rem;
+}
+
+/* 紧凑卡片（任务 / 逾期共用）：内容居左、操作居右，一行容纳 */
+.task-card {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  padding: 0.7rem 1rem 0.7rem 1.2rem;
+}
+
+.task-card::before {
+  top: 0.72rem;
+  bottom: 0.72rem;
+}
+
+.task-card__content {
+  min-width: 0;
+  flex: 1;
+}
+
+.task-card__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+}
+
+.task-card__head .status-pill {
+  padding: 0.16rem 0.5rem;
+  font-size: 0.72rem;
+}
+
+.task-card__head h2,
+.task-card__head h3 {
+  margin: 0;
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+}
+
+.task-card__tag {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.task-card__desc {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* 完成态：标题划线降噪 */
+.work-item--completed .task-card__head h2,
+.work-item--completed .task-card__head h3 {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: rgb(92 96 90 / 45%);
+  text-decoration-thickness: 1.5px;
+}
+
+/* 操作区：跟随内容右侧，取消分隔线 */
+.task-card__actions {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+  flex: 0 0 auto;
+}
+
+.task-card__actions button {
+  min-height: 1.95rem;
+  padding: 0.18rem 0.8rem;
+  font-size: 0.78rem;
+}
+
+/* 编辑表单与错误提示占满整行 */
+.task-card .inline-form,
+.task-card .form-error {
+  flex: 1 1 100%;
+}
+
+@media (max-width: 760px) {
+  .tasks-page .list-toolbar__title {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .task-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .task-card__tag {
+    margin-left: 0;
+  }
 }
 
 @media (max-width: 980px) {
