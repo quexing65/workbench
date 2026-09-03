@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppRouter } from '../app/router';
 
@@ -10,6 +10,18 @@ const healthPayload = {
   schemaVersion: 3,
   timeZone: 'Asia/Shanghai',
 };
+
+function stubHealthFetch() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      new Response(JSON.stringify(healthPayload), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+      }),
+    ),
+  );
+}
 
 function renderApp() {
   const queryClient = new QueryClient({
@@ -26,15 +38,7 @@ function renderApp() {
 describe('Personal Workbench application shell', () => {
   beforeEach(() => {
     window.history.replaceState({}, '', '/');
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify(healthPayload), {
-          headers: { 'Content-Type': 'application/json' },
-          status: 200,
-        }),
-      ),
-    );
+    stubHealthFetch();
   });
 
   afterEach(() => {
@@ -88,5 +92,91 @@ describe('Personal Workbench application shell', () => {
 
     expect((await screen.findAllByRole('alert')).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: '重试' }).length).toBeGreaterThan(0);
+  });
+});
+
+describe('responsive sidebar tiers', () => {
+  /** 按查询返回 matches 的 matchMedia 替身；AppShell 用它判定 rail / drawer 档位。 */
+  function stubMatchMedia(matches: (query: string) => boolean) {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: matches(query),
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    );
+  }
+
+  function shellElement(): Element | null {
+    return document.querySelector('.app-shell');
+  }
+
+  beforeEach(() => {
+    window.history.replaceState({}, '', '/');
+    stubHealthFetch();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the full sidebar on desktop widths', async () => {
+    stubMatchMedia(() => false);
+    renderApp();
+
+    expect(
+      await screen.findByRole('heading', { name: '把今天，安稳地放在眼前。' }),
+    ).toBeInTheDocument();
+    const shell = shellElement();
+    expect(shell).not.toHaveClass('app-shell--sidebar-collapsed');
+    expect(shell).not.toHaveClass('app-shell--rail');
+    expect(shell).not.toHaveClass('app-shell--drawer');
+    expect(screen.queryByRole('button', { name: '打开导航' })).not.toBeInTheDocument();
+  });
+
+  it('narrows to an icon rail between 641px and 1100px', async () => {
+    stubMatchMedia((query) => query === '(min-width: 641px) and (max-width: 1100px)');
+    renderApp();
+
+    expect(
+      await screen.findByRole('heading', { name: '把今天，安稳地放在眼前。' }),
+    ).toBeInTheDocument();
+    const shell = shellElement();
+    expect(shell).toHaveClass('app-shell--sidebar-collapsed');
+    expect(shell).toHaveClass('app-shell--rail');
+    expect(screen.queryByRole('button', { name: '打开导航' })).not.toBeInTheDocument();
+  });
+
+  it('hides the sidebar behind a handle on phone widths and closes via Escape', async () => {
+    stubMatchMedia((query) => query === '(max-width: 640px)');
+    renderApp();
+
+    const handle = await screen.findByRole('button', { name: '打开导航' });
+    const shell = shellElement();
+    expect(shell).toHaveClass('app-shell--drawer');
+    expect(shell).not.toHaveClass('app-shell--drawer-open');
+
+    fireEvent.click(handle);
+    expect(shell).toHaveClass('app-shell--drawer-open');
+    expect(screen.getByRole('button', { name: '关闭导航' })).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(shell).not.toHaveClass('app-shell--drawer-open'));
+  });
+
+  it('closes the drawer after picking a destination', async () => {
+    stubMatchMedia((query) => query === '(max-width: 640px)');
+    renderApp();
+
+    fireEvent.click(await screen.findByRole('button', { name: '打开导航' }));
+    fireEvent.click(screen.getAllByRole('link', { name: '回顾' })[0]!);
+    await waitFor(() => expect(shellElement()).not.toHaveClass('app-shell--drawer-open'));
   });
 });

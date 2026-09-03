@@ -6,6 +6,7 @@ import { addBusinessDays, businessDateSpan } from '@workbench/shared';
 
 import { OverviewPage } from '../pages/overview/OverviewPage';
 import { ReviewPage } from '../pages/review/ReviewPage';
+import { ContributionHeatmap } from '../shared/ui/ContributionHeatmap';
 
 const date = '2026-08-13';
 const day = {
@@ -90,6 +91,47 @@ function renderPage(page: React.ReactNode) {
   );
 }
 
+function reviewPayload(from: string, to: string) {
+  // 当前年窗口（2026-01-01 起）有完成记录，同比窗口全部为零。
+  const isCurrent = from === '2026-01-01';
+  const span = businessDateSpan(from, to);
+  const days = Array.from({ length: span }, (_, index) => ({
+    ...day,
+    date: addBusinessDays(from, index),
+    completed: isCurrent ? 1 : 0,
+    completionRate: isCurrent ? 0.5 : 0,
+    learningActivities: isCurrent ? 1 : 0,
+  }));
+  return {
+    from,
+    to,
+    days,
+    totals: {
+      planned: span * 2,
+      completed: isCurrent ? span : 0,
+      cancelled: 0,
+      completionRate: isCurrent ? 0.5 : 0,
+      learningActivities: isCurrent ? span : 0,
+    },
+    // 观看进度是当前状态快照，与区间无关，两期返回相同值。
+    learningDuration: {
+      totalSeconds: 5400,
+      bySeries: [
+        {
+          seriesId: '10000000-0000-4000-8000-000000000001',
+          seriesName: '数据库',
+          durationSeconds: 3600,
+        },
+        {
+          seriesId: '10000000-0000-4000-8000-000000000002',
+          seriesName: '人工智能',
+          durationSeconds: 1800,
+        },
+      ],
+    },
+  };
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   vi.setSystemTime(new Date('2026-08-13T04:00:00.000Z'));
@@ -108,6 +150,8 @@ describe('overview page', () => {
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         calls.push([input, init]);
+        const url = String(input);
+        if (url.includes('/api/v1/review')) return json(reviewPayload('2026-01-01', date));
         if (init?.method === 'POST') return json(overview.today.items[0], 201);
         if (init?.method === 'PATCH')
           return json({ ...overview.overdueTasks[0], date, revision: 3 });
@@ -119,15 +163,18 @@ describe('overview page', () => {
     expect(await screen.findByRole('heading', { name: '完成阶段回顾' })).toBeInTheDocument();
     expect(screen.getByText('记录一个可靠的想法')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'TypeScript 课程' })).toBeInTheDocument();
-    expect(screen.getAllByText('50%')).toHaveLength(7);
 
     const progress = screen.getByRole('progressbar', { name: '今日完成进度' });
     expect(progress).toHaveAttribute('aria-valuenow', '0');
     expect(progress).toHaveAttribute('aria-valuetext', '已完成 0%');
-    const weekChart = screen.getByRole('group', {
-      name: '近 7 天每日计划与完成堆叠柱状图',
-    });
-    expect(within(weekChart).getAllByRole('img')).toHaveLength(7);
+
+    // 贡献轨迹：26 周滚动窗口是完整矩形，本周未到的日子渲染为空格子。
+    // 窗口为 2026-02-15（周日）至 2026-08-15（周六），数据到 8 月 13 日。
+    const heatmap = screen.getByRole('group', { name: '近半年每日任务完成贡献图' });
+    expect(heatmap.querySelectorAll('.contribution-cell')).toHaveLength(26 * 7);
+    expect(within(heatmap).getAllByRole('img')).toHaveLength(180);
+    expect(screen.getByText('完成 180 项 · 有贡献 180 天 · 最长连续 180 天')).toBeInTheDocument();
+
     expect(screen.getByRole('heading', { name: '过期待办 · 1' })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('快速添加今天的任务'), {
@@ -142,31 +189,54 @@ describe('overview page', () => {
   });
 
   it('shows retry and truthful empty states', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(json({ error: { code: 'FAIL', message: '失败', details: [] } }, 500))
-      .mockResolvedValue(
-        json({
-          ...overview,
-          today: { ...overview.today, items: [], planned: 0, active: 0 },
-          overdueTasks: [],
-          recentNotes: [],
-          nextLearning: null,
-          last7Days: overview.last7Days.map((item) => ({
-            ...item,
-            planned: 0,
-            completed: 0,
-            completionRate: null,
-          })),
-        }),
-      );
-    vi.stubGlobal('fetch', fetchMock);
+    const emptyReview = {
+      from: '2026-01-01',
+      to: date,
+      // schema 要求 days 至少一天；全零的一天代表真实空态。
+      days: [
+        {
+          ...day,
+          planned: 0,
+          completed: 0,
+          cancelled: 0,
+          completionRate: null,
+          learningActivities: 0,
+        },
+      ],
+      totals: {
+        planned: 0,
+        completed: 0,
+        cancelled: 0,
+        completionRate: null,
+        learningActivities: 0,
+      },
+      learningDuration: { totalSeconds: 0, bySeries: [] },
+    };
+    const emptyOverview = {
+      ...overview,
+      today: { ...overview.today, items: [], planned: 0, active: 0 },
+      overdueTasks: [],
+      recentNotes: [],
+      nextLearning: null,
+    };
+    // 页面并发请求 overview 与 review；首次任意失败后重试，都应回到真实空态。
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(json({ error: { code: 'FAIL', message: '失败', details: [] } }, 500))
+        .mockImplementation(async (input: RequestInfo | URL) =>
+          json(String(input).includes('/api/v1/review') ? emptyReview : emptyOverview),
+        ),
+    );
     renderPage(<OverviewPage />);
     const retries = await screen.findAllByRole('button', { name: '重试' });
-    fireEvent.click(retries[0]!);
+    for (const retry of retries) fireEvent.click(retry);
     expect(await screen.findByText('没有逾期任务。')).toBeInTheDocument();
     expect(screen.getByText('还没有可续接的学习进度。')).toBeInTheDocument();
-    expect(screen.getByText('近 7 天还没有计划，不计算完成率。')).toBeInTheDocument();
+    expect(screen.getByText('今天没有等待完成的任务，给自己留一点余白吧。')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '近半年每日任务完成贡献图' })).toBeInTheDocument();
+    expect(screen.getByText('完成 0 项 · 有贡献 0 天 · 最长连续 0 天')).toBeInTheDocument();
   });
 
   it('keeps a large overdue list available without rendering it all at once', async () => {
@@ -185,82 +255,86 @@ describe('overview page', () => {
   });
 });
 
-describe('review page', () => {
-  function reviewPayload(from: string, to: string) {
-    const isCurrent = to === date;
-    const span = businessDateSpan(from, to);
-    const days = Array.from({ length: span }, (_, index) => ({
+describe('contribution heatmap', () => {
+  it('covers the whole year, pads future days and labels month boundaries', () => {
+    const days = Array.from({ length: 7 }, (_, index) => ({
       ...day,
-      date: addBusinessDays(from, index),
-      completed: isCurrent ? 1 : 0,
-      completionRate: isCurrent ? 0.5 : 0,
-      learningActivities: isCurrent ? 1 : 0,
+      date: addBusinessDays('2026-08-30', index),
     }));
-    return {
-      from,
-      to,
-      days,
-      totals: {
-        planned: span * 2,
-        completed: isCurrent ? span : 0,
-        cancelled: 0,
-        completionRate: isCurrent ? 0.5 : 0,
-        learningActivities: isCurrent ? span : 0,
-      },
-      // 观看进度是当前状态快照，与区间无关，两期返回相同值。
-      learningDuration: {
-        totalSeconds: 5400,
-        bySeries: [
-          {
-            seriesId: '10000000-0000-4000-8000-000000000001',
-            seriesName: '数据库',
-            durationSeconds: 3600,
-          },
-          {
-            seriesId: '10000000-0000-4000-8000-000000000002',
-            seriesName: '人工智能',
-            durationSeconds: 1800,
-          },
-        ],
-      },
-    };
-  }
 
+    render(
+      <ContributionHeatmap
+        days={days}
+        from="2026-01-01"
+        to="2026-12-31"
+        label="2026 年每日任务完成贡献图"
+      />,
+    );
+
+    const grid = screen.getByRole('group', { name: '2026 年每日任务完成贡献图' });
+    expect(within(grid).getAllByRole('img')).toHaveLength(7);
+    // 2026 年 1 月 1 日是周四：4 个前导占位 + 365 天 + 年尾占位 = 53 周 × 7 格。
+    expect(grid.querySelectorAll('.contribution-cell')).toHaveLength(371);
+    // 年内无数据的日期（测试数据只有 7 天）与"没有任务"的格子同样渲染：
+    // 365 - 7 = 358 个 data-level=0 格子，边界对齐位保持透明。
+    expect(grid.querySelectorAll('.contribution-cell[data-level="0"]')).toHaveLength(358);
+    expect(grid.querySelectorAll('.contribution-cell.is-placeholder')).toHaveLength(6);
+    expect(screen.getByText('1月')).toBeInTheDocument();
+    expect(screen.getByText('9月')).toBeInTheDocument();
+    expect(screen.getByText('12月')).toBeInTheDocument();
+  });
+});
+
+describe('review page', () => {
   function reviewFetch() {
     return vi.fn(async (input: RequestInfo | URL) => {
       const params = new URL(String(input), 'http://localhost').searchParams;
-      const from = params.get('from') ?? '2026-08-07';
+      const from = params.get('from') ?? '2026-01-01';
       const to = params.get('to') ?? date;
       return json(reviewPayload(from, to));
     });
   }
 
-  it('shows period-over-period stats, full-range trend and rhythm, then switches to thirty days', async () => {
+  it('shows year-over-year stats and the annual contribution grid, then switches to the previous year', async () => {
     const fetchMock = reviewFetch();
     vi.stubGlobal('fetch', fetchMock);
     renderPage(<ReviewPage />);
 
-    expect(await screen.findByText('↑ 较上期 +50%')).toBeInTheDocument();
-    expect(screen.getByText('↑ 较上期 +7 项')).toBeInTheDocument();
-    expect(screen.getByText('↑ 较上期 +7 天')).toBeInTheDocument();
+    expect(await screen.findByText('↑ 较上年同期 +50%')).toBeInTheDocument();
+    expect(screen.getByText('↑ 较上年同期 +225 项')).toBeInTheDocument();
+    expect(screen.getByText('↑ 较上年同期 +225 天')).toBeInTheDocument();
     expect(screen.getByText('当前状态，不随区间变化')).toBeInTheDocument();
     expect(screen.getAllByText('50%').length).toBeGreaterThan(0);
-    expect(screen.getByText('共计划 14 项：完成 7 · 取消 0 · 待完成 7。')).toBeInTheDocument();
+    expect(screen.getByText('共计划 450 项：完成 225 · 取消 0 · 待完成 225。')).toBeInTheDocument();
 
-    const trend = screen.getByRole('group', { name: '每日计划、完成、取消堆叠柱状图' });
-    const columns = within(trend).getAllByRole('img');
-    expect(columns).toHaveLength(7);
-    expect(columns[0]).toHaveAttribute(
+    const contribution = screen.getByRole('group', { name: '2026 年每日任务完成贡献图' });
+    const cells = within(contribution).getAllByRole('img');
+    // 今年只请求到今天（2026-08-13，年初以来 225 天），其余日期是未来占位格。
+    expect(cells).toHaveLength(225);
+    expect(contribution.querySelectorAll('.contribution-cell')).toHaveLength(371);
+    expect(cells[0]).toHaveAttribute(
       'aria-label',
-      '2026-08-07：计划 2，完成 1，取消 0，待完成 1，完成率 50%，学习活动 1 次',
+      '2026-01-01：完成 1，计划 2，取消 0，待完成 1，完成率 50%，学习活动 1 次',
     );
-    fireEvent.mouseEnter(columns[0]!);
+    expect(cells[0]).toHaveAttribute('data-level', '4');
+    expect(screen.getByText('完成 225 项 · 有贡献 225 天 · 最长连续 225 天')).toBeInTheDocument();
+    fireEvent.mouseEnter(cells[0]!);
     expect(await screen.findByText('完成 1 / 计划 2')).toBeInTheDocument();
-    fireEvent.mouseLeave(columns[0]!);
+    fireEvent.mouseLeave(cells[0]!);
     await waitFor(() => expect(screen.queryByText('完成 1 / 计划 2')).not.toBeInTheDocument());
 
-    const rhythm = screen.getByRole('group', { name: '每日学习活动热度' });
-    expect(within(rhythm).getAllByRole('img')).toHaveLength(7);
+    // 年份选择器紧邻贡献图，提供今年往回五年。
+    const yearSelect = screen.getByLabelText('选择贡献图年份');
+    expect(yearSelect).toHaveValue('2026');
+    for (const label of ['2026 年', '2025 年', '2024 年', '2023 年', '2022 年']) {
+      expect(screen.getByRole('option', { name: label })).toBeInTheDocument();
+    }
+
+    // 学习节奏改为年度概览，不再渲染逐日格子。
+    expect(screen.getByText('学习活动')).toBeInTheDocument();
+    expect(screen.getByText('225 次')).toBeInTheDocument();
+    expect(screen.getByText('最活跃一天')).toBeInTheDocument();
+    expect(screen.getByText('01-01（1 次）')).toBeInTheDocument();
 
     const durationPie = screen.getByRole('group', { name: /观看进度系列分布/ });
     expect(durationPie).toBeInTheDocument();
@@ -277,39 +351,26 @@ describe('review page', () => {
     await waitFor(() => expect(databaseSlice).toHaveAttribute('aria-pressed', 'true'));
     expect(within(durationPie).getByText('数据库')).toBeInTheDocument();
 
-    const dailyTable = screen.getByRole('table', {
-      name: '每日计划、完成、取消和学习活动明细',
-    });
-    expect(within(dailyTable).getAllByRole('row')).toHaveLength(8);
-
-    fireEvent.click(screen.getByRole('button', { name: '近 30 天' }));
+    fireEvent.change(yearSelect, { target: { value: '2025' } });
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('from=2026-07-15'),
+        expect.stringContaining('from=2025-01-01'),
         expect.anything(),
       ),
     );
     expect(
-      await screen.findByText('共计划 60 项：完成 30 · 取消 0 · 待完成 30。'),
+      await screen.findByText('共计划 730 项：完成 0 · 取消 0 · 待完成 730。'),
     ).toBeInTheDocument();
-    expect(
-      within(screen.getByRole('group', { name: '每日计划、完成、取消堆叠柱状图' })).getAllByRole(
-        'img',
-      ),
-    ).toHaveLength(30);
-    expect(
-      within(
-        screen.getByRole('table', { name: '每日计划、完成、取消和学习活动明细' }),
-      ).getAllByRole('row'),
-    ).toHaveLength(31);
-    expect(
-      within(screen.getByRole('group', { name: '每日学习活动热度' })).getAllByRole('img'),
-    ).toHaveLength(30);
+    const previousYearGrid = screen.getByRole('group', { name: '2025 年每日任务完成贡献图' });
+    expect(within(previousYearGrid).getAllByRole('img')).toHaveLength(365);
+    expect(previousYearGrid.querySelectorAll('.contribution-cell')).toHaveLength(371);
+    expect(screen.getByText('所选范围内还没有学习活动记录。')).toBeInTheDocument();
+    expect(screen.getAllByText('与上年同期持平').length).toBeGreaterThan(0);
   });
 
   it('does not show a misleading zero percent and can retry failures', async () => {
     const empty = {
-      from: '2026-08-07',
+      from: '2026-01-01',
       to: date,
       days: overview.last7Days.map((item) => ({
         ...item,
@@ -339,8 +400,10 @@ describe('review page', () => {
     fireEvent.click(await screen.findByRole('button', { name: '重试' }));
     expect(await screen.findByText('这段时间还没有计划，因此不计算完成率。')).toBeInTheDocument();
     expect(screen.queryByText('0%')).not.toBeInTheDocument();
-    expect(screen.getAllByText('与上期持平').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('与上年同期持平').length).toBeGreaterThan(0);
     expect(screen.getByText('还没有可统计的合集观看进度。')).toBeInTheDocument();
     expect(screen.getByText('所选范围内还没有学习活动记录。')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: '2026 年每日任务完成贡献图' })).toBeInTheDocument();
+    expect(screen.getByText('完成 0 项 · 有贡献 0 天 · 最长连续 0 天')).toBeInTheDocument();
   });
 });

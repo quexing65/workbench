@@ -1,13 +1,37 @@
-import { ArrowLineLeft, ArrowLineRight } from '@phosphor-icons/react';
+import { ArrowLineLeft, ArrowLineRight, SidebarSimple } from '@phosphor-icons/react';
 import { MotionConfig, motion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { HealthStatus } from '../shared/ui/HealthStatus';
 import { navigationItems } from './navigation';
 
-function Navigation({ mobile = false }: { mobile?: boolean }) {
+/** 三档侧栏的断点，与 shell.css 中 .app-shell--rail / .app-shell--drawer 样式对应：
+ *  宽（>1100px）：完整侧栏，可手动折叠；
+ *  中（641–1100px）：自动收窄为图标栏；
+ *  窄（<=640px）：侧栏收进屏外，由左侧把手按钮呼出抽屉。 */
+const RAIL_QUERY = '(min-width: 641px) and (max-width: 1100px)';
+const DRAWER_QUERY = '(max-width: 640px)';
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window.matchMedia !== 'function') return false;
+    return window.matchMedia(query).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia(query);
+    const onChange = (event: MediaQueryListEvent) => setMatches(event.matches);
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, [query]);
+
+  return matches;
+}
+
+function Navigation({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
   return (
-    <nav className={mobile ? 'mobile-nav' : 'side-nav'} aria-label="主要导航">
+    <nav className="side-nav" aria-label="主要导航">
       {navigationItems.map((item) => {
         const Glyph = item.icon;
         return (
@@ -17,10 +41,11 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
             key={item.to}
             to={item.to}
             viewTransition
+            onClick={onNavigate}
           >
             {({ isActive }) => (
               <>
-                {!mobile && isActive && (
+                {isActive && (
                   <motion.span
                     aria-hidden="true"
                     className="side-nav__glider"
@@ -33,7 +58,7 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
                   <Glyph className="nav-link__glyph nav-link__glyph--fill" weight="fill" />
                 </span>
                 <span className="nav-link__label-wrap">
-                  <span className="nav-link__label">{mobile ? item.shortLabel : item.label}</span>
+                  <span className="nav-link__label">{item.label}</span>
                 </span>
               </>
             )}
@@ -52,6 +77,27 @@ export function AppShell() {
       return false;
     }
   });
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const isRail = useMediaQuery(RAIL_QUERY);
+  const isDrawer = useMediaQuery(DRAWER_QUERY);
+
+  // 离开窄屏档位时收起抽屉，避免拖宽窗口后遮罩与抽屉悬挂在页面上。
+  // 用官方认可的"渲染期间按状态变化重置"写法，替代 effect 里的同步 setState。
+  const [wasDrawer, setWasDrawer] = useState(isDrawer);
+  if (wasDrawer !== isDrawer) {
+    setWasDrawer(isDrawer);
+    if (!isDrawer) setDrawerOpen(false);
+  }
+
+  // 抽屉打开时支持 Escape 收起，键盘用户不必寻找遮罩按钮。
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDrawerOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [drawerOpen]);
 
   function toggleSidebar() {
     setSidebarCollapsed((current) => {
@@ -65,9 +111,20 @@ export function AppShell() {
     });
   }
 
+  const shellClass = [
+    'app-shell',
+    // 中档强制图标栏；宽档沿用用户的手动折叠偏好。
+    isRail || (!isDrawer && sidebarCollapsed) ? 'app-shell--sidebar-collapsed' : '',
+    isRail ? 'app-shell--rail' : '',
+    isDrawer ? 'app-shell--drawer' : '',
+    isDrawer && drawerOpen ? 'app-shell--drawer-open' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`app-shell${sidebarCollapsed ? ' app-shell--sidebar-collapsed' : ''}`}>
+      <div className={shellClass}>
         <a className="skip-link" href="#main-content">
           跳到主要内容
         </a>
@@ -103,12 +160,21 @@ export function AppShell() {
               <strong>Workbench</strong>
             </span>
           </div>
-          <Navigation />
+          <Navigation onNavigate={isDrawer ? () => setDrawerOpen(false) : undefined} />
           <div className="sidebar__footer">
             <HealthStatus />
             <p>数据仅保存在这台设备</p>
           </div>
         </aside>
+
+        {isDrawer && drawerOpen ? (
+          <button
+            type="button"
+            className="drawer-scrim"
+            aria-label="关闭导航"
+            onClick={() => setDrawerOpen(false)}
+          />
+        ) : null}
 
         <div className="workspace">
           <header className="mobile-header">
@@ -125,9 +191,17 @@ export function AppShell() {
           </main>
         </div>
 
-        <div className="mobile-nav-container">
-          <Navigation mobile />
-        </div>
+        {isDrawer ? (
+          <button
+            type="button"
+            className="drawer-handle"
+            aria-label={drawerOpen ? '收起导航' : '打开导航'}
+            aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen((current) => !current)}
+          >
+            <SidebarSimple aria-hidden="true" size={20} weight={drawerOpen ? 'fill' : 'regular'} />
+          </button>
+        ) : null}
       </div>
     </MotionConfig>
   );

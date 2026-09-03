@@ -1,17 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { OverviewResponse } from '@workbench/shared';
+import { addBusinessDays, type OverviewResponse } from '@workbench/shared';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getOverview } from '../../shared/api/insights';
+import { getOverview, getReview } from '../../shared/api/insights';
 import { queryKeys } from '../../shared/api/query-keys';
 import { createTask, updateTask } from '../../shared/api/tasks';
-import { DayTrendChart } from '../../shared/ui/DayTrendChart';
+import { ContributionHeatmap } from '../../shared/ui/ContributionHeatmap';
 
 const OVERDUE_BATCH_SIZE = 20;
+/** 总览贡献图回看的周数；窗口按周日对齐，本周始终完整呈现。 */
+export const HEATMAP_WEEKS = 26;
 
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
+}
+
+function currentYear(): number {
+  return Number(today().slice(0, 4));
+}
+
+/** 贡献图窗口：以本周六为终点、26 周前的周日为起点，恰好 26 列 × 7 行的完整矩形。 */
+export function heatmapRange(date: string): { from: string; to: string } {
+  const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+  const to = addBusinessDays(date, (6 - weekday + 7) % 7);
+  return { from: addBusinessDays(to, -(HEATMAP_WEEKS * 7 - 1)), to };
 }
 
 function resumePositionLabel(seconds: number): string {
@@ -30,11 +43,25 @@ interface BlockProps {
   readonly retry: () => void;
   readonly children: ReactNode;
   readonly primary?: boolean;
+  readonly className?: string;
 }
 
-function Block({ title, label, pending, error, retry, children, primary = false }: BlockProps) {
+function Block({
+  title,
+  label,
+  pending,
+  error,
+  retry,
+  children,
+  primary = false,
+  className,
+}: BlockProps) {
   return (
-    <article className={`surface insight-block${primary ? ' surface--primary' : ''}`}>
+    <article
+      className={`surface insight-block${primary ? ' surface--primary' : ''}${
+        className === undefined ? '' : ` ${className}`
+      }`}
+    >
       <p className="surface__label">{label}</p>
       <h2>{title}</h2>
       {pending ? <p role="status">正在加载…</p> : null}
@@ -109,6 +136,13 @@ export function OverviewPage() {
     queryKey: queryKeys.overview(date),
     queryFn: ({ signal }) => getOverview(date, signal),
   });
+  // 与回顾页共享同一份数据缓存；窗口裁剪在贡献图组件内完成。
+  const reviewFrom = `${currentYear()}-01-01`;
+  const review = useQuery({
+    queryKey: queryKeys.review(reviewFrom, date),
+    queryFn: ({ signal }) => getReview(reviewFrom, date, signal),
+  });
+  const heatmap = heatmapRange(date);
   const refresh = async () => {
     await Promise.all([
       client.invalidateQueries({ queryKey: queryKeys.overview(date) }),
@@ -188,6 +222,29 @@ export function OverviewPage() {
         <Block title="今日焦点" label="任务摘要" primary {...common}>
           {overview.data ? <Summary data={overview.data} /> : null}
         </Block>
+
+        <Block
+          title="贡献轨迹"
+          label="近半年回望"
+          className="overview-heatmap"
+          pending={review.isPending}
+          error={review.isError}
+          retry={() => void review.refetch()}
+        >
+          {review.data ? (
+            <ContributionHeatmap
+              days={review.data.days}
+              from={heatmap.from}
+              to={heatmap.to}
+              label="近半年每日任务完成贡献图"
+            >
+              <Link className="text-link" to="/review">
+                查看完整回顾 →
+              </Link>
+            </ContributionHeatmap>
+          ) : null}
+        </Block>
+
         <Block
           title={overdueTasks.length > 0 ? `过期待办 · ${overdueTasks.length}` : '过期待办'}
           label="移回今天"
@@ -235,19 +292,7 @@ export function OverviewPage() {
             </p>
           ) : null}
         </Block>
-        <Block title="最近小记" label="刚刚记下" {...common}>
-          {overview.data?.recentNotes.length === 0 ? (
-            <p className="empty-state">还没有小记。</p>
-          ) : null}
-          <ul className="note-snippets">
-            {overview.data?.recentNotes.map((note) => (
-              <li key={note.id}>{note.content}</li>
-            ))}
-          </ul>
-          <Link className="text-link" to="/notes">
-            查看全部小记
-          </Link>
-        </Block>
+
         <Block title="继续学习" label="续接进度" {...common}>
           {overview.data?.nextLearning ? (
             <div className="learning-resume">
@@ -264,33 +309,18 @@ export function OverviewPage() {
             <p className="empty-state">还没有可续接的学习进度。</p>
           )}
         </Block>
-        <Block title="近 7 天完成" label="轻量回望" {...common}>
-          {overview.data?.last7Days.every((day) => day.planned === 0) ? (
-            <p className="empty-state">近 7 天还没有计划，不计算完成率。</p>
+
+        <Block title="最近小记" label="刚刚记下" {...common}>
+          {overview.data?.recentNotes.length === 0 ? (
+            <p className="empty-state">还没有小记。</p>
           ) : null}
-          {overview.data ? (
-            <DayTrendChart
-              days={overview.data.last7Days}
-              chartLabel="近 7 天每日计划与完成堆叠柱状图"
-              size="sm"
-            />
-          ) : null}
-          <p className="day-chart-legend" aria-hidden="true">
-            <span>
-              <i className="day-chart-legend__dot is-completed" />
-              完成
-            </span>
-            <span>
-              <i className="day-chart-legend__dot is-cancelled" />
-              取消
-            </span>
-            <span>
-              <i className="day-chart-legend__dot is-pending" />
-              待完成
-            </span>
-          </p>
-          <Link className="text-link" to="/review">
-            查看完整回顾
+          <ul className="note-snippets">
+            {overview.data?.recentNotes.map((note) => (
+              <li key={note.id}>{note.content}</li>
+            ))}
+          </ul>
+          <Link className="text-link" to="/notes">
+            查看全部小记
           </Link>
         </Block>
       </div>
