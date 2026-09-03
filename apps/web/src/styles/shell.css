@@ -296,6 +296,108 @@
   justify-content: center;
 }
 
+/* —— 中档（641–1100px）：自动图标栏 —— */
+/* 折叠箭头只服务宽屏的手动折叠；中档由断点强制收窄，箭头暗示点击可展开会误导。 */
+.app-shell--rail .brand-toggle:hover .brand-toggle__glyph--mark,
+.app-shell--rail .brand-toggle:focus-visible .brand-toggle__glyph--mark {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.app-shell--rail .brand-toggle:hover .brand-toggle__glyph--action,
+.app-shell--rail .brand-toggle:focus-visible .brand-toggle__glyph--action {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+/* 图标栏保住连接状态指示，只藏隐私文案。 */
+.app-shell--rail .sidebar__footer {
+  display: block;
+  padding-top: 0.75rem;
+}
+
+.app-shell--rail .sidebar__footer > p {
+  display: none;
+}
+
+/* 图标栏的底部状态只剩圆点：文字与版本号在窄栏里会竖排溢出；
+   状态异常时红点本身即提示，重试入口在宽档与抽屉里保留。 */
+.app-shell--rail .health {
+  justify-content: center;
+}
+
+.app-shell--rail .health__label,
+.app-shell--rail .health__version,
+.app-shell--rail .health__retry {
+  display: none;
+}
+
+/* —— 窄档（<=640px）：屏外抽屉 + 左侧把手 —— */
+.app-shell--drawer .sidebar {
+  width: min(17rem, 84vw);
+  z-index: 40;
+  box-shadow: 24px 0 60px rgb(20 23 18 / 18%);
+  transform: translateX(-100%);
+  transition: transform 240ms var(--ease-out);
+}
+
+.app-shell--drawer.app-shell--drawer-open .sidebar {
+  transform: translateX(0);
+}
+
+.app-shell--drawer .workspace {
+  margin-left: 0;
+}
+
+/* 抽屉里不需要折叠按钮；品牌区由 logo 充当标题。 */
+.app-shell--drawer .brand-toggle {
+  display: none;
+}
+
+.app-shell--drawer .side-nav {
+  margin-top: 1.5rem;
+}
+
+.drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  padding: 0;
+  border: 0;
+  background: rgb(20 23 18 / 42%);
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+}
+
+/* 左侧中部的淡色把手：呼出/收起抽屉的唯一入口。 */
+.drawer-handle {
+  position: fixed;
+  z-index: 30;
+  top: 50%;
+  left: 0.6rem;
+  display: grid;
+  width: 2.4rem;
+  height: 3.6rem;
+  border: 1px solid rgb(255 255 255 / 55%);
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 62%);
+  box-shadow: var(--shadow-sm);
+  color: var(--muted);
+  cursor: pointer;
+  place-items: center;
+  translate: 0 -50%;
+  backdrop-filter: blur(10px);
+  transition:
+    color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease;
+}
+
+.drawer-handle:hover,
+.drawer-handle:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
 .mobile-header,
 .mobile-nav-container {
   display: none;

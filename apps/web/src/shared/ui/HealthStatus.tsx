@@ -11,7 +11,7 @@ export function HealthStatus() {
     return (
       <div className="health health--pending" role="status">
         <span className="health__dot" aria-hidden="true" />
-        正在连接本机服务
+        <span className="health__label">正在连接本机服务</span>
       </div>
     );
   }
@@ -20,7 +20,7 @@ export function HealthStatus() {
     return (
       <div className="health health--error" role="alert">
         <span className="health__dot" aria-hidden="true" />
-        <span>本机服务未连接</span>
+        <span className="health__label">本机服务未连接</span>
         <button className="health__retry" type="button" onClick={() => health.refetch()}>
           重试
         </button>
@@ -31,7 +31,7 @@ export function HealthStatus() {
   return (
     <div className="health health--ok" role="status">
       <span className="health__dot" aria-hidden="true" />
-      <span>本机服务正常</span>
+      <span className="health__label">本机服务正常</span>
       <span className="health__version" aria-label={`版本 ${health.data.version}`}>
         v{health.data.version}
       </span>
