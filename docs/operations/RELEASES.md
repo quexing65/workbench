@@ -2,9 +2,11 @@
 
 本文件是桌面安装包的版本控制记录：安装包二进制不进入 Git（避免仓库膨胀），
 分发源是 GitHub Releases；每个版本在此登记变更摘要与 SHA-256 校验和，用于
-验证下载或本地归档的安装包是否完好。本地归档按版本存放在
-`apps/desktop/release/v<version>/`（不入库），构建时由
-`apps/desktop/scripts/dist.mjs` 自动生成同目录 `SHA256SUMS.txt`。
+验证下载的安装包是否完好。安装包由 tag 推送触发的 CI 构建
+（`.github/workflows/release.yml`），产物连同 `SHA256SUMS.txt`（由
+`apps/desktop/scripts/dist.mjs` 生成）作为附件挂在 Release 上——Release 附件即
+归档源。2026-09-03 之前的本地归档目录已清理，历史版本以对应 Release 附件及
+本表登记的校验和为准。
 
 发版流程见 `docs/operations/OPERATIONS.md` 的"桌面应用发布"一节。版本号规则：语义化
 X.Y.Z——修 bug 升 patch、加功能或数据库 schema 变更升 minor、不兼容改动升

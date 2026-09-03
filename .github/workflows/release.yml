@@ -1,0 +1,97 @@
+name: Release
+
+# 推送 v* 标签触发：在 CI 上打包 Windows 安装包并创建草稿 Release。
+# 草稿而非直接发布——留出改写变更说明、核对校验和的窗口。
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    name: Windows 安装包构建与上传
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # tag 打错位置（版本号提交未包含在内）时快速失败，
+      # 避免打出与 tag 不同名的安装包。
+      - name: 校验标签与版本号一致
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $root = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $desktop = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).version
+          if ($root -ne $desktop) {
+            throw "根目录版本 $root 与 apps/desktop 版本 $desktop 不一致"
+          }
+          if ($tag -ne "v$root") {
+            throw "标签 $tag 与 package.json 版本 v$root 不一致"
+          }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 与本地发版完全同源：shared/web 构建后由 electron-builder 打
+      # nsis + portable 双产物，dist.mjs 生成 SHA256SUMS.txt。
+      - name: Build installers
+        run: npm run desktop:dist
+
+      # Release 说明预填台账风格的校验和表（读 SHA256SUMS.txt），
+      # "变更内容"由人发布前在草稿里补写。
+      # 已正式发布的 Release 拒绝覆盖（NSIS 非确定性构建，重跑哈希会变，
+      # 覆盖会造成 RELEASES.md 台账校验和漂移）；草稿则删除重建。
+      - name: 创建草稿 Release 并上传安装包
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $tag = '${{ github.ref_name }}'
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $dir = "apps/desktop/release/v$version"
+          $files = Get-ChildItem -LiteralPath $dir -File |
+            Where-Object { $_.Name -like 'PersonalWorkbench-*' -or $_.Name -eq 'SHA256SUMS.txt' } |
+            ForEach-Object { $_.FullName }
+          if (-not $files) { throw "$dir 下未找到安装包产物" }
+
+          $rows = foreach ($line in Get-Content -LiteralPath "$dir\SHA256SUMS.txt") {
+            if ($line.StartsWith('#') -or -not $line.Trim()) { continue }
+            $parts = $line -split '  '
+            if ($parts.Count -ge 2) { '| {0} | `{1}` |' -f $parts[1], $parts[0] }
+          }
+          $notes = @"
+          ## 变更内容
+
+          （草稿：发布前请补充本版变更摘要）
+
+          ## 校验和
+
+          | 产物 | SHA-256 |
+          | --- | --- |
+          $($rows -join "`n")
+
+          安装包未做代码签名，首次运行 Windows SmartScreen 会提示未知发布者，"更多信息 → 仍要运行"即可。
+          "@
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            $isDraft = (gh release view $tag --json isDraft -q '.isDraft') -eq 'true'
+            if (-not $isDraft) {
+              throw "Release $tag 已正式发布，拒绝覆盖上传以避免台账校验和漂移"
+            }
+            gh release delete $tag --yes
+          }
+          gh release create $tag $files --draft --title $tag --notes $notes
+          if ($LASTEXITCODE -ne 0) { throw "gh release create 失败（exit $LASTEXITCODE）" }

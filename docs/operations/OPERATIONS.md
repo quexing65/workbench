@@ -50,14 +50,18 @@ Web 只监听 `127.0.0.1:5190`，API 只监听 `127.0.0.1:8790`。开发默认�
 ## 桌面应用发布
 
 1. 确定版本号并更新 `apps/desktop/package.json` 与根 `package.json` 的 `version`
-   （规则见 `docs/operations/RELEASES.md`：修 bug 升 patch，加功能或 schema 变更升 minor）。
-2. 构建：`npm run desktop:dist`。产物归档到 `apps/desktop/release/v<version>/`：
-   - `PersonalWorkbench-Setup-<version>.exe`（安装版）
-   - `PersonalWorkbench-Portable-<version>.exe`（便携版）
-   - `SHA256SUMS.txt`（全部产物的 SHA-256 与字节数，自动生成）
-   - `win-unpacked/`（解包目录，仅供本地快速验证，可删）
-3. 打 tag 并推送：`git tag -a v<version> -m "<摘要>" && git push origin v<version>`。
-4. 在 GitHub Releases 基于 tag 创建发布，拖入两个 exe 作为附件（安装包不进 Git）。
+   （规则见 `docs/operations/RELEASES.md`：修 bug 升 patch，加功能或 schema 变更升 minor），
+   提交并推送，等待 main 分支 CI 全绿。
+2. 在 CI 全绿的提交上打 tag 并推送：
+   `git tag -a v<version> -m "<摘要>" && git push origin v<version>`。
+3. tag 推送触发 `.github/workflows/release.yml`：CI 在 windows-latest 上执行
+   `npm run desktop:dist` 打包（`PersonalWorkbench-Setup-<version>.exe` 安装版、
+   `PersonalWorkbench-Portable-<version>.exe` 便携版、`SHA256SUMS.txt` 校验和清单），
+   并创建**草稿** Release 挂上三个产物。工作流会校验 tag 与 package.json 版本一致；
+   已正式发布的 Release 拒绝覆盖上传（NSIS 非确定性构建，重跑哈希会变），
+   草稿则删除重建。
+4. 在 GitHub Releases 审阅草稿：把"变更内容"占位段改写为正式变更摘要，
+   核对校验和表后发布。安装包不进 Git，Release 附件即归档源。
 5. 在 `docs/operations/RELEASES.md` 登记版本：变更摘要、commit 基线、GitHub Release 链接与
    SHA-256，随代码一起提交。
 
