@@ -38,6 +38,7 @@ Thumbs.db
 
 # AI agent working files (personal, not project code)
 .workbuddy/
+.workbuddy-ai/
 .qoder/
 .trae/
 
