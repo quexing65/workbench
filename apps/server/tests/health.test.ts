@@ -21,6 +21,7 @@ describe('GET /api/v1/health', () => {
       database: 'ok',
       schemaVersion: 5,
       timeZone: 'Asia/Shanghai',
+      dataDirectory: 'unused-in-unit-tests',
     });
     expect(response.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/u);
     expect(response.headers['x-request-id']).not.toBe('caller-controlled');

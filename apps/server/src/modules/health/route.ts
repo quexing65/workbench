@@ -24,6 +24,7 @@ export function createHealthRouter(
         database: 'ok',
         schemaVersion: database.schemaVersion,
         timeZone: config.timeZone,
+        dataDirectory: config.dataDirectory,
       }),
     );
   });

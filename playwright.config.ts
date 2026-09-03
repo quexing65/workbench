@@ -18,6 +18,7 @@ const dataDirectory =
 
 export default defineConfig({
   testDir: './tests/e2e',
+  globalSetup: './tests/e2e/global-setup.ts',
   fullyParallel: false,
   forbidOnly: isCi,
   retries: isCi ? 2 : 0,

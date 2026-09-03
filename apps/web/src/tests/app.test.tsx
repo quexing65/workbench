@@ -9,6 +9,7 @@ const healthPayload = {
   database: 'ok',
   schemaVersion: 3,
   timeZone: 'Asia/Shanghai',
+  dataDirectory: 'C:\\workbench-data',
 };
 
 function stubHealthFetch() {
