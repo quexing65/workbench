@@ -146,11 +146,13 @@ async function audit(browser) {
   );
   const reviewRangeChangeMs = await measureInteraction(async () => {
     const response = page.waitForResponse((candidate) =>
-      candidate.url().includes('/api/v1/review?'),
+      candidate.url().includes('/api/v1/review?from=2025'),
     );
-    await page.getByRole('button', { name: '近 30 天' }).click();
+    await page.getByLabel('选择贡献图年份').selectOption('2025');
     await response;
-    await page.getByRole('button', { name: '近 30 天' }).waitFor();
+    await page
+      .getByRole('group', { name: '2025 年每日任务完成贡献图', exact: true })
+      .waitFor();
   });
 
   await context.close();
