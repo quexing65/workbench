@@ -150,9 +150,7 @@ async function audit(browser) {
     );
     await page.getByLabel('选择贡献图年份').selectOption('2025');
     await response;
-    await page
-      .getByRole('group', { name: '2025 年每日任务完成贡献图', exact: true })
-      .waitFor();
+    await page.getByRole('group', { name: '2025 年每日任务完成贡献图', exact: true }).waitFor();
   });
 
   await context.close();
