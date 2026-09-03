@@ -70,8 +70,14 @@ h1 {
 .overview-grid {
   display: grid;
   margin-top: clamp(2.5rem, 6vw, 5rem);
-  grid-template-columns: 1.35fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
+}
+
+/* 今日焦点与贡献轨迹横贯全宽，是页面的两块主视觉。 */
+.overview-grid > .surface--primary,
+.overview-grid > .overview-heatmap {
+  grid-column: 1 / -1;
 }
 
 .surface {
@@ -85,11 +91,10 @@ h1 {
 
 .surface--primary {
   display: flex;
-  min-height: 28rem;
+  min-height: 20rem;
   color: white;
   background:
     radial-gradient(circle at 85% 15%, rgb(255 255 255 / 9%), transparent 32%), var(--accent-strong);
-  grid-row: span 2;
   flex-direction: column;
 }
 

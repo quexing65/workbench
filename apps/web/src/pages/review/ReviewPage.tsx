@@ -1,13 +1,46 @@
 import { useQuery } from '@tanstack/react-query';
-import { addBusinessDays, type DayStats, type ReviewResponse } from '@workbench/shared';
+import { isBusinessDate, type DayStats, type ReviewResponse } from '@workbench/shared';
 import { useState } from 'react';
 
 import { getReview } from '../../shared/api/insights';
 import { queryKeys } from '../../shared/api/query-keys';
-import { DayTrendChart } from '../../shared/ui/DayTrendChart';
+import { ContributionHeatmap } from '../../shared/ui/ContributionHeatmap';
+
+/** 年份选择器往回提供的年数；本地数据更早时可以调大。 */
+const YEAR_WINDOW = 5;
 
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
+}
+
+function currentYear(): number {
+  return Number(today().slice(0, 4));
+}
+
+function selectableYears(): number[] {
+  const latest = currentYear();
+  return Array.from({ length: YEAR_WINDOW }, (_, index) => latest - index);
+}
+
+/** 所选年份的数据范围：今年取年初到今天，往年取整年。 */
+function yearRange(year: number): { from: string; to: string } {
+  return {
+    from: `${year}-01-01`,
+    to: year === currentYear() ? today() : `${year}-12-31`,
+  };
+}
+
+/** 同比对照范围：今年与去年同期对比，往年与上一年整年对比。 */
+function previousYearRange(year: number): { from: string; to: string } {
+  const previous = year - 1;
+  if (year !== currentYear()) {
+    return { from: `${previous}-01-01`, to: `${previous}-12-31` };
+  }
+  const sameDayLastYear = `${previous}-${today().slice(5)}`;
+  return {
+    from: `${previous}-01-01`,
+    to: isBusinessDate(sameDayLastYear) ? sameDayLastYear : `${previous}-02-28`,
+  };
 }
 
 function percent(value: number | null): string {
@@ -34,12 +67,12 @@ function DeltaBadge({
 }) {
   if (delta === null) return null;
   if (Math.abs(delta) < threshold) {
-    return <small className="review-stat__delta is-flat">与上期持平</small>;
+    return <small className="review-stat__delta is-flat">与上年同期持平</small>;
   }
   const up = delta > 0;
   return (
     <small className={`review-stat__delta${up ? ' is-up' : ' is-down'}`}>
-      {up ? '↑' : '↓'} 较上期 {format(delta)}
+      {up ? '↑' : '↓'} 较上年同期 {format(delta)}
     </small>
   );
 }
@@ -144,7 +177,6 @@ function StudyDurationPie({ data }: { data: ReviewResponse['learningDuration'] }
 function ActivityRhythm({ days }: { days: DayStats[] }) {
   const total = days.reduce((sum, day) => sum + day.learningActivities, 0);
   const activeCount = days.filter((day) => day.learningActivities > 0).length;
-  const max = Math.max(...days.map((day) => day.learningActivities));
   const peakDay = days.reduce<DayStats | null>(
     (peak, day) => (peak === null || day.learningActivities > peak.learningActivities ? day : peak),
     null,
@@ -158,64 +190,60 @@ function ActivityRhythm({ days }: { days: DayStats[] }) {
       <div className="review-study-card__header">
         <div>
           <p className="eyebrow">学习节奏</p>
-          <h2 id="activity-rhythm-title">活跃热区</h2>
+          <h2 id="activity-rhythm-title">活跃概览</h2>
         </div>
-        <p>每天一格，颜色越深表示当天学习活动越多，空格代表没有学习记录。</p>
+        <p>统计所选年份的学习活动：每天最后观测到的学习进度记为一次活动。</p>
       </div>
       {total === 0 ? (
         <p className="review-empty">所选范围内还没有学习活动记录。</p>
       ) : (
-        <>
-          <div className="review-rhythm__grid" role="group" aria-label="每日学习活动热度">
-            {days.map((day) => {
-              const intensity =
-                day.learningActivities === 0
-                  ? 0
-                  : Math.round((0.24 + (day.learningActivities / max) * 0.76) * 100);
-              return (
-                <span
-                  key={day.date}
-                  className={`review-rhythm__cell${day.learningActivities === 0 ? ' is-empty' : ''}`}
-                  role="img"
-                  aria-label={`${day.date}：学习活动 ${day.learningActivities} 次`}
-                  style={
-                    intensity === 0
-                      ? undefined
-                      : {
-                          background: `color-mix(in srgb, var(--accent) ${intensity}%, var(--paper))`,
-                        }
-                  }
-                />
-              );
-            })}
+        <dl className="review-rhythm__summary">
+          <div>
+            <dt>学习活动</dt>
+            <dd>{total} 次</dd>
           </div>
-          <p className="review-rhythm__meta">
-            学习活动 {total} 次 · 有记录 {activeCount} 天
-            {peakDay !== null && peakDay.learningActivities > 0
-              ? ` · 最活跃 ${peakDay.date.slice(5)}（${peakDay.learningActivities} 次）`
-              : ''}
-          </p>
-        </>
+          <div>
+            <dt>有记录</dt>
+            <dd>{activeCount} 天</dd>
+          </div>
+          <div>
+            <dt>最活跃一天</dt>
+            <dd>
+              {peakDay !== null && peakDay.learningActivities > 0
+                ? `${peakDay.date.slice(5)}（${peakDay.learningActivities} 次）`
+                : '—'}
+            </dd>
+          </div>
+        </dl>
       )}
     </section>
   );
 }
 
-function DailySection({ days }: { days: DayStats[] }) {
+function DailySection({
+  days,
+  year,
+  years,
+  onYearChange,
+}: {
+  readonly days: DayStats[];
+  readonly year: number;
+  readonly years: readonly number[];
+  readonly onYearChange: (year: number) => void;
+}) {
   const [activeDate, setActiveDate] = useState<string | null>(null);
-  const compact = days.length > 7;
   const activeDay = days.find((day) => day.date === activeDate) ?? null;
 
   return (
     <section className="review-detail-card" aria-labelledby="daily-review-title">
       <div className="review-section-header">
         <div>
-          <p className="eyebrow">按日查看</p>
-          <h2 id="daily-review-title">每日趋势与明细</h2>
+          <p className="eyebrow">按年查看</p>
+          <h2 id="daily-review-title">年度贡献</h2>
         </div>
         <p className="day-chart-readout" aria-live="polite">
           {activeDay === null ? (
-            <span>悬停或聚焦柱子查看当天明细，共 {days.length} 天。</span>
+            <span>悬停或聚焦方格查看当天明细，共 {days.length} 天。</span>
           ) : (
             <>
               <strong>{activeDay.date}</strong>
@@ -229,82 +257,49 @@ function DailySection({ days }: { days: DayStats[] }) {
           )}
         </p>
       </div>
-      <DayTrendChart
+      <ContributionHeatmap
         days={days}
-        chartLabel="每日计划、完成、取消堆叠柱状图"
-        compact={compact}
+        from={`${year}-01-01`}
+        to={`${year}-12-31`}
+        label={`${year} 年每日任务完成贡献图`}
         activeDate={activeDate}
         onActiveDateChange={setActiveDate}
-      />
-      <p className="day-chart-legend" aria-hidden="true">
-        <span>
-          <i className="day-chart-legend__dot is-completed" />
-          完成
-        </span>
-        <span>
-          <i className="day-chart-legend__dot is-cancelled" />
-          取消
-        </span>
-        <span>
-          <i className="day-chart-legend__dot is-pending" />
-          待完成
-        </span>
-      </p>
-      <DailyTable days={days} />
+      >
+        <label className="contribution-year">
+          年份
+          <select
+            value={year}
+            onChange={(event) => onYearChange(Number(event.target.value))}
+            aria-label="选择贡献图年份"
+          >
+            {years.map((option) => (
+              <option key={option} value={option}>
+                {option} 年
+              </option>
+            ))}
+          </select>
+        </label>
+      </ContributionHeatmap>
     </section>
   );
 }
 
-function DailyTable({ days }: { days: DayStats[] }) {
-  return (
-    <div className="review-table-wrap">
-      <table>
-        <caption>每日计划、完成、取消和学习活动明细</caption>
-        <thead>
-          <tr>
-            <th>日期</th>
-            <th>计划</th>
-            <th>完成</th>
-            <th>取消</th>
-            <th>完成率</th>
-            <th>学习</th>
-          </tr>
-        </thead>
-        <tbody>
-          {days.map((day) => (
-            <tr key={day.date}>
-              <th>{day.date}</th>
-              <td>{day.planned}</td>
-              <td>{day.completed}</td>
-              <td>{day.cancelled}</td>
-              <td>{percent(day.completionRate)}</td>
-              <td>{day.learningActivities}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 export function ReviewPage() {
-  const [range, setRange] = useState<7 | 30>(7);
-  const to = today();
-  const from = addBusinessDays(to, 1 - range);
+  const [year, setYear] = useState(currentYear);
+  const { from, to } = yearRange(year);
   const review = useQuery({
     queryKey: queryKeys.review(from, to),
     queryFn: ({ signal }) => getReview(from, to, signal),
   });
-  // 上一个等长区间，仅用于结论层的环比角标。
-  const previousFrom = addBusinessDays(from, -range);
-  const previousTo = addBusinessDays(from, -1);
-  const previous = useQuery({
-    queryKey: queryKeys.review(previousFrom, previousTo),
-    queryFn: ({ signal }) => getReview(previousFrom, previousTo, signal),
+  // 上一年同期，仅用于结论层的同比角标。
+  const previous = previousYearRange(year);
+  const yearOverYear = useQuery({
+    queryKey: queryKeys.review(previous.from, previous.to),
+    queryFn: ({ signal }) => getReview(previous.from, previous.to, signal),
   });
 
   const totals = review.data?.totals ?? null;
-  const previousData = previous.data ?? null;
+  const previousData = yearOverYear.data ?? null;
   const activeDays = review.data?.days.filter((day) => day.learningActivities > 0).length ?? null;
   const previousActiveDays =
     previousData?.days.filter((day) => day.learningActivities > 0).length ?? null;
@@ -329,22 +324,6 @@ export function ReviewPage() {
           <p className="eyebrow">回望轨迹</p>
           <h1 id="review-title">回顾</h1>
           <p className="page-lead">从真实记录里看见完成与积累；没有计划时，不虚构完成率。</p>
-        </div>
-        <div className="range-toggle" role="group" aria-label="回顾范围">
-          <button
-            className={range === 7 ? '' : 'button-secondary'}
-            aria-pressed={range === 7}
-            onClick={() => setRange(7)}
-          >
-            近 7 天
-          </button>
-          <button
-            className={range === 30 ? '' : 'button-secondary'}
-            aria-pressed={range === 30}
-            onClick={() => setRange(30)}
-          >
-            近 30 天
-          </button>
         </div>
       </header>
       {review.isPending ? (
@@ -406,7 +385,12 @@ export function ReviewPage() {
             <StudyDurationPie data={review.data.learningDuration} />
             <ActivityRhythm days={review.data.days} />
           </div>
-          <DailySection days={review.data.days} />
+          <DailySection
+            days={review.data.days}
+            year={year}
+            years={selectableYears()}
+            onYearChange={setYear}
+          />
         </>
       ) : null}
     </section>
