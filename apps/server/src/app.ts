@@ -97,12 +97,18 @@ export function createApp(options: CreateAppOptions): Express {
   );
   if (options.database.connection !== undefined) {
     const tasks = new TaskRepository(options.database.connection);
-    const learningResources = new LearningResourceRepository(options.database.connection);
+    const learningResources = new LearningResourceRepository(
+      options.database.connection,
+      config.timeZone,
+    );
     const learningSeries = new LearningSeriesRepository(options.database.connection);
     api.use(
       '/',
       createInsightRouter(
-        new InsightService(new InsightRepository(options.database.connection), tasks),
+        new InsightService(
+          new InsightRepository(options.database.connection, config.timeZone),
+          tasks,
+        ),
       ),
     );
     api.use('/tasks', createTaskRouter(new TaskService(tasks)));

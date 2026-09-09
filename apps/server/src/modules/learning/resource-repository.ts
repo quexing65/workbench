@@ -1,8 +1,9 @@
-import type {
-  LearningPartProgress,
-  LearningProgress,
-  LearningResource,
-  UnresolvedLearningLink,
+import {
+  DEFAULT_BUSINESS_TIME_ZONE,
+  type LearningPartProgress,
+  type LearningProgress,
+  type LearningResource,
+  type UnresolvedLearningLink,
 } from '@workbench/shared';
 import type { DatabaseSync } from 'node:sqlite';
 
@@ -23,9 +24,12 @@ export class LearningResourceRepository {
   private readonly reader: LearningResourceReader;
   private readonly progress: LearningProgressRepository;
 
-  public constructor(private readonly database: DatabaseSync) {
+  public constructor(
+    private readonly database: DatabaseSync,
+    timeZone: string = DEFAULT_BUSINESS_TIME_ZONE,
+  ) {
     this.reader = new LearningResourceReader(database);
-    this.progress = new LearningProgressRepository(database, this.reader);
+    this.progress = new LearningProgressRepository(database, this.reader, timeZone);
   }
 
   public list(): LearningResource[] {

@@ -2,6 +2,8 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { BACKUP_APP_ID } from '@workbench/shared';
 
+import { logicalDatabaseChecksum } from '../../db/logical-checksum.js';
+
 const FORBIDDEN_SETTING_TOKENS = [
   'authorization',
   'cookie',
@@ -11,6 +13,7 @@ const FORBIDDEN_SETTING_TOKENS = [
 
 export interface SnapshotInspection {
   readonly schemaVersion: number;
+  readonly logicalChecksumSha256: string;
 }
 
 function schemaVersion(database: DatabaseSync): number {
@@ -57,7 +60,7 @@ export function inspectSnapshot(path: string, checkSecrets = true): SnapshotInsp
     if (!Number.isSafeInteger(version) || version < 1) {
       throw new Error('Snapshot schema version verification failed');
     }
-    return { schemaVersion: version };
+    return { schemaVersion: version, logicalChecksumSha256: logicalDatabaseChecksum(database) };
   } finally {
     database.close();
   }

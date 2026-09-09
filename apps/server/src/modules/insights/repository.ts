@@ -1,4 +1,14 @@
-import { epochMillisecondsToIso, type Note, type ResumableLearning } from '@workbench/shared';
+import {
+  addBusinessDays,
+  businessDateOfEpochMilliseconds,
+  businessDayStartEpochMilliseconds,
+  DEFAULT_BUSINESS_TIME_ZONE,
+  epochMillisecondsToIso,
+  MAX_BUSINESS_DATE,
+  MAX_UTC_EPOCH_MS,
+  type Note,
+  type ResumableLearning,
+} from '@workbench/shared';
 import type { DatabaseSync } from 'node:sqlite';
 
 interface NoteRow {
@@ -50,7 +60,10 @@ function learning(row: LearningRow): ResumableLearning {
 }
 
 export class InsightRepository {
-  public constructor(private readonly database: DatabaseSync) {}
+  public constructor(
+    private readonly database: DatabaseSync,
+    private readonly timeZone: string = DEFAULT_BUSINESS_TIME_ZONE,
+  ) {}
 
   public listRecentNotes(limit: number): Note[] {
     const rows = this.database
@@ -85,19 +98,26 @@ export class InsightRepository {
   }
 
   public learningActivityCounts(from: string, to: string): ReadonlyMap<string, number> {
+    // 日界按 APP_TIME_ZONE 计算后作为 epoch 范围下推到 SQL，避免在索引列上逐行做时区换算。
+    const start = businessDayStartEpochMilliseconds(from, this.timeZone);
+    // 9999-12-31 没有次日可作上界，直接用 UTC 上界收尾。
+    const end =
+      to === MAX_BUSINESS_DATE
+        ? MAX_UTC_EPOCH_MS + 1
+        : businessDayStartEpochMilliseconds(addBusinessDays(to, 1), this.timeZone);
     const rows = this.database
       .prepare(
-        `SELECT strftime('%Y-%m-%d', last_observed_at_ms / 1000, 'unixepoch', '+8 hours') AS date,
-                count(*) AS count
-         FROM learning_part_progress
-         WHERE last_observed_at_ms >=
-           CAST(strftime('%s', ? || ' 00:00:00', '-8 hours') AS INTEGER) * 1000
-           AND last_observed_at_ms <
-           CAST(strftime('%s', date(?, '+1 day') || ' 00:00:00', '-8 hours') AS INTEGER) * 1000
-         GROUP BY date`,
+        `SELECT last_observed_at_ms AS observedAt FROM learning_part_progress
+         WHERE last_observed_at_ms >= ? AND last_observed_at_ms < ?`,
       )
-      .all(from, to) as unknown as Array<{ date: string; count: number }>;
-    return new Map(rows.map((row) => [row.date, row.count]));
+      .all(start, end) as unknown as Array<{ observedAt: number }>;
+
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      const date = businessDateOfEpochMilliseconds(row.observedAt, this.timeZone);
+      counts.set(date, (counts.get(date) ?? 0) + 1);
+    }
+    return counts;
   }
 
   /**

@@ -68,4 +68,24 @@ describe('loopback HTTP guard', () => {
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe('CROSS_SITE_REQUEST');
   });
+
+  it('rejects cross-site reads so a local page cannot trigger side effects', async () => {
+    for (const fetchSite of ['cross-site', 'same-origin, cross-site']) {
+      const response = await request(makeApp())
+        .get('/api/v1/health')
+        .set('Host', allowedHost)
+        .set('Sec-Fetch-Site', fetchSite);
+      expect(response.status).toBe(403);
+      expect(response.body.error.code).toBe('CROSS_SITE_REQUEST');
+    }
+  });
+
+  it('allows same-origin, navigation and header-less reads', async () => {
+    for (const fetchSite of ['same-origin', 'none', 'same-site', undefined]) {
+      const pending = request(makeApp()).get('/api/v1/health').set('Host', allowedHost);
+      if (fetchSite !== undefined) pending.set('Sec-Fetch-Site', fetchSite);
+      const response = await pending;
+      expect(response.status).toBe(200);
+    }
+  });
 });

@@ -1,12 +1,15 @@
+import { existsSync } from 'node:fs';
 import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { CredentialProtector } from '../src/modules/credentials/dpapi-runner.js';
 import {
   CredentialProtectionError,
+  DEFAULT_DPAPI_SCRIPT_PATH,
+  defaultPowerShellPath,
   WindowsDpapiProtector,
 } from '../src/modules/credentials/dpapi-runner.js';
 import { DpapiCredentialStore } from '../src/modules/credentials/dpapi-store.js';
@@ -70,6 +73,13 @@ describe('credential stores', () => {
     },
   );
 
+  it('resolves a bundled script and an absolute PowerShell interpreter', () => {
+    expect(isAbsolute(DEFAULT_DPAPI_SCRIPT_PATH)).toBe(true);
+    expect(existsSync(DEFAULT_DPAPI_SCRIPT_PATH)).toBe(true);
+    expect(isAbsolute(defaultPowerShellPath())).toBe(true);
+    expect(defaultPowerShellPath()).toMatch(/WindowsPowerShell[\\/]v1\.0[\\/]powershell\.exe$/u);
+  });
+
   it.runIf(process.platform === 'win32')(
     'normalizes PowerShell startup, exit and oversized-output failures',
     async () => {
@@ -78,6 +88,12 @@ describe('credential stores', () => {
       ).rejects.toBeInstanceOf(CredentialProtectionError);
       await expect(
         new WindowsDpapiProtector('missing.ps1').protect('test-value'),
+      ).rejects.toBeInstanceOf(CredentialProtectionError);
+      await expect(
+        new WindowsDpapiProtector(
+          join(import.meta.dirname, 'fixtures', 'dpapi-oversized.ps1'),
+          'missing-powershell.exe',
+        ).protect('test-value'),
       ).rejects.toBeInstanceOf(CredentialProtectionError);
       await expect(
         new WindowsDpapiProtector(

@@ -59,6 +59,12 @@ describe('production static hosting', () => {
       expect(response.headers['x-content-type-options']).toBe('nosniff');
       expect(response.headers['referrer-policy']).toBe('no-referrer');
       expect(response.headers['x-frame-options']).toBe('DENY');
+      const policy = response.headers['content-security-policy'];
+      expect(policy).toContain("script-src 'self'");
+      expect(policy).not.toContain('unsafe-eval');
+      expect(policy).toContain("object-src 'none'");
+      expect(policy).toContain("frame-ancestors 'none'");
+      expect(policy).toContain("base-uri 'self'");
     }
   });
 });

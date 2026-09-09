@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 
+import { DEFAULT_BUSINESS_TIME_ZONE } from '@workbench/shared';
 import { z } from 'zod';
 
 const serverConfigSchema = z.object({
@@ -7,7 +8,7 @@ const serverConfigSchema = z.object({
   HOST: z.literal('127.0.0.1').default('127.0.0.1'),
   PORT: z.coerce.number().int().min(1).max(65_535).default(8790),
   WEB_DEV_ORIGIN: z.string().default('http://127.0.0.1:5190'),
-  APP_TIME_ZONE: z.string().min(1).default('Asia/Shanghai'),
+  APP_TIME_ZONE: z.string().min(1).default(DEFAULT_BUSINESS_TIME_ZONE),
   WORKBENCH_DATA_DIR: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   BILI_SYNC_ENABLED: z.enum(['true', 'false']).default('false'),

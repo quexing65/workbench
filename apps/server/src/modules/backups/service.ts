@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { mkdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
-import { DatabaseSync as SnapshotDatabase } from 'node:sqlite';
 
 import {
   BACKUP_APP_ID,
@@ -10,7 +9,6 @@ import {
   type BackupManifest,
 } from '@workbench/shared';
 
-import { logicalDatabaseChecksum } from '../../db/logical-checksum.js';
 import { hashFile } from '../../db/source-hash.js';
 import { createBackupArchive } from './archive.js';
 import { inspectSnapshot } from './snapshot.js';
@@ -54,25 +52,15 @@ export class BackupService {
         createdAt: createdAt.toISOString(),
         dbBytes: statSync(snapshotPath).size,
         dbSha256: await hashFile(snapshotPath),
+        logicalChecksumSha256: inspection.logicalChecksumSha256,
         secretIncluded: false,
       };
-      const snapshot = new SnapshotDatabase(snapshotPath, {
-        readOnly: true,
-        allowExtension: false,
-        enableDoubleQuotedStringLiterals: false,
-      });
-      let logicalChecksumSha256: string;
-      try {
-        logicalChecksumSha256 = logicalDatabaseChecksum(snapshot);
-      } finally {
-        snapshot.close();
-      }
       await createBackupArchive(snapshotPath, manifest, archivePath);
       return {
         path: archivePath,
         fileName,
         manifest,
-        logicalChecksumSha256,
+        logicalChecksumSha256: inspection.logicalChecksumSha256,
         cleanup: () => {
           if (!options.persistent) rmSync(archivePath, { force: true });
         },

@@ -27,4 +27,9 @@ describe('loadConfig', () => {
     expect(loadConfig({ BILI_SYNC_ENABLED: 'true' }).biliSyncEnabled).toBe(true);
     expect(() => loadConfig({ BILI_SYNC_ENABLED: '1' })).toThrow();
   });
+
+  it('accepts a valid IANA business time zone and rejects an invalid one', () => {
+    expect(loadConfig({ APP_TIME_ZONE: 'America/New_York' }).timeZone).toBe('America/New_York');
+    expect(() => loadConfig({ APP_TIME_ZONE: 'Not/AZone' })).toThrow(/IANA/u);
+  });
 });

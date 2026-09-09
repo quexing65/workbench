@@ -157,6 +157,34 @@ describe('learning resource API', () => {
     expect(refreshed.body.resource.progress.furthestSeconds).toBe(40);
   });
 
+  it('records watched seconds on the business day of the configured time zone', async () => {
+    const resource = (await importResource()).body.resource;
+    const partId = String(resource.parts[0].id);
+    const path = `/api/v1/learning/resources/${resource.id}/progress/observe`;
+    const observe = (timeZone: string, revision: number, observedAt: string, seconds: number) =>
+      request(makeApp({ database: database.connection, biliClient: bili, timeZone }))
+        .post(path)
+        .set('Host', allowedHost)
+        .set('Origin', 'http://127.0.0.1:5190')
+        .set('X-Workbench-Request', '1')
+        .set('Content-Type', 'application/json')
+        .send({ revision, partId, seconds, observedAt, source: 'manual' });
+
+    // 第一次观察只建立基线，第二次与第三次各贡献 10 秒实际观看。
+    await observe('Asia/Shanghai', 1, '2026-08-13T20:00:00.000Z', 10);
+    await observe('Asia/Shanghai', 2, '2026-08-13T20:30:00.000Z', 20);
+    await observe('America/New_York', 3, '2026-08-13T21:00:00.000Z', 30);
+
+    expect(
+      database.connection
+        .prepare('SELECT watch_date, watched_seconds FROM learning_watch_daily ORDER BY watch_date')
+        .all(),
+    ).toEqual([
+      { watch_date: '2026-08-13', watched_seconds: 10 },
+      { watch_date: '2026-08-14', watched_seconds: 10 },
+    ]);
+  });
+
   it('clears progress pointers when a previously observed part disappears', async () => {
     const resource = (await importResource()).body.resource;
     const removedPart = resource.parts[1];

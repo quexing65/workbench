@@ -94,6 +94,13 @@ export function migrateDatabase(
     }
   }
 
+  // 已应用集合必须是文件列表的前缀：否则新增一个低位编号迁移会在已升级的库上
+  // 跳过中间版本后乱序执行，checksum 与数据模型都会失去意义。
+  const appliedIds = [...applied.keys()];
+  if (appliedIds.some((id, index) => files[index]?.id !== id)) {
+    throw new Error('Applied migrations are not a prefix of the migration files');
+  }
+
   const newlyApplied: string[] = [];
   for (const file of files) {
     if (applied.has(file.id)) {

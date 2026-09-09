@@ -5,7 +5,12 @@ import { DatabaseSync } from 'node:sqlite';
 import { pipeline } from 'node:stream/promises';
 import { createWriteStream } from 'node:fs';
 
-import { BACKUP_APP_ID, BACKUP_FORMAT_VERSION, type BackupManifest } from '@workbench/shared';
+import {
+  BACKUP_APP_ID,
+  BACKUP_FORMAT_VERSION,
+  LEGACY_BACKUP_FORMAT_VERSION,
+  type BackupManifest,
+} from '@workbench/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ZipFile } from 'yazl';
 
@@ -91,7 +96,10 @@ describe('controlled backup archive', () => {
       schemaVersion: 5,
       secretIncluded: false,
     });
-    expect(inspectSnapshot(extracted.databasePath)).toEqual({ schemaVersion: 5 });
+    expect(inspectSnapshot(extracted.databasePath)).toEqual({
+      schemaVersion: 5,
+      logicalChecksumSha256: expectedChecksum,
+    });
     const snapshot = new DatabaseSync(extracted.databasePath, { readOnly: true });
     try {
       expect(logicalDatabaseChecksum(snapshot)).toBe(expectedChecksum);
@@ -207,6 +215,7 @@ describe('controlled backup archive', () => {
       createdAt: '2026-08-13T12:00:00.000Z',
       dbBytes: 1,
       dbSha256: '0'.repeat(64),
+      logicalChecksumSha256: '0'.repeat(64),
       secretIncluded: false,
     };
     const archive = join(directory, 'mismatch.pwbk');
@@ -270,6 +279,90 @@ describe('whole-database restore', () => {
     expect(reopened.connection.prepare('SELECT id FROM tasks ORDER BY id').all()).toEqual([
       { id: 'backup-task' },
       { id: 'current-task' },
+    ]);
+  });
+
+  it('surfaces both the restore failure and an incomplete rollback', async () => {
+    const directory = root();
+    const database = open(directory);
+    addTask(database.connection, 'backup-task', '备份内容');
+    const backup = await new BackupService(
+      database.connection,
+      database.directories.backups,
+    ).create({ persistent: true });
+    close(database);
+
+    // 用普通文件占住失败副本的目标路径，让「替换后回退」这一步本身失败。
+    writeFileSync(join(directory, 'backups', 'failed-restore-fixed-id'), 'occupied');
+
+    const failure = await restoreBackup(directory, backup.path, {
+      createId: () => 'fixed-id',
+      injectFault: (point) => {
+        if (point === 'after-replacement') throw new Error('fault:after-replacement');
+      },
+    }).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).toContain('could not be restored');
+    expect((failure as Error).cause).toMatchObject({
+      restoreError: expect.any(Error),
+      rollbackError: expect.any(Error),
+    });
+  });
+
+  it('rejects a manifest whose logical checksum does not match the snapshot', async () => {
+    const directory = root();
+    const database = open(directory);
+    addTask(database.connection, 'task-checksum', '逻辑校验和');
+    const backup = await new BackupService(
+      database.connection,
+      database.directories.backups,
+    ).create({ persistent: true });
+    close(database);
+
+    const extracted = await extractBackupArchive(backup.path, join(directory, 'tampered'));
+    const tampered = join(directory, 'tampered.pwbk');
+    await createBackupArchive(
+      extracted.databasePath,
+      { ...extracted.manifest, logicalChecksumSha256: 'f'.repeat(64) },
+      tampered,
+    );
+
+    await expect(restoreBackup(directory, tampered)).rejects.toThrow('logical checksum');
+    const reopened = open(directory);
+    expect(reopened.connection.prepare('SELECT id FROM tasks ORDER BY id').all()).toEqual([
+      { id: 'task-checksum' },
+    ]);
+  });
+
+  it('still restores a legacy format 1 backup without a logical checksum', async () => {
+    const directory = root();
+    const database = open(directory);
+    addTask(database.connection, 'legacy-task', '旧格式备份');
+    const backup = await new BackupService(
+      database.connection,
+      database.directories.backups,
+    ).create({ persistent: true });
+    const extracted = await extractBackupArchive(backup.path, join(directory, 'legacy'));
+    close(database);
+
+    const legacyManifest: BackupManifest = {
+      app: extracted.manifest.app,
+      backupFormat: LEGACY_BACKUP_FORMAT_VERSION,
+      schemaVersion: extracted.manifest.schemaVersion,
+      createdAt: extracted.manifest.createdAt,
+      dbBytes: extracted.manifest.dbBytes,
+      dbSha256: extracted.manifest.dbSha256,
+      secretIncluded: false,
+    };
+    const legacyArchive = join(directory, 'legacy-v1.pwbk');
+    await createBackupArchive(extracted.databasePath, legacyManifest, legacyArchive);
+
+    const result = await restoreBackup(directory, legacyArchive);
+    expect(result.manifest.backupFormat).toBe(LEGACY_BACKUP_FORMAT_VERSION);
+    const reopened = open(directory);
+    expect(reopened.connection.prepare('SELECT id FROM tasks ORDER BY id').all()).toEqual([
+      { id: 'legacy-task' },
     ]);
   });
 

@@ -21,10 +21,23 @@ describe('GET /api/v1/health', () => {
       database: 'ok',
       schemaVersion: 5,
       timeZone: 'Asia/Shanghai',
+      // 测试/开发模式保留数据目录，E2E 隔离守卫依赖它。
       dataDirectory: 'unused-in-unit-tests',
     });
     expect(response.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/u);
     expect(response.headers['x-request-id']).not.toBe('caller-controlled');
+  });
+
+  it('omits the absolute data directory in production', async () => {
+    const response = await request(
+      makeApp({ nodeEnv: 'production', dataDirectory: 'C:\\Users\\secret\\AppData' }),
+    )
+      .get('/api/v1/health')
+      .set('Host', allowedHost);
+
+    expect(response.status).toBe(200);
+    expect(response.body).not.toHaveProperty('dataDirectory');
+    expect(JSON.stringify(response.body)).not.toContain('secret');
   });
 
   it('reports the explicitly injected version', async () => {

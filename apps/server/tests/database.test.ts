@@ -144,6 +144,24 @@ describe('Workbench SQLite foundation', () => {
     ).toThrow('Applied migration file is missing: 0001-initial');
   });
 
+  it('rejects a lower-numbered migration inserted after the database was upgraded', () => {
+    const root = temporaryDirectory('workbench-migration-order-');
+    const migrations = temporaryDirectory('workbench-order-sql-');
+    cpSync(sourceMigrations, migrations, { recursive: true });
+
+    // 模拟「先跳号升级、后补写低位迁移」：0002 缺席时升级，再把 0002 放回去。
+    const heldPath = join(migrations, '0002-source-contributions.sql');
+    const held = readFileSync(heldPath, 'utf8');
+    rmSync(heldPath);
+    const upgraded = openWorkbenchDatabase({ dataDirectory: root, migrationDirectory: migrations });
+    upgraded.close();
+
+    writeFileSync(heldPath, held);
+    expect(() =>
+      openWorkbenchDatabase({ dataDirectory: root, migrationDirectory: migrations }),
+    ).toThrow('not a prefix');
+  });
+
   it('enforces foreign keys and rolls back failed repository transactions', () => {
     const root = temporaryDirectory('workbench-transaction-');
     const database = openWorkbenchDatabase({ dataDirectory: root });

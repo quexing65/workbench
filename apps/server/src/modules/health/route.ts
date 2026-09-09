@@ -24,7 +24,8 @@ export function createHealthRouter(
         database: 'ok',
         schemaVersion: database.schemaVersion,
         timeZone: config.timeZone,
-        dataDirectory: config.dataDirectory,
+        // 正式运行不暴露本机绝对路径；开发/测试保留，供 E2E 隔离守卫核对。
+        ...(config.nodeEnv === 'production' ? {} : { dataDirectory: config.dataDirectory }),
       }),
     );
   });

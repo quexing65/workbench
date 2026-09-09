@@ -1,6 +1,11 @@
 export { healthResponseSchema } from './contracts/health.js';
 export type { HealthResponse } from './contracts/health.js';
-export { BACKUP_APP_ID, BACKUP_FORMAT_VERSION, backupManifestSchema } from './contracts/backups.js';
+export {
+  BACKUP_APP_ID,
+  BACKUP_FORMAT_VERSION,
+  backupManifestSchema,
+  LEGACY_BACKUP_FORMAT_VERSION,
+} from './contracts/backups.js';
 export type { BackupManifest } from './contracts/backups.js';
 export {
   biliBrowserSchema,
@@ -113,9 +118,13 @@ export type {
 } from './contracts/tasks.js';
 export {
   addBusinessDays,
+  businessDateOfEpochMilliseconds,
   businessDateSpan,
+  businessDayStartEpochMilliseconds,
   compareBusinessDates,
+  DEFAULT_BUSINESS_TIME_ZONE,
   isBusinessDate,
+  MAX_BUSINESS_DATE,
   parseBusinessDate,
 } from './domain/business-date.js';
 export type { BusinessDateParts } from './domain/business-date.js';

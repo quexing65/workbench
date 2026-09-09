@@ -34,6 +34,8 @@ export function makeApp(
     mountBackups?: boolean;
     backupService?: Pick<BackupService, 'create'>;
     dataDirectory?: string;
+    timeZone?: string;
+    nodeEnv?: ServerConfig['nodeEnv'];
     version?: string;
   } = {},
 ) {
@@ -41,6 +43,8 @@ export function makeApp(
     config: {
       ...testConfig,
       ...(options.dataDirectory === undefined ? {} : { dataDirectory: options.dataDirectory }),
+      ...(options.timeZone === undefined ? {} : { timeZone: options.timeZone }),
+      ...(options.nodeEnv === undefined ? {} : { nodeEnv: options.nodeEnv }),
     },
     database: {
       schemaVersion: 5,

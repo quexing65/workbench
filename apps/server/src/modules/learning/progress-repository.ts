@@ -1,4 +1,10 @@
-import type { LearningPartProgress, LearningProgress, LearningResource } from '@workbench/shared';
+import {
+  businessDateOfEpochMilliseconds,
+  DEFAULT_BUSINESS_TIME_ZONE,
+  type LearningPartProgress,
+  type LearningProgress,
+  type LearningResource,
+} from '@workbench/shared';
 import type { DatabaseSync } from 'node:sqlite';
 
 import { withTransaction } from '../../db/transaction.js';
@@ -8,6 +14,7 @@ export class LearningProgressRepository {
   public constructor(
     private readonly database: DatabaseSync,
     private readonly reader: LearningResourceReader,
+    private readonly timeZone: string = DEFAULT_BUSINESS_TIME_ZONE,
   ) {}
 
   public updateObservation(
@@ -121,8 +128,8 @@ export class LearningProgressRepository {
 
   private recordWatchedSeconds(partId: string, watchedDelta: number, observedAt: string): void {
     if (watchedDelta <= 0) return;
-    // 与 insights 查询口径一致：按 UTC+8 业务日归属观看时长。
-    const watchDate = new Date(Date.parse(observedAt) + 8 * 3_600_000).toISOString().slice(0, 10);
+    // 与 insights 查询口径一致：按 APP_TIME_ZONE 业务日归属观看时长。
+    const watchDate = businessDateOfEpochMilliseconds(Date.parse(observedAt), this.timeZone);
     this.database
       .prepare(
         `INSERT INTO learning_watch_daily (part_id, watch_date, watched_seconds) VALUES (?, ?, ?)

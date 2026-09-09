@@ -62,10 +62,17 @@ function removeDatabaseSet(directory: string): void {
   for (const name of DATABASE_FILES) rmSync(join(directory, name), { force: true });
 }
 
-function migrateStagedDatabase(path: string, expectedSchemaVersion: number): void {
+function migrateStagedDatabase(path: string, manifest: BackupManifest): void {
+  // 迁移前先核对备份自带的逻辑校验和，证明业务内容与备份时一致。
   const before = inspectSnapshot(path);
-  if (before.schemaVersion !== expectedSchemaVersion) {
+  if (before.schemaVersion !== manifest.schemaVersion) {
     throw new Error('Backup manifest schema version does not match the database');
+  }
+  if (
+    manifest.logicalChecksumSha256 !== undefined &&
+    before.logicalChecksumSha256 !== manifest.logicalChecksumSha256
+  ) {
+    throw new Error('Backup logical checksum does not match the staged database');
   }
   const database = new DatabaseSync(path, {
     allowExtension: false,
@@ -105,9 +112,31 @@ export async function restoreBackup(
   let activeMoved = false;
   let replacementMoved = false;
   let current: ReturnType<typeof openWorkbenchDatabase> | undefined;
+
+  const attemptRollback = (): unknown => {
+    try {
+      current?.close();
+      current = undefined;
+      if (!activeMoved) return undefined;
+      if (replacementMoved) {
+        mkdirSync(failed, { recursive: true });
+        moveDatabaseSet(directories.database, failed);
+      } else {
+        removeDatabaseSet(directories.database);
+      }
+      moveDatabaseSet(rollback, directories.database);
+      rmSync(rollback, { recursive: true, force: true });
+      const verification = openWorkbenchDatabase({ dataDirectory });
+      verification.close();
+      return undefined;
+    } catch (rollbackFailure) {
+      return rollbackFailure;
+    }
+  };
+
   try {
     const extracted = await extractBackupArchive(archivePath, stage);
-    migrateStagedDatabase(extracted.databasePath, extracted.manifest.schemaVersion);
+    migrateStagedDatabase(extracted.databasePath, extracted.manifest);
     injectFault('after-validation');
 
     current = openWorkbenchDatabase({ dataDirectory });
@@ -148,18 +177,13 @@ export async function restoreBackup(
       restoredLogicalChecksumSha256,
     };
   } catch (error) {
-    current?.close();
-    if (activeMoved) {
-      if (replacementMoved) {
-        mkdirSync(failed, { recursive: true });
-        moveDatabaseSet(directories.database, failed);
-      } else {
-        removeDatabaseSet(directories.database);
-      }
-      moveDatabaseSet(rollback, directories.database);
-      rmSync(rollback, { recursive: true, force: true });
-      const verification = openWorkbenchDatabase({ dataDirectory });
-      verification.close();
+    // 回退链自身也可能失败（磁盘、权限、句柄）。此时必须同时暴露两个错误，
+    // 否则真正的失败原因会被回退步骤的异常掩盖。
+    const rollbackError = attemptRollback();
+    if (rollbackError !== undefined) {
+      throw new Error('Restore failed and the active database could not be restored', {
+        cause: { restoreError: error, rollbackError },
+      });
     }
     throw error;
   } finally {

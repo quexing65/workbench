@@ -255,4 +255,51 @@ describe('overview and review API', () => {
     expect((await read('/api/v1/review?from=2026-08-14&to=2026-08-12')).status).toBe(400);
     expect((await read('/api/v1/review?from=2025-08-01&to=2026-08-14')).status).toBe(400);
   });
+
+  it('buckets learning activity into the configured business time zone', async () => {
+    const observedAt = Date.parse('2026-08-13T20:00:00.000Z');
+    const resourceId = '10000000-0000-4000-8000-0000000000aa';
+    const partId = '20000000-0000-4000-8000-0000000000aa';
+    database.connection
+      .prepare(
+        `INSERT INTO learning_resources
+         (id, platform, source_url, title, duration_seconds, created_at_ms, updated_at_ms)
+         VALUES (?, 'bilibili', 'https://www.bilibili.com/video/BV1zone', '时区课程', 600, ?, ?)`,
+      )
+      .run(resourceId, observedAt, observedAt);
+    database.connection
+      .prepare(
+        `INSERT INTO learning_parts
+         (id, resource_id, part_number, title, duration_seconds, created_at_ms, updated_at_ms)
+         VALUES (?, ?, 1, '第一讲', 600, ?, ?)`,
+      )
+      .run(partId, resourceId, observedAt, observedAt);
+    database.connection
+      .prepare(
+        `INSERT INTO learning_part_progress
+         (part_id, furthest_seconds, last_observed_at_ms, updated_at_ms)
+         VALUES (?, 60, ?, ?)`,
+      )
+      .run(partId, observedAt, observedAt);
+
+    const activitiesFor = async (timeZone: string) => {
+      const result = await request(makeApp({ database: database.connection, timeZone }))
+        .get('/api/v1/review?from=2026-08-13&to=2026-08-14')
+        .set('Host', allowedHost);
+      expect(result.status).toBe(200);
+      return result.body.days.map((day: { learningActivities: number }) => day.learningActivities);
+    };
+
+    // 2026-08-13T20:00Z 在上海已是 08-14 04:00，在纽约仍是 08-13 16:00。
+    expect(await activitiesFor('Asia/Shanghai')).toEqual([0, 1]);
+    expect(await activitiesFor('America/New_York')).toEqual([1, 0]);
+  });
+
+  it('accepts the last representable business day as a single-day review range', async () => {
+    const result = await read('/api/v1/review?from=9999-12-31&to=9999-12-31');
+    expect(result.status).toBe(200);
+    expect(result.body.days).toEqual([
+      expect.objectContaining({ date: '9999-12-31', learningActivities: 0 }),
+    ]);
+  });
 });
