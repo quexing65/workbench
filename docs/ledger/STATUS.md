@@ -2,14 +2,13 @@
 
 ## 当前阶段
 
-- 阶段：8（完成）；此后为常规迭代，当前代码版本 **v1.5.0**（发版进行中：`package.json`
-  已升版，等待打 tag 与登记 `docs/operations/RELEASES.md`），上一个已发布版本 v1.4.0
-  （2026-09-03）。
+- 阶段：8（完成）；此后为常规迭代，当前版本 **v1.5.0**（2026-09-10 已发布：
+  <https://github.com/quexing65/workbench/releases/tag/v1.5.0>）。
 - 状态：已完成。工程实现、自动验收、远程 CI、桌面分发、并行使用与用户确认均通过；
   30 天旧项目保留期已由用户于 2026-08-21 主动声明取消，旧项目可自行处置。
 - 最后更新：2026-09-10
 
-## v1.4.0 之后的加固改动（2026-09-10，v1.5.0 待发版）
+## v1.4.0 之后的加固改动（2026-09-10，v1.5.0 已发布）
 
 针对一次全仓复核发现的缺陷与文档漂移，完成以下改动；每条都有对应自动化测试：
 
@@ -148,13 +147,10 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 
 ## 未完成项
 
-- 阶段 8 全部完成；v1.0.0 于 2026-08-21 上线，此后迭代至 v1.4.0（2026-09-03）。
-- **v1.5.0 发版进行中**：根与 `apps/desktop` 的 `version` 已升到 1.5.0，代码与门禁已就绪。
-  剩余步骤（见 `docs/operations/OPERATIONS.md`「桌面应用发布」）：
-  1. 推送 main 并等 CI 全绿；
-  2. 在 CI 全绿的提交上 `git tag -a v1.5.0 -m "<摘要>" && git push origin v1.5.0`；
-  3. 等 `.github/workflows/release.yml` 产出草稿 Release，审阅后发布；
-  4. 在 `docs/operations/RELEASES.md` 登记变更摘要、tag、Release 链接与 SHA-256。
+- 阶段 8 全部完成；v1.0.0 于 2026-08-21 上线，此后迭代至 v1.5.0（2026-09-10 发布）。
+- v1.5.0 已按 `docs/operations/OPERATIONS.md`「桌面应用发布」完成：main CI 全绿（run
+  `34381406550`）→ tag `v1.5.0` 打在 `bff2ba9` → Release 流水线 `34381954138` 构建
+  NSIS/便携版 → 草稿审阅后正式发布 → 已在 `docs/operations/RELEASES.md` 登记校验和。
 - 旧项目（Personal-Workbench / Personl-Workbench-qoder）由用户 quexing65 主动声明
   取消 30 天保留期，可由用户自行处置。
 
