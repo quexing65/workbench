@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config';
 
-import { baseCoverageThresholds } from './vitest.coverage-thresholds';
+import {
+  baseCoverageThresholds,
+  criticalPathCoverageThresholds,
+} from './vitest.coverage-thresholds';
 
 export default defineConfig({
   test: {
@@ -14,6 +17,7 @@ export default defineConfig({
         'apps/server/src/db/cli-migrate.ts',
         'apps/server/src/modules/backups/cli-restore.ts',
         'apps/server/src/performance/cli-audit.ts',
+        'apps/desktop/src/main.ts',
         'apps/web/src/main.tsx',
         'packages/shared/src/index.ts',
       ],
@@ -23,6 +27,11 @@ export default defineConfig({
       reportsDirectory: 'coverage',
       thresholds: {
         ...baseCoverageThresholds,
+        // 关键路径的严格下限。未参与当前统计范围的 glob（例如 server 运行时的
+        // shared 文件）由 vitest 忽略，不影响另一侧的判定。
+        'apps/server/src/db/migrate.ts': criticalPathCoverageThresholds,
+        'apps/server/src/modules/credentials/**': criticalPathCoverageThresholds,
+        'packages/shared/src/domain/learning-progress.ts': criticalPathCoverageThresholds,
       },
     },
     environment: 'node',

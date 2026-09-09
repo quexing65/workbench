@@ -5,6 +5,7 @@ import {
   businessDateOfEpochMilliseconds,
   businessDateSpan,
   businessDayStartEpochMilliseconds,
+  businessToday,
   compareBusinessDates,
   isBusinessDate,
   parseBusinessDate,
@@ -74,5 +75,11 @@ describe('business dates', () => {
     expect(() => businessDayStartEpochMilliseconds('2026-02-30', 'Asia/Shanghai')).toThrow(
       RangeError,
     );
+  });
+
+  it('derives the current business day in the configured zone', () => {
+    const now = () => Date.parse('2026-08-13T20:00:00.000Z');
+    expect(businessToday('Asia/Shanghai', now)).toBe('2026-08-14');
+    expect(businessToday('America/New_York', now)).toBe('2026-08-13');
   });
 });

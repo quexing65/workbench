@@ -1,6 +1,6 @@
 {
   "name": "@workbench/desktop",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "Electron desktop shell for Personal Workbench",
   "author": "quexing65",
@@ -8,6 +8,8 @@
   "main": "dist/main.js",
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --root ../.. --config vitest.config.ts apps/desktop",
+    "test:coverage": "vitest run --coverage --root ../.. --config vitest.config.ts apps/desktop --coverage.include=apps/desktop/src/**/*.ts",
     "build": "node scripts/build.mjs",
     "dev": "node scripts/build.mjs && electron . --dev",
     "start": "electron .",

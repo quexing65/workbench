@@ -61,6 +61,8 @@ test('supports core task and note flows from the keyboard', async ({ page }) => 
 });
 
 test('has no blocking accessibility violations on every page', async ({ page }) => {
+  // 八个页面各跑一次 axe，默认 30s 不够。
+  test.setTimeout(120_000);
   await page.clock.setFixedTime(fixedTime);
   const pages = [
     ['/overview', '把今天，安稳地放在眼前。'],
