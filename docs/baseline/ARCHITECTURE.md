@@ -104,11 +104,15 @@ ADR 0007）在 Electron 主进程内嵌同一 Express 服务并加载同源地�
 覆盖率门槛由 `vitest.coverage-thresholds.ts` 统一定义，根 `vitest.config.ts` 与
 `apps/web/vite.config.ts` 共用：lines/functions/statements ≥ 85%，branches ≥ 80%。
 server、web、shared 各自用 `--coverage.include` 收窄统计范围，因此门槛按包分别判定，
-而不是整个仓库聚合；当前没有 per-path 阈值。入口与 CLI（`apps/server/src/index.ts`、
-`db/cli-migrate.ts`、`modules/backups/cli-restore.ts`、`performance/cli-audit.ts`、
-`apps/web/src/main.tsx`、`packages/shared/src/index.ts`）不计入覆盖率，`apps/desktop`
-尚无自动化测试。不得用无意义断言或排除关键文件追求数字。原 import 模块的独立覆盖率
-阈值已随 v1.1.0 模块退役移除。
+而不是整个仓库聚合。关键路径另有严格下限 lines/functions/statements ≥ 95%、branches ≥ 90%：
+`apps/server/src/db/migrate.ts`、`apps/server/src/modules/credentials/**`、
+`packages/shared/src/domain/learning-progress.ts`（见根 `vitest.config.ts` 的 per-path
+thresholds）。入口与 CLI（`apps/server/src/index.ts`、`db/cli-migrate.ts`、
+`modules/backups/cli-restore.ts`、`performance/cli-audit.ts`、`apps/web/src/main.tsx`、
+`apps/desktop/src/main.ts`、`packages/shared/src/index.ts`）不计入覆盖率。
+`apps/desktop` 通过 `apps/desktop/tests/server-process.test.ts` 覆盖内嵌服务的装配、
+锁释放与失败清理；Electron 主进程（窗口、外链拦截）仍依赖人工冒烟。
+不得用无意义断言或排除关键文件追求数字。
 
 测试矩阵（改动对应区域时必须覆盖的最低面）：
 

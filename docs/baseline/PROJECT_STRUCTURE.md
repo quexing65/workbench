@@ -35,6 +35,9 @@
 - `src/main.ts`：Electron 主进程装配——单实例锁、内嵌服务启动、窗口生命周期与外链拦截。
 - `src/server-process.ts`：在当前进程内组装现有 server 的配置、锁、数据库与应用；
   migrations、DPAPI 脚本与 web dist 的资源路径全部由此显式注入。
+- `tests/server-process.test.ts`：以隔离数据目录与临时端口启动内嵌服务，覆盖健康接口、
+  静态资源、数据目录锁的获取与释放，以及迁移/端口失败时的清理；Electron 主进程本身
+  不在自动化测试范围内。
 - `scripts/build.mjs`：esbuild 单文件打包（server 源码内联）并复制 migrations、
   `dpapi.ps1` 与 `apps/web/dist` 到 `dist/`。
 - `scripts/dist.mjs`：调用 electron-builder 产出 NSIS/便携版并按版本归档到

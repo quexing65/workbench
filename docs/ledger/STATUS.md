@@ -2,13 +2,14 @@
 
 ## 当前阶段
 
-- 阶段：8（完成）；此后为常规迭代，当前版本 **v1.4.0**（2026-09-03），工作树含 v1.5.0
-  待发版改动（见「v1.4.0 之后的加固改动」）。
+- 阶段：8（完成）；此后为常规迭代，当前代码版本 **v1.5.0**（发版进行中：`package.json`
+  已升版，等待打 tag 与登记 `docs/operations/RELEASES.md`），上一个已发布版本 v1.4.0
+  （2026-09-03）。
 - 状态：已完成。工程实现、自动验收、远程 CI、桌面分发、并行使用与用户确认均通过；
   30 天旧项目保留期已由用户于 2026-08-21 主动声明取消，旧项目可自行处置。
 - 最后更新：2026-09-10
 
-## v1.4.0 之后的加固改动（2026-09-10，未发版）
+## v1.4.0 之后的加固改动（2026-09-10，v1.5.0 待发版）
 
 针对一次全仓复核发现的缺陷与文档漂移，完成以下改动；每条都有对应自动化测试：
 
@@ -25,6 +26,10 @@
 | 跨站请求防护  | `apps/server/src/http/origin-guard.ts`                                                                                  | `Sec-Fetch-Site` 改白名单并覆盖所有方法，跨站 GET 不再能触发副作用                                                                              |
 | 健康接口收口  | `packages/shared/src/contracts/health.ts`、`health/route.ts`                                                            | 仅非 production 模式返回数据目录（E2E 隔离守卫仍可用），正式运行不暴露绝对路径                                                                  |
 | 状态组件统一  | `apps/web/src/shared/ui/QueryState.tsx` 及 7 个页面                                                                     | 加载/失败状态收敛为一套 markup 与样式；顺带修复 axe 报出的 `/review` `definition-list` 违规                                                     |
+| 前端去重      | `apps/web/src/shared/api/business-time.ts`、`shared/ui/ConfirmDialog.tsx` 及 6 个页面                                   | `today()` 跟随服务端时区、409 文案单点维护、`window.confirm` 换成可访问的应用内确认对话框                                                       |
+| 视觉与无障碍  | `tests/e2e/00-empty-visual.spec.ts`、`visual-accessibility.spec.ts`                                                     | 新增 8 页空态像素基线（先于数据用例运行，确定性），axe 扫描从 2 页扩到 8 页                                                                     |
+| 覆盖率硬门槛  | `vitest.config.ts`、`vitest.coverage-thresholds.ts`                                                                     | 为 migrate/credentials/learning-progress 恢复 per-path ≥95%/90% 阈值并验证生效                                                                  |
+| 桌面壳测试    | `apps/desktop/tests/server-process.test.ts`                                                                             | 内嵌服务的启动、静态资源、锁释放与迁移/端口失败清理纳入自动化                                                                                   |
 
 ## 阶段状态
 
@@ -108,20 +113,22 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 
 ## 当前验证结果（2026-09-10，v1.4.0 + 加固改动）
 
-| 命令/检查               | 结果 | 测试数/备注                                                                                                 |
-| ----------------------- | ---- | ----------------------------------------------------------------------------------------------------------- |
-| `npm run format:check`  | 通过 | 全部文件符合 Prettier                                                                                       |
-| `npm run lint`          | 通过 | ESLint 0 error、0 warning                                                                                   |
-| `npm run typecheck`     | 通过 | Server/Web/Shared strict 类型检查通过                                                                       |
-| `npm run test:coverage` | 通过 | 47 files、269 tests（Server 153、Web 51、Shared 65），0 failed、0 skipped                                   |
-| 覆盖率门槛              | 通过 | 按包判定（lines/branches/functions）：Server 96.67/86.48/97.39；Web 96.54/89.53/88.19；Shared 100/97.60/100 |
-| `npm run build`         | 通过 | bundle 预算通过（最大 chunk 224.63 KiB、首屏 gzip 158.93 KiB）；生产 SPA/API 静态边界保持通过               |
-| `npm run test:e2e`      | 通过 | 10 Chromium tests；备份下载/条目、业务工作流、360px、键盘、reduced-motion 与 8 页 axe 扫描通过              |
-| `npm run check:all`     | 通过 | format/lint/typecheck、269 tests、build、10 E2E 与浏览器性能门禁（5 页 0 失败）一次完整运行通过             |
-| 备份/恢复矩阵           | 通过 | exact entries、hash/integrity/FK、逻辑校验和（v2）、v1 兼容恢复、恶意 ZIP、5 故障点回退、回退失败聚合报错   |
-| 迁移与锁                | 通过 | 跨进程验证：持锁时 `db:migrate` 拒绝执行、退出后释放；乱序迁移拒绝启动；损坏锁宽限期自愈                    |
-| 时区贯通                | 通过 | 同一 UTC 时刻在 `Asia/Shanghai` 与 `America/New_York` 归属不同业务日（写入与聚合两路）                      |
-| 跨站请求                | 通过 | 跨站 GET/POST 一律 403，`same-origin`/`none`/无头请求放行                                                   |
+| 命令/检查               | 结果 | 测试数/备注                                                                                                                        |
+| ----------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run format:check`  | 通过 | 全部文件符合 Prettier                                                                                                              |
+| `npm run lint`          | 通过 | ESLint 0 error、0 warning                                                                                                          |
+| `npm run typecheck`     | 通过 | Desktop/Server/Web/Shared strict 类型检查通过                                                                                      |
+| `npm run test:coverage` | 通过 | 49 files、278 tests（Desktop 4、Server 153、Web 55、Shared 66），0 failed、0 skipped                                               |
+| 覆盖率门槛              | 通过 | 按包判定（lines/branches/functions）：Desktop 100/91.66/100；Server 96.67/86.47/97.39；Web 96.67/89.59/88.65；Shared 100/97.61/100 |
+| 关键路径 per-path 阈值  | 通过 | migrate.ts、credentials/**、learning-progress.ts 均满足 lines/functions/statements ≥95%、branches ≥90%                             |
+| `npm run build`         | 通过 | bundle 预算通过（最大 chunk 224.63 KiB、首屏 gzip 159.45 KiB）；生产 SPA/API 静态边界保持通过                                      |
+| `npm run test:e2e`      | 通过 | 11 Chromium tests；新增 8 页空态像素基线，axe 扫描覆盖全部 8 页                                                                    |
+| `npm run check:all`     | 通过 | format/lint/typecheck、278 tests、build、11 E2E 与浏览器性能门禁（5 页 0 失败）一次完整运行通过                                    |
+| 备份/恢复矩阵           | 通过 | exact entries、hash/integrity/FK、逻辑校验和（v2）、v1 兼容恢复、恶意 ZIP、5 故障点回退、回退失败聚合报错                          |
+| 迁移与锁                | 通过 | 跨进程验证：持锁时 `db:migrate` 拒绝执行、退出后释放；乱序迁移拒绝启动；损坏锁宽限期自愈                                           |
+| 时区贯通                | 通过 | 同一 UTC 时刻在 `Asia/Shanghai` 与 `America/New_York` 归属不同业务日（写入与聚合两路）                                             |
+| 跨站请求                | 通过 | 跨站 GET/POST 一律 403，`same-origin`/`none`/无头请求放行                                                                          |
+| 桌面壳内嵌服务          | 通过 | 健康接口 + 注入的静态资源 + 数据目录锁释放；迁移失败与端口占用均清理锁与数据库                                                     |
 
 > 说明：`npm run check:all` 含 E2E 与浏览器性能审计，耗时较长；上表为本次加固改动的实测结果。
 
@@ -142,8 +149,12 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 ## 未完成项
 
 - 阶段 8 全部完成；v1.0.0 于 2026-08-21 上线，此后迭代至 v1.4.0（2026-09-03）。
-- 本节「v1.4.0 之后的加固改动」尚未发版：需要按 `docs/operations/OPERATIONS.md` 打 tag、
-  走 Release 流程并登记 `RELEASES.md`（备份格式升 v2，建议按 minor 升 v1.5.0）。
+- **v1.5.0 发版进行中**：根与 `apps/desktop` 的 `version` 已升到 1.5.0，代码与门禁已就绪。
+  剩余步骤（见 `docs/operations/OPERATIONS.md`「桌面应用发布」）：
+  1. 推送 main 并等 CI 全绿；
+  2. 在 CI 全绿的提交上 `git tag -a v1.5.0 -m "<摘要>" && git push origin v1.5.0`；
+  3. 等 `.github/workflows/release.yml` 产出草稿 Release，审阅后发布；
+  4. 在 `docs/operations/RELEASES.md` 登记变更摘要、tag、Release 链接与 SHA-256。
 - 旧项目（Personal-Workbench / Personl-Workbench-qoder）由用户 quexing65 主动声明
   取消 30 天保留期，可由用户自行处置。
 
@@ -157,7 +168,8 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
   且旧版本程序无法读取 v2 备份（`backupFormat` 不匹配会拒绝）。
 - DPAPI 依赖系统执行策略：以 `RemoteSigned` 调用固定脚本，若机器通过组策略强制
   `Restricted`，凭据功能不可用（与之前 `Bypass` 的受限面相同）。
-- `apps/desktop` 无自动化测试，Electron 主进程与内嵌服务装配依赖人工冒烟。
+- `apps/desktop` 的内嵌服务装配已有自动化测试；Electron 主进程（窗口、外链拦截、
+  单实例锁）仍依赖人工冒烟。
 - 健康检查在非 production 模式仍返回数据目录（开发与 E2E 隔离守卫依赖它）；正式运行不返回。
 - 损坏的 `.workbench.lock` 在 30 秒宽限期后会被接管：若确实有进程在启动瞬间写入失败，可能被
   误判为陈旧，但该窗口极短且锁文件不含业务数据。
