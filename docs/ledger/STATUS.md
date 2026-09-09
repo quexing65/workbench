@@ -2,10 +2,29 @@
 
 ## 当前阶段
 
-- 阶段：8（完成）
+- 阶段：8（完成）；此后为常规迭代，当前版本 **v1.4.0**（2026-09-03），工作树含 v1.5.0
+  待发版改动（见「v1.4.0 之后的加固改动」）。
 - 状态：已完成。工程实现、自动验收、远程 CI、桌面分发、并行使用与用户确认均通过；
   30 天旧项目保留期已由用户于 2026-08-21 主动声明取消，旧项目可自行处置。
-- 最后更新：2026-08-21
+- 最后更新：2026-09-10
+
+## v1.4.0 之后的加固改动（2026-09-10，未发版）
+
+针对一次全仓复核发现的缺陷与文档漂移，完成以下改动；每条都有对应自动化测试：
+
+| 改动          | 关键文件                                                                                                                | 说明                                                                                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 业务时区贯通  | `packages/shared/src/domain/business-date.ts`、`learning/progress-repository.ts`、`insights/repository.ts`、`config.ts` | `APP_TIME_ZONE` 此前只出现在 `/health`，业务日硬编码 UTC+8；现按 IANA 时区计算日界，日界以 epoch 范围下推到 SQL，观看时长与学习活动归属随之生效 |
+| 备份格式 v2   | `packages/shared/src/contracts/backups.ts`、`backups/snapshot.ts`、`backups/service.ts`、`backups/restore.ts`           | manifest 记录业务内容逻辑校验和；恢复在应用 migration 前比对，证明内容与备份时一致；v1 旧备份仍可恢复                                           |
+| 迁移 CLI 加锁 | `apps/server/src/db/cli-migrate.ts`、`db/data-lock.ts`                                                                  | `npm run db:migrate` 与服务端/恢复共用数据目录排他锁                                                                                            |
+| CSP           | `apps/server/src/http/security-headers.ts`                                                                              | 增加 `Content-Security-Policy`（`script-src 'self'`，禁用 `object-src`/`frame-ancestors`，样式允许内联）                                        |
+| DPAPI 加固    | `apps/server/src/modules/credentials/dpapi-runner.ts`                                                                   | PowerShell 解释器固定为系统绝对路径；执行策略由 `Bypass` 收窄为 `RemoteSigned`；脚本缺失直接 fail closed                                        |
+| 迁移顺序守卫  | `apps/server/src/db/migrate.ts`                                                                                         | 已应用集合必须是文件列表前缀，防止新增低位编号迁移在已升级库上乱序执行                                                                          |
+| 恢复回退保真  | `apps/server/src/modules/backups/restore.ts`                                                                            | 回退链自身失败时抛聚合错误（`cause` 同时携带原始失败与回退失败），不再掩盖根因                                                                  |
+| 锁自愈与属主  | `apps/server/src/db/data-lock.ts`                                                                                       | 损坏锁 30 秒宽限期后自动接管；`release()` 只在锁仍属于自己时删除                                                                                |
+| 跨站请求防护  | `apps/server/src/http/origin-guard.ts`                                                                                  | `Sec-Fetch-Site` 改白名单并覆盖所有方法，跨站 GET 不再能触发副作用                                                                              |
+| 健康接口收口  | `packages/shared/src/contracts/health.ts`、`health/route.ts`                                                            | 仅非 production 模式返回数据目录（E2E 隔离守卫仍可用），正式运行不暴露绝对路径                                                                  |
+| 状态组件统一  | `apps/web/src/shared/ui/QueryState.tsx` 及 7 个页面                                                                     | 加载/失败状态收敛为一套 markup 与样式；顺带修复 axe 报出的 `/review` `definition-list` 违规                                                     |
 
 ## 阶段状态
 
@@ -60,7 +79,9 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 洞察查询、workspace scripts、Data page、E2E、大列表首屏渲染、系列按需编辑、README 与基线文档；
 删除文件：无。
 
-## 验证结果
+## 验证结果（阶段 8 验收，2026-08-21，历史记录）
+
+> 下表是 v1.0.0 上线时的验收快照，数字已不再代表当前代码。当前数字见下节。
 
 | 命令/检查               | 结果 | 测试数/备注                                                                                       |
 | ----------------------- | ---- | ------------------------------------------------------------------------------------------------- |
@@ -85,13 +106,34 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 |                         |      | 卸载保留数据等特性均人工验证通过                                                                  |
 | 用户真实并行使用        | 通过 | 桌面版日常使用满 7 天（用户 quexing65，2026-08-21 声明），核心工作流无缺陷                        |
 
+## 当前验证结果（2026-09-10，v1.4.0 + 加固改动）
+
+| 命令/检查               | 结果 | 测试数/备注                                                                                                 |
+| ----------------------- | ---- | ----------------------------------------------------------------------------------------------------------- |
+| `npm run format:check`  | 通过 | 全部文件符合 Prettier                                                                                       |
+| `npm run lint`          | 通过 | ESLint 0 error、0 warning                                                                                   |
+| `npm run typecheck`     | 通过 | Server/Web/Shared strict 类型检查通过                                                                       |
+| `npm run test:coverage` | 通过 | 47 files、269 tests（Server 153、Web 51、Shared 65），0 failed、0 skipped                                   |
+| 覆盖率门槛              | 通过 | 按包判定（lines/branches/functions）：Server 96.67/86.48/97.39；Web 96.54/89.53/88.19；Shared 100/97.60/100 |
+| `npm run build`         | 通过 | bundle 预算通过（最大 chunk 224.63 KiB、首屏 gzip 158.93 KiB）；生产 SPA/API 静态边界保持通过               |
+| `npm run test:e2e`      | 通过 | 10 Chromium tests；备份下载/条目、业务工作流、360px、键盘、reduced-motion 与 8 页 axe 扫描通过              |
+| `npm run check:all`     | 通过 | format/lint/typecheck、269 tests、build、10 E2E 与浏览器性能门禁（5 页 0 失败）一次完整运行通过             |
+| 备份/恢复矩阵           | 通过 | exact entries、hash/integrity/FK、逻辑校验和（v2）、v1 兼容恢复、恶意 ZIP、5 故障点回退、回退失败聚合报错   |
+| 迁移与锁                | 通过 | 跨进程验证：持锁时 `db:migrate` 拒绝执行、退出后释放；乱序迁移拒绝启动；损坏锁宽限期自愈                    |
+| 时区贯通                | 通过 | 同一 UTC 时刻在 `Asia/Shanghai` 与 `America/New_York` 归属不同业务日（写入与聚合两路）                      |
+| 跨站请求                | 通过 | 跨站 GET/POST 一律 403，`same-origin`/`none`/无头请求放行                                                   |
+
+> 说明：`npm run check:all` 含 E2E 与浏览器性能审计，耗时较长；上表为本次加固改动的实测结果。
+
 ## 数据迁移
 
-- 新增 migration：`0003-performance-indexes.sql`
-- migration SHA-256：`1d29efde9ad5d9a65f9312a8fce751edcb6b832961d1a77b0e8a79a754fbb74e`
+- 现行 migration 序列：`0001-initial.sql`、`0002-source-contributions.sql`、
+  `0003-performance-indexes.sql`、`0004-watched-seconds.sql`、`0005-task-expired-status.sql`
 - `0001` SHA-256：`103858fe38bbdfdc4ed2af86fa5894b71b0203aa2ab756ded9c859eabbfd08ac`（未修改）
 - `0002` SHA-256：`53b63690deffce1fed6a4276bd5690e4d28efc13db59aaf6f72a02575f192965`（未修改）
-- schema version：3
+- `0003` SHA-256：`1d29efde9ad5d9a65f9312a8fce751edcb6b832961d1a77b0e8a79a754fbb74e`
+- schema version：5（0004 增加 `watched_seconds`/`last_seconds` 与 `learning_watch_daily`；
+  0005 把 `tasks.status` 的 `expired` 正式纳入 CHECK 并重建相关索引）
 - 真实数据导入：qoder 脱敏副本已在临时目录完成两次导入；Personal 真实导出用户声明已弃用
   不导入，fixture 覆盖已通过；均未写入正式 vNext 数据目录，临时文件已清理。
 - 开发 → 正式数据目录迁移：`.local` 备份 → 停服 production restore → 凭据复制 → 桌面验证
@@ -99,7 +141,9 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 
 ## 未完成项
 
-- 全部完成。vNext v1.0.0 已于 2026-08-21 正式上线。
+- 阶段 8 全部完成；v1.0.0 于 2026-08-21 上线，此后迭代至 v1.4.0（2026-09-03）。
+- 本节「v1.4.0 之后的加固改动」尚未发版：需要按 `docs/operations/OPERATIONS.md` 打 tag、
+  走 Release 流程并登记 `RELEASES.md`（备份格式升 v2，建议按 minor 升 v1.5.0）。
 - 旧项目（Personal-Workbench / Personl-Workbench-qoder）由用户 quexing65 主动声明
   取消 30 天保留期，可由用户自行处置。
 
@@ -109,6 +153,14 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 - Personal 基线原本不是完全干净，已有未跟踪执行规范；验收以前后 HEAD/status 相同为准。
 - `.pwbk` 排除登录凭据但包含个人业务数据，格式本身不加密，必须存放在受信任位置。
 - 恢复依赖应用级 lock file 和同卷 rename；异常断电仍应优先用已验证的 pre-restore `.pwbk` 回退。
+- 备份格式 v2 的 manifest 含 `logicalChecksumSha256`；v1 旧备份可恢复但没有内容一致性校验，
+  且旧版本程序无法读取 v2 备份（`backupFormat` 不匹配会拒绝）。
+- DPAPI 依赖系统执行策略：以 `RemoteSigned` 调用固定脚本，若机器通过组策略强制
+  `Restricted`，凭据功能不可用（与之前 `Bypass` 的受限面相同）。
+- `apps/desktop` 无自动化测试，Electron 主进程与内嵌服务装配依赖人工冒烟。
+- 健康检查在非 production 模式仍返回数据目录（开发与 E2E 隔离守卫依赖它）；正式运行不返回。
+- 损坏的 `.workbench.lock` 在 30 秒宽限期后会被接管：若确实有进程在启动瞬间写入失败，可能被
+  误判为陈旧，但该窗口极短且锁文件不含业务数据。
 - 性能数据来自本机合成 fixture；虽然已覆盖 10 个系列和正式浏览器路径，真实长文本、更多分P或
   较慢磁盘仍应持续观察。
 - npm 的间接依赖弃用/allow-scripts 提示及 Chromium 字体截图基线风险延续；自动门禁当前通过。
@@ -118,7 +170,18 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 
 - 首次启动在 schema 2 数据库上自动应用只新增索引的不可变 migration `0003`；旧 migration 未修改，checksum 不一致仍拒绝启动。
 - 新增 `/api/v1/data/backups`，不新增 HTTP restore；整库恢复仍只允许停服 CLI。
-- server 启动和 restore 共用数据目录排他锁；同一数据目录重复启动会 fail closed。
+- server 启动、restore 与 `npm run db:migrate` 共用数据目录排他锁；同一数据目录重复启动会 fail closed。
+- 备份格式由 v1 升到 v2：新备份带逻辑校验和；恢复 v2 时在迁移前比对，v1 备份跳过该比对。
+  旧版本程序读取 v2 备份会因 `backupFormat` 不受支持而拒绝。
+- `APP_TIME_ZONE` 现在真正决定业务日归属（观看时长聚合与学习活动统计）；默认值仍为
+  `Asia/Shanghai`，默认配置下行为与之前一致。
+- 所有响应新增 `Content-Security-Policy`；`script-src 'self'` 不加载任何外部脚本，生产构建
+  产物全部同源，无需调整部署。
+- `Sec-Fetch-Site` 收紧为白名单且覆盖所有方法：跨站页面发起的 GET 现在也会被 403 拒绝；
+  浏览器扩展、命令行与探活请求不带该头，行为不变。
+- `/api/v1/health` 的 `dataDirectory` 变为可选字段，仅非 production 模式返回。
+- 迁移新增「已应用集合必须是文件列表前缀」校验：若曾跳过某个编号后补写，启动会被拒绝，
+  需要先对齐迁移序列。
 - 普通备份不会替换或包含 DPAPI credential；恢复后凭据状态保持当前机器/用户的独立文件状态。
 - qoder sanitize 仅是显式运维 CLI，不是运行时依赖；输出默认被 `.gitignore` 的 SQLite 规则排除。
 - 两个旧项目不是 workspace、链接或运行时依赖；保留期已由用户于 2026-08-21 取消，

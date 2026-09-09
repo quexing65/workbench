@@ -73,13 +73,16 @@ ADR 0007）在 Electron 主进程内嵌同一 Express 服务并加载同源地�
 
 ## 关键子系统
 
-- Migration：编号、SHA-256、事务、已应用文件不可修改。
+- Migration：编号、SHA-256、事务、已应用文件不可修改；已应用集合必须是文件列表前缀，
+  否则拒绝启动（防止新增低位编号迁移在已升级库上乱序执行）；`npm run db:migrate` 与服务端、
+  恢复共用数据目录排他锁，禁止与运行中的服务并发迁移。
 - Import：preflight 与 apply 两阶段，来源只读，应用前快照，单事务写入和对账。
-- Backup：SQLite 一致快照、manifest、hash、integrity；不含 credential。
-- Restore：停服 CLI、pre-restore 快照、原子替换和失败回退。
+- Backup：SQLite 一致快照、manifest、字节 hash、逻辑校验和、integrity；不含 credential。
+- Restore：停服 CLI、pre-restore 快照、迁移前比对 manifest 逻辑校验和、原子替换和失败回退。
 - Background jobs：B站同步互斥，状态写 sync_runs，不记录敏感内容。
 - Credential：正式环境使用 CurrentUser DPAPI 独立文件；API 只返回通用状态，秘密只通过
-  PowerShell 子进程 stdin 传递。
+  PowerShell 子进程 stdin 传递；解释器使用系统绝对路径，脚本固定且以
+  `-ExecutionPolicy RemoteSigned` 调用。
 - Browser：默认仅被动发现固定 loopback CDP 端口；只有 Edge 在用户二次确认后可按固定路径和
   参数重启，Chrome 136+ 仅提供安全说明。
 - Bili sync：单进程互斥、持久化运行状态、启动恢复中断任务；历史观察继续使用统一进度纯函数，
@@ -98,9 +101,14 @@ ADR 0007）在 Electron 主进程内嵌同一 Express 服务并加载同源地�
 静态检查：TypeScript strict、ESLint 0 warning、Prettier 格式检查，全部通过 Windows CI
 （`.github/workflows/ci.yml`）。
 
-覆盖率（全局）：lines/functions/statements ≥ 85%，branches ≥ 80%；migration、进度合并
-（progress merge）和凭据（credential）模块要求 lines ≥ 95%、branches ≥ 90%。不得用无意义
-断言或排除关键文件追求数字。原 import 模块的独立覆盖率阈值已随 v1.1.0 模块退役移除。
+覆盖率门槛由 `vitest.coverage-thresholds.ts` 统一定义，根 `vitest.config.ts` 与
+`apps/web/vite.config.ts` 共用：lines/functions/statements ≥ 85%，branches ≥ 80%。
+server、web、shared 各自用 `--coverage.include` 收窄统计范围，因此门槛按包分别判定，
+而不是整个仓库聚合；当前没有 per-path 阈值。入口与 CLI（`apps/server/src/index.ts`、
+`db/cli-migrate.ts`、`modules/backups/cli-restore.ts`、`performance/cli-audit.ts`、
+`apps/web/src/main.tsx`、`packages/shared/src/index.ts`）不计入覆盖率，`apps/desktop`
+尚无自动化测试。不得用无意义断言或排除关键文件追求数字。原 import 模块的独立覆盖率
+阈值已随 v1.1.0 模块退役移除。
 
 测试矩阵（改动对应区域时必须覆盖的最低面）：
 

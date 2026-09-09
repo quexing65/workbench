@@ -57,7 +57,8 @@ SQLite 是唯一业务事实源。localStorage 只能保存主题、折叠状态
 - `learning_resource_progress`：整部最远位置、真实续播位置、完成和手动门槛。
 - `learning_part_progress`：分P局部最远位置、实际观看累计（`watched_seconds`，按
   “间隔 × 3 + 15秒”封顶估算，拖动跳过不计）与完成状态。
-- `learning_watch_daily`：分P × 业务日（UTC+8）的实际观看秒数聚合；`reset` 不清空该表。
+- `learning_watch_daily`：分P × 业务日的实际观看秒数聚合，业务日按 `APP_TIME_ZONE`
+  （默认 Asia/Shanghai）划分；`reset` 不清空该表。
   回顾页不再读取该表（见 ADR 0006），仅作为每日实际观看的历史记录保留。
 - `learning_series` / `learning_series_items`：系列及有序视频关系。回顾页「观看进度」按
   系列实时汇总：各资源取「续播分P之前分P全长 + resume 秒数」（手动完成按全长）求和。
@@ -148,6 +149,7 @@ reset 门槛继续阻止旧历史复活进度。
 
 阶段 4 没有改变 schema。`GET /api/v1/overview` 和 `GET /api/v1/review` 仅对已有表做
 只读聚合：每日任务与有效固定任务按日期合并，缺少 occurrence 时状态为 active；小记按
-更新时间取最近三条；学习活动按 `last_observed_at_ms` 归属 Asia/Shanghai 业务日。回顾页
-「取消」计数包含 expired（作废口径，见 `tasks` 条目）。没有计划
+更新时间取最近三条；学习活动按 `last_observed_at_ms` 归属 `APP_TIME_ZONE` 业务日
+（默认 Asia/Shanghai，日界在 JS 中按 IANA 时区计算后作为 epoch 范围下推到 SQL）。
+回顾页「取消」计数包含 expired（作废口径，见 `tasks` 条目）。没有计划
 的日期将完成率表示为 `null`，不伪造 0%。读取聚合不得创建 occurrence 或修改 revision。

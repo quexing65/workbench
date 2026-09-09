@@ -15,15 +15,20 @@
 - 加密 blob 只存 `credentials/credentials.bin`。
 - 禁止进入 SQLite、settings、Git、普通备份、API 响应、日志、URL 或命令行参数。
 - API 只能返回 present/valid 等状态，不返回值、长度、片段或 hash。
-- PowerShell 辅助程序必须是固定脚本，以 `-NoProfile -NonInteractive -File` 调用。
+- PowerShell 辅助程序必须是固定脚本，以 `-NoProfile -NonInteractive -File` 调用；
+  解释器固定解析为系统目录中的绝对路径（不依赖 PATH），执行策略使用 `RemoteSigned`
+  （只放行本机未签名脚本，比 `Bypass` 更窄）；脚本缺失时直接拒绝执行。
 - 秘密只通过 stdin 传入，不拼接命令；stdout/stderr 与异常不得泄露输入。
 - 普通恢复不恢复凭据，恢复或换 Windows 用户后应重新登录。
 
 ## Loopback HTTP 防护
 
 - 只监听 `127.0.0.1`。
-- 校验 Host 与 Origin；拒绝跨站写请求和 `Sec-Fetch-Site: cross-site`。
+- 校验 Host 与 Origin；`Sec-Fetch-Site` 采用白名单（只放行 `same-origin`/`none`/`same-site`，
+  缺少该头时不判断），对**所有方法**生效，避免本机恶意页面用跨站 GET 触发副作用。
 - 写请求必须带 `X-Workbench-Request: 1`。
+- 健康检查只在非 production 模式返回数据目录（供开发与 E2E 隔离守卫核对），
+  正式运行不返回本机绝对路径。
 - 默认 JSON 限制 1MB，受控 multipart 导入限制 50MB。
 - API 不接受任意本机文件路径；临时文件使用随机隔离目录。
 - SQL 全部参数化；错误不返回 SQL、栈、绝对路径、Cookie 或请求头。
@@ -62,6 +67,8 @@ read-only/query_only、`trusted_schema=OFF`、table/column allowlist、integrity
 - 普通备份只含 manifest 和一致 SQLite 快照，绝不含 credential。
 - 生成普通备份前检查业务库不存在禁用的 credential/settings key，不能只信任 manifest 声明。
 - 备份校验 bytes、SHA-256、integrity_check 和 foreign_key_check。
+- manifest 记录业务内容的逻辑校验和（备份格式 v2）；恢复在应用迁移前比对它，证明恢复出的
+  业务内容与备份时一致。v1 旧备份仍可恢复，但没有该保证。
 - 恢复包固定且仅允许 manifest/SQLite 两个普通文件；拒绝重复名、大小写变体、加密条目、
   symlink/reparse、额外条目、绝对路径和 `..`。流式限制压缩/解压总量、单文件大小和压缩比，
   manifest 的 dbBytes 也必须受程序硬上限约束。

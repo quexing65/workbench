@@ -96,8 +96,9 @@ workbench.sqlite
 ```
 
 快照通过 `VACUUM INTO` 生成，并验证 app ID、schema、`integrity_check`、foreign keys、bytes 和
-SHA-256。凭据目录不进入备份；若业务 settings 中出现疑似 authorization/cookie/credential/
-SESSDATA key，备份会 fail closed。下载完成或失败都会清理服务端临时包。
+SHA-256。manifest 同时记录业务内容的逻辑校验和（备份格式 v2）。凭据目录不进入备份；若业务
+settings 中出现疑似 authorization/cookie/credential/SESSDATA key，备份会 fail closed。下载完成
+或失败都会清理服务端临时包。
 
 将备份保存到独立磁盘或受信任位置。`.pwbk` 未加密；它不含登录凭据，但仍包含个人业务数据。
 
@@ -111,8 +112,10 @@ npm run data:restore -- --file 'D:\Backup\personal-workbench-....pwbk'
 ```
 
 恢复器会取得数据目录排他锁，拒绝额外/重复/加密/链接/遍历/超限 ZIP 条目；校验 manifest、
-hash、integrity、foreign keys 和 app ID；在 staging 副本应用可兼容 migration；为当前库创建
-并验证 `pre-restore` 备份；checkpoint/关闭句柄后同卷替换主库；最后重开并复验。
+hash、逻辑校验和、integrity、foreign keys 和 app ID；在 staging 副本应用可兼容 migration；
+为当前库创建并验证 `pre-restore` 备份；checkpoint/关闭句柄后同卷替换主库；最后重开并复验。
+逻辑校验和在应用 migration 之前比对，证明恢复出的业务内容与备份时一致；v1 旧备份没有该字段，
+仍可恢复但没有这层保证。
 
 成功输出只包含文件名、schema 和逻辑校验和，不含绝对路径。B站凭据不会被替换或恢复；换机、
 换 Windows 用户或凭据失效后请重新登录。
@@ -124,8 +127,8 @@ hash、integrity、foreign keys 和 app ID；在 staging 副本应用可兼容 m
 - 替换后的失败副本保存在 `backups/failed-restore-*`，可供离线诊断；不要上传含个人数据的文件。
 - 每次正式恢复前生成的 `personal-workbench-*.pwbk` 保存在 `backups/`。如需人工回退，保持服务
   停止，使用同一 `data:restore` 命令恢复这份 pre-restore 备份，不要手工移动 WAL/SHM。
-- `.workbench.lock` 只在能确认对应进程已结束时才处理；格式损坏的锁默认按"仍在使用"拒绝，
-  不应盲删。
+- `.workbench.lock` 只在能确认对应进程已结束时才处理；记录里 PID 已消失的锁自动接管，
+  格式损坏的锁在 30 秒宽限期后同样按陈旧接管（多为写入期间崩溃），宽限期内仍拒绝。
 
 ## 数据库与性能检查
 
@@ -134,6 +137,9 @@ npm run db:migrate
 npm run performance:audit -- --output docs/reports/performance-audit.json
 npm run performance:browser -- --output docs/reports/browser-performance-audit.json
 ```
+
+`npm run db:migrate` 与服务端、恢复共用数据目录排他锁：服务或桌面应用正在运行时会被拒绝，
+需要先停止它们。
 
 性能审计只在系统临时目录生成 10,000 任务、10,000 小记和 1,000 视频，运行常用页面查询与
 `EXPLAIN QUERY PLAN`。浏览器审计会构建正式 Web/Server、启动隔离的正式同源服务，测量总览、
