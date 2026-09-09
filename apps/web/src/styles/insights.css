@@ -1,5 +1,4 @@
-.page-loader,
-.review-state {
+.page-loader {
   padding: 4rem 1rem;
   color: var(--muted);
   text-align: center;
@@ -164,6 +163,7 @@
 }
 
 .review-stat dd {
+  display: grid;
   margin: 0.1rem 0 0;
   font-family: var(--font-mono);
   font-size: 1.55rem;
@@ -172,9 +172,11 @@
   line-height: 1.2;
 }
 
+/* 与 .review-stat 的 0.2rem gap + 原 0.3rem margin 等效，保持既有视觉位置。 */
 .review-stat__delta {
   min-height: 1rem;
-  margin-top: 0.3rem;
+  margin-top: 0.5rem;
+  line-height: 1.7;
   font-size: 0.72rem;
   font-weight: 650;
 }

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { getReview } from '../../shared/api/insights';
 import { queryKeys } from '../../shared/api/query-keys';
 import { ContributionHeatmap } from '../../shared/ui/ContributionHeatmap';
+import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 
 /** 年份选择器往回提供的年数；本地数据更早时可以调大。 */
 const YEAR_WINDOW = 5;
@@ -326,50 +327,49 @@ export function ReviewPage() {
           <p className="page-lead">从真实记录里看见完成与积累；没有计划时，不虚构完成率。</p>
         </div>
       </header>
-      {review.isPending ? (
-        <p role="status" className="review-state">
-          正在整理回顾…
-        </p>
-      ) : null}
+      {review.isPending ? <QueryLoading message="正在整理回顾…" /> : null}
       {review.isError ? (
-        <div role="alert" className="review-state">
-          <p>回顾加载失败。</p>
-          <button onClick={() => review.refetch()}>重试</button>
-        </div>
+        <QueryError message="回顾加载失败。" onRetry={() => review.refetch()} />
       ) : null}
       {review.data && totals !== null ? (
         <>
           <dl className="review-stats">
             <div className="review-stat">
               <dt>完成率</dt>
-              <dd>{percent(totals.completionRate)}</dd>
-              <DeltaBadge
-                delta={deltas === null ? null : deltas.rate}
-                format={(delta) => `${delta > 0 ? '+' : ''}${Math.round(delta)}%`}
-              />
+              <dd>
+                {percent(totals.completionRate)}
+                <DeltaBadge
+                  delta={deltas === null ? null : deltas.rate}
+                  format={(delta) => `${delta > 0 ? '+' : ''}${Math.round(delta)}%`}
+                />
+              </dd>
             </div>
             <div className="review-stat">
               <dt>完成任务</dt>
-              <dd>{totals.completed}</dd>
-              <DeltaBadge
-                delta={deltas === null ? null : deltas.completed}
-                format={(delta) => `${delta > 0 ? '+' : ''}${delta} 项`}
-              />
+              <dd>
+                {totals.completed}
+                <DeltaBadge
+                  delta={deltas === null ? null : deltas.completed}
+                  format={(delta) => `${delta > 0 ? '+' : ''}${delta} 项`}
+                />
+              </dd>
             </div>
             <div className="review-stat">
               <dt>观看进度</dt>
-              <dd>{durationLabel(review.data.learningDuration.totalSeconds)}</dd>
-              <small className="review-stat__delta is-flat">当前状态，不随区间变化</small>
+              <dd>
+                {durationLabel(review.data.learningDuration.totalSeconds)}
+                <small className="review-stat__delta is-flat">当前状态，不随区间变化</small>
+              </dd>
             </div>
             <div className="review-stat">
               <dt>活跃天数</dt>
               <dd>
                 {activeDays ?? 0} / {review.data.days.length} 天
+                <DeltaBadge
+                  delta={deltas === null ? null : deltas.activeDays}
+                  format={(delta) => `${delta > 0 ? '+' : ''}${delta} 天`}
+                />
               </dd>
-              <DeltaBadge
-                delta={deltas === null ? null : deltas.activeDays}
-                format={(delta) => `${delta > 0 ? '+' : ''}${delta} 天`}
-              />
             </div>
           </dl>
           {totals.planned > 0 ? (

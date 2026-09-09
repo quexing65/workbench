@@ -5,6 +5,7 @@ import { businessDateSpan, type DailyTask } from '@workbench/shared';
 import { isRevisionConflict } from '../../shared/api/client';
 import { queryKeys } from '../../shared/api/query-keys';
 import { deleteTask, getOverdueTasks, updateTask } from '../../shared/api/tasks';
+import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
@@ -171,16 +172,9 @@ export function OverduePage() {
           </div>
         ) : null}
       </header>
-      {overdue.isPending ? (
-        <p role="status" className="review-state">
-          正在整理过期待办…
-        </p>
-      ) : null}
+      {overdue.isPending ? <QueryLoading message="正在整理过期待办…" /> : null}
       {overdue.isError ? (
-        <div role="alert" className="review-state">
-          <p>过期待办加载失败。</p>
-          <button onClick={() => overdue.refetch()}>重试</button>
-        </div>
+        <QueryError message="过期待办加载失败。" onRetry={() => overdue.refetch()} />
       ) : null}
       {overdue.data !== undefined && all.length === 0 ? (
         <p className="empty-state">没有过期待办，保持得很好。</p>

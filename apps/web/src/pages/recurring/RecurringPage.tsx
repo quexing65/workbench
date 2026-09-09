@@ -11,6 +11,7 @@ import {
   updateRecurringTask,
 } from '../../shared/api/recurring';
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
+import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
@@ -187,12 +188,9 @@ export function RecurringPage() {
         </form>
         <div className="list-panel">
           <h2>生效规则</h2>
-          {list.isPending && <p>正在加载…</p>}
+          {list.isPending && <QueryLoading />}
           {list.isError && (
-            <div role="alert">
-              <p>固定任务加载失败。</p>
-              <button onClick={() => list.refetch()}>重试</button>
-            </div>
+            <QueryError message="固定任务加载失败。" onRetry={() => list.refetch()} />
           )}
           {list.data?.items.length === 0 && <p className="empty-state">还没有固定任务。</p>}
           <ul className="work-list" ref={workList}>

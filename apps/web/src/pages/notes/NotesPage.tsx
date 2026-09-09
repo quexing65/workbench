@@ -6,6 +6,7 @@ import { isRevisionConflict } from '../../shared/api/client';
 import { createNote, deleteNote, getNotes, updateNote } from '../../shared/api/notes';
 import { queryKeys } from '../../shared/api/query-keys';
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
+import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 
 function useDebounced(value: string, delay = 300): string {
   const [debounced, setDebounced] = useState(value);
@@ -176,13 +177,8 @@ export function NotesPage() {
               />
             </label>
           </div>
-          {notes.isPending && <p>正在加载小记…</p>}
-          {notes.isError && (
-            <div role="alert">
-              <p>小记加载失败。</p>
-              <button onClick={() => notes.refetch()}>重试</button>
-            </div>
-          )}
+          {notes.isPending && <QueryLoading message="正在加载小记…" />}
+          {notes.isError && <QueryError message="小记加载失败。" onRetry={() => notes.refetch()} />}
           {notes.data?.items.length === 0 && <p className="empty-state">还没有匹配的小记。</p>}
           <ul className="note-grid" ref={noteGrid}>
             {notes.data?.items.map((note) => (

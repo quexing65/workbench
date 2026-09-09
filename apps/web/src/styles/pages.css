@@ -3,6 +3,17 @@
   margin: 0 auto;
 }
 
+/* 列表与区块统一的加载/失败状态（见 shared/ui/QueryState.tsx）。 */
+.query-state {
+  padding: 2.5rem 1rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.query-state p {
+  margin: 0 0 0.75rem;
+}
+
 .page-header {
   max-width: 48rem;
 }

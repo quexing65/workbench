@@ -12,6 +12,7 @@ import {
   updateTask,
 } from '../../shared/api/tasks';
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
+import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 
 function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
@@ -250,13 +251,8 @@ export function TasksPage() {
               <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
             </label>
           </div>
-          {tasks.isPending && <p>正在加载任务…</p>}
-          {tasks.isError && (
-            <div role="alert">
-              <p>任务加载失败。</p>
-              <button onClick={() => tasks.refetch()}>重试</button>
-            </div>
-          )}
+          {tasks.isPending && <QueryLoading message="正在加载任务…" />}
+          {tasks.isError && <QueryError message="任务加载失败。" onRetry={() => tasks.refetch()} />}
           {tasks.data?.items.length === 0 && <p className="empty-state">今天还没有任务。</p>}
           <ul className="work-list" ref={workList}>
             {tasks.data?.items.map((item) => (

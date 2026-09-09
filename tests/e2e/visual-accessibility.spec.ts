@@ -60,6 +60,37 @@ test('supports core task and note flows from the keyboard', async ({ page }) => 
   await expect(page.getByText(noteContent)).toBeVisible();
 });
 
+test('has no blocking accessibility violations on every page', async ({ page }) => {
+  await page.clock.setFixedTime(fixedTime);
+  const pages = [
+    ['/overview', '把今天，安稳地放在眼前。'],
+    ['/tasks', '任务'],
+    ['/overdue', '逾期'],
+    ['/recurring', '固定任务'],
+    ['/notes', '小记'],
+    ['/learning', '学习'],
+    ['/review', '回顾'],
+    ['/data', '数据'],
+  ] as const;
+
+  for (const [route, heading] of pages) {
+    await page.goto(route);
+    await expect(page.getByRole('heading', { name: heading }).first()).toBeVisible();
+    await expect(page.locator('.health.health--ok').first()).toBeVisible();
+    const results = await new AxeBuilder({ page }).analyze();
+    const blocking = results.violations.filter(
+      (violation) => violation.impact === 'serious' || violation.impact === 'critical',
+    );
+    expect(
+      blocking.map(
+        (violation) =>
+          `${violation.id} @ ${violation.nodes.map((node) => node.target.join(' ')).join(' | ')}`,
+      ),
+      `axe 阻断级违规：${route}`,
+    ).toEqual([]);
+  }
+});
+
 test('honors reduced motion and has no blocking mobile accessibility violations', async ({
   page,
 }) => {

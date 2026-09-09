@@ -8,6 +8,7 @@ import {
 } from '../../shared/api/learning';
 import { queryKeys } from '../../shared/api/query-keys';
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
+import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 import { LearningResourceCard } from './LearningResourceCard';
 import { LearningSeriesPanel } from './LearningSeriesPanel';
 import { BiliSyncPanel } from './BiliSyncPanel';
@@ -154,19 +155,15 @@ export function LearningPage() {
       ) : null}
 
       {hasLoadError && (
-        <div className="load-error" role="alert">
-          <p>学习数据加载失败，其他工作台数据不受影响。</p>
-          <button
-            onClick={() => {
-              void resources.refetch();
-              void series.refetch();
-            }}
-          >
-            重试
-          </button>
-        </div>
+        <QueryError
+          message="学习数据加载失败，其他工作台数据不受影响。"
+          onRetry={() => {
+            void resources.refetch();
+            void series.refetch();
+          }}
+        />
       )}
-      {(resources.isPending || series.isPending) && <p role="status">正在加载学习数据…</p>}
+      {(resources.isPending || series.isPending) && <QueryLoading message="正在加载学习数据…" />}
 
       {resources.data && series.data && (
         <div className="learning-sections">

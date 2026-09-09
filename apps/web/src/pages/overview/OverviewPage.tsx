@@ -7,6 +7,7 @@ import { getOverview, getReview } from '../../shared/api/insights';
 import { queryKeys } from '../../shared/api/query-keys';
 import { createTask, updateTask } from '../../shared/api/tasks';
 import { ContributionHeatmap } from '../../shared/ui/ContributionHeatmap';
+import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 
 const OVERDUE_BATCH_SIZE = 20;
 /** 总览贡献图回看的周数；窗口按周日对齐，本周始终完整呈现。 */
@@ -64,17 +65,8 @@ function Block({
     >
       <p className="surface__label">{label}</p>
       <h2>{title}</h2>
-      {pending ? <p role="status">正在加载…</p> : null}
-      {error ? (
-        <div role="alert" className="block-error">
-          <p>这部分暂时没有加载成功。</p>
-          <button className="button-secondary" onClick={retry}>
-            重试
-          </button>
-        </div>
-      ) : (
-        children
-      )}
+      {pending ? <QueryLoading /> : null}
+      {error ? <QueryError message="这部分暂时没有加载成功。" onRetry={retry} /> : children}
     </article>
   );
 }
