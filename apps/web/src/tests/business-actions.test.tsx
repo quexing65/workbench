@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { NotesPage } from '../pages/notes/NotesPage';
 import { RecurringPage } from '../pages/recurring/RecurringPage';
@@ -23,12 +23,6 @@ function json(value: unknown, status = 200) {
   });
 }
 
-beforeEach(() =>
-  vi.stubGlobal(
-    'confirm',
-    vi.fn(() => true),
-  ),
-);
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -70,6 +64,7 @@ describe('business page actions', () => {
       ),
     );
     fireEvent.click(screen.getByRole('button', { name: '删除' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '删除' }));
     await waitFor(() => expect(screen.getByText('还没有固定任务。')).toBeInTheDocument());
   });
 
@@ -111,6 +106,7 @@ describe('business page actions', () => {
       expect(fetch).toHaveBeenCalledWith('/api/v1/notes?q=%E4%BF%AE%E6%94%B9', expect.anything()),
     );
     fireEvent.click(screen.getByRole('button', { name: '删除' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '删除' }));
     expect(await screen.findByText('还没有匹配的小记。')).toBeInTheDocument();
   });
 
@@ -173,6 +169,7 @@ describe('business page actions', () => {
       ),
     );
     fireEvent.click(screen.getByRole('button', { name: '删除' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '删除' }));
     await waitFor(() => expect(screen.queryByText('普通任务')).not.toBeInTheDocument());
   });
 

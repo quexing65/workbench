@@ -14,6 +14,37 @@
   margin: 0 0 0.75rem;
 }
 
+/* 应用内确认对话框（见 shared/ui/ConfirmDialog.tsx）。 */
+.confirm-backdrop {
+  position: fixed;
+  z-index: 50;
+  display: grid;
+  padding: 1rem;
+  background: rgb(20 23 18 / 38%);
+  inset: 0;
+  place-items: center;
+}
+
+.confirm-dialog {
+  width: min(100%, 26rem);
+  padding: 1.25rem 1.25rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.confirm-dialog p {
+  margin: 0 0 1rem;
+  color: var(--ink);
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .page-header {
   max-width: 48rem;
 }

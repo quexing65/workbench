@@ -113,6 +113,14 @@ export function businessDayStartEpochMilliseconds(
   return corrected === guessed ? candidate : naive - corrected;
 }
 
+/** 当前业务日；`now` 可注入以便测试。 */
+export function businessToday(
+  timeZone: string = DEFAULT_BUSINESS_TIME_ZONE,
+  now: () => number = Date.now,
+): string {
+  return businessDateOfEpochMilliseconds(now(), timeZone);
+}
+
 function daysInMonth(year: number, month: number): number {
   if (month === 2) {
     const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);

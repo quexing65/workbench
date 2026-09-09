@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { BiliSyncPanel } from '../pages/learning/BiliSyncPanel';
 import { LearningResourceSync } from '../pages/learning/LearningResourceSync';
@@ -29,12 +29,6 @@ function renderResourceSync() {
 }
 
 describe('Bili connection and sync panel', () => {
-  beforeEach(() =>
-    vi.stubGlobal(
-      'confirm',
-      vi.fn(() => true),
-    ),
-  );
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();

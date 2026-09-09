@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { getHealth } from '../api/health';
+import { queryKeys } from '../api/query-keys';
 
 export function HealthStatus() {
   const health = useQuery({
-    queryKey: ['health'],
+    queryKey: queryKeys.health,
     queryFn: ({ signal }) => getHealth(signal),
   });
 

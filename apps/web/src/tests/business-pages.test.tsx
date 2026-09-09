@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { NotesPage } from '../pages/notes/NotesPage';
 import { TasksPage } from '../pages/tasks/TasksPage';
@@ -23,12 +23,6 @@ function json(value: unknown, status = 200): Response {
 }
 
 describe('business pages', () => {
-  beforeEach(() =>
-    vi.stubGlobal(
-      'confirm',
-      vi.fn(() => true),
-    ),
-  );
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();

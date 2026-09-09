@@ -3,6 +3,7 @@ import { isBusinessDate, type DayStats, type ReviewResponse } from '@workbench/s
 import { useState } from 'react';
 
 import { getReview } from '../../shared/api/insights';
+import { businessToday } from '../../shared/api/business-time';
 import { queryKeys } from '../../shared/api/query-keys';
 import { ContributionHeatmap } from '../../shared/ui/ContributionHeatmap';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
@@ -10,12 +11,8 @@ import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 /** 年份选择器往回提供的年数；本地数据更早时可以调大。 */
 const YEAR_WINDOW = 5;
 
-function today(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
-}
-
 function currentYear(): number {
-  return Number(today().slice(0, 4));
+  return Number(businessToday().slice(0, 4));
 }
 
 function selectableYears(): number[] {
@@ -27,7 +24,7 @@ function selectableYears(): number[] {
 function yearRange(year: number): { from: string; to: string } {
   return {
     from: `${year}-01-01`,
-    to: year === currentYear() ? today() : `${year}-12-31`,
+    to: year === currentYear() ? businessToday() : `${year}-12-31`,
   };
 }
 
@@ -37,7 +34,7 @@ function previousYearRange(year: number): { from: string; to: string } {
   if (year !== currentYear()) {
     return { from: `${previous}-01-01`, to: `${previous}-12-31` };
   }
-  const sameDayLastYear = `${previous}-${today().slice(5)}`;
+  const sameDayLastYear = `${previous}-${businessToday().slice(5)}`;
   return {
     from: `${previous}-01-01`,
     to: isBusinessDate(sameDayLastYear) ? sameDayLastYear : `${previous}-02-28`,

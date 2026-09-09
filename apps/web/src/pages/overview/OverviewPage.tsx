@@ -4,6 +4,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getOverview, getReview } from '../../shared/api/insights';
+import { businessToday } from '../../shared/api/business-time';
 import { queryKeys } from '../../shared/api/query-keys';
 import { createTask, updateTask } from '../../shared/api/tasks';
 import { ContributionHeatmap } from '../../shared/ui/ContributionHeatmap';
@@ -13,12 +14,8 @@ const OVERDUE_BATCH_SIZE = 20;
 /** 总览贡献图回看的周数；窗口按周日对齐，本周始终完整呈现。 */
 export const HEATMAP_WEEKS = 26;
 
-function today(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
-}
-
 function currentYear(): number {
-  return Number(today().slice(0, 4));
+  return Number(businessToday().slice(0, 4));
 }
 
 /** 贡献图窗口：以本周六为终点、26 周前的周日为起点，恰好 26 列 × 7 行的完整矩形。 */
@@ -120,7 +117,7 @@ function Summary({ data }: { data: OverviewResponse }) {
 }
 
 export function OverviewPage() {
-  const date = today();
+  const date = businessToday();
   const [title, setTitle] = useState('');
   const [visibleOverdueCount, setVisibleOverdueCount] = useState(OVERDUE_BATCH_SIZE);
   const client = useQueryClient();

@@ -2,9 +2,10 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import type { Note } from '@workbench/shared';
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react';
 
-import { isRevisionConflict } from '../../shared/api/client';
+import { errorMessage } from '../../shared/api/client';
 import { createNote, deleteNote, getNotes, updateNote } from '../../shared/api/notes';
 import { queryKeys } from '../../shared/api/query-keys';
+import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 
@@ -38,6 +39,7 @@ function NoteRow({ note, query }: { note: Note; query: string }) {
     },
     onError: refresh,
   });
+  const { confirm, dialog } = useConfirm();
   function keyboardSave(event: KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
       event.preventDefault();
@@ -88,7 +90,13 @@ function NoteRow({ note, query }: { note: Note; query: string }) {
             <button
               className="button-danger"
               disabled={mutation.isPending}
-              onClick={() => window.confirm('确定删除这条小记吗？') && mutation.mutate('delete')}
+              onClick={() =>
+                confirm({
+                  message: '确定删除这条小记吗？',
+                  confirmLabel: '删除',
+                  onConfirm: () => mutation.mutate('delete'),
+                })
+              }
             >
               删除
             </button>
@@ -97,11 +105,10 @@ function NoteRow({ note, query }: { note: Note; query: string }) {
       )}
       {mutation.error && (
         <p role="alert" className="form-error">
-          {isRevisionConflict(mutation.error)
-            ? '数据已在其他页面修改，已刷新。'
-            : mutation.error.message}
+          {errorMessage(mutation.error, '数据已在其他页面修改，已刷新。')}
         </p>
       )}
+      {dialog}
     </li>
   );
 }

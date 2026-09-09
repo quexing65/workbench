@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { LearningResource, LearningSeries } from '@workbench/shared';
 import { useState, type FormEvent } from 'react';
 
-import { isRevisionConflict } from '../../shared/api/client';
+import { errorMessage, isRevisionConflict } from '../../shared/api/client';
 import {
   createLearningSeries,
   deleteLearningSeries,
@@ -10,6 +10,7 @@ import {
   updateLearningSeries,
 } from '../../shared/api/learning';
 import { queryKeys } from '../../shared/api/query-keys';
+import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 
 type SeriesAction =
@@ -47,6 +48,7 @@ function SeriesEditor({
       if (isRevisionConflict(error)) void refresh();
     },
   });
+  const { confirm, dialog } = useConfirm();
   const resourceById = new Map(resources.map((resource) => [resource.id, resource]));
   const available = resources.filter((resource) => !ids.includes(resource.id));
 
@@ -156,8 +158,11 @@ function SeriesEditor({
           className="button-danger"
           disabled={mutation.isPending}
           onClick={() =>
-            window.confirm('确认删除这个学习系列吗？资源本身不会被删除。') &&
-            mutation.mutate({ kind: 'delete' })
+            confirm({
+              message: '确认删除这个学习系列吗？资源本身不会被删除。',
+              confirmLabel: '删除系列',
+              onConfirm: () => mutation.mutate({ kind: 'delete' }),
+            })
           }
         >
           删除系列
@@ -165,11 +170,10 @@ function SeriesEditor({
       </div>
       {mutation.error && (
         <p role="alert" className="form-error">
-          {isRevisionConflict(mutation.error)
-            ? '系列已在其他页面变化，列表已刷新。'
-            : mutation.error.message}
+          {errorMessage(mutation.error, '系列已在其他页面变化，列表已刷新。')}
         </p>
       )}
+      {dialog}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { LearningResource } from '@workbench/shared';
 import { useState } from 'react';
 
-import { isRevisionConflict } from '../../shared/api/client';
+import { errorMessage, isRevisionConflict } from '../../shared/api/client';
 import {
   completeLearningProgress,
   deleteLearningResource,
@@ -10,6 +10,7 @@ import {
   resetLearningProgress,
 } from '../../shared/api/learning';
 import { queryKeys } from '../../shared/api/query-keys';
+import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { LearningResourceSync } from './LearningResourceSync';
 
 type Action =
@@ -78,6 +79,7 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
       if (isRevisionConflict(error)) void refresh();
     },
   });
+  const { confirm, dialog } = useConfirm();
   const currentPart =
     resource.parts.find((part) => part.id === resource.progress.resumePartId) ?? resource.parts[0];
   const furthestPartIndex = resource.parts.findIndex(
@@ -199,8 +201,11 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
             className="learning-action-button learning-action-button--primary"
             disabled={mutation.isPending}
             onClick={() =>
-              window.confirm('确认将整项学习标记为完成吗？') &&
-              mutation.mutate({ kind: 'complete' })
+              confirm({
+                message: '确认将整项学习标记为完成吗？',
+                confirmLabel: '标记完成',
+                onConfirm: () => mutation.mutate({ kind: 'complete' }),
+              })
             }
           >
             标记整项完成
@@ -210,8 +215,11 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
           className="button-secondary learning-action-button"
           disabled={mutation.isPending}
           onClick={() =>
-            window.confirm('确认清空这项学习的全部进度吗？此操作不能撤销。') &&
-            mutation.mutate({ kind: 'reset' })
+            confirm({
+              message: '确认清空这项学习的全部进度吗？此操作不能撤销。',
+              confirmLabel: '重置进度',
+              onConfirm: () => mutation.mutate({ kind: 'reset' }),
+            })
           }
         >
           重置进度
@@ -220,8 +228,11 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
           className="button-danger learning-action-button learning-action-button--danger"
           disabled={mutation.isPending}
           onClick={() =>
-            window.confirm('确认从工作台移除这项学习资源吗？') &&
-            mutation.mutate({ kind: 'delete' })
+            confirm({
+              message: '确认从工作台移除这项学习资源吗？',
+              confirmLabel: '移除资源',
+              onConfirm: () => mutation.mutate({ kind: 'delete' }),
+            })
           }
         >
           移除资源
@@ -229,11 +240,10 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
       </div>
       {mutation.error && (
         <p role="alert" className="form-error">
-          {isRevisionConflict(mutation.error)
-            ? '进度已在其他页面变化，列表已刷新。'
-            : mutation.error.message}
+          {errorMessage(mutation.error, '进度已在其他页面变化，列表已刷新。')}
         </p>
       )}
+      {dialog}
     </article>
   );
 }

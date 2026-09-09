@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { apiRequest } from '../shared/api/client';
+import {
+  businessToday,
+  getConfiguredTimeZone,
+  setConfiguredTimeZone,
+} from '../shared/api/business-time';
+import { ApiError, apiRequest, errorMessage } from '../shared/api/client';
 import { createNote, deleteNote, updateNote } from '../shared/api/notes';
 import {
   createRecurringTask,
@@ -150,5 +155,32 @@ describe('typed API client', () => {
     await updateNote('33333333-3333-4333-8333-333333333333', 1, { pinned: true });
     await deleteNote('33333333-3333-4333-8333-333333333333', 2);
     expect(fetch).toHaveBeenCalledTimes(10);
+  });
+});
+
+describe('business time and conflict messages', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    setConfiguredTimeZone('Asia/Shanghai');
+  });
+
+  it('derives today from the time zone reported by the server', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-13T20:00:00.000Z'));
+
+    setConfiguredTimeZone('Asia/Shanghai');
+    expect(getConfiguredTimeZone()).toBe('Asia/Shanghai');
+    expect(businessToday()).toBe('2026-08-14');
+
+    setConfiguredTimeZone('America/New_York');
+    expect(businessToday()).toBe('2026-08-13');
+  });
+
+  it('explains revision conflicts and passes other errors through', () => {
+    expect(errorMessage(new ApiError(409, 'REVISION_CONFLICT', '冲突'), '列表已刷新。')).toBe(
+      '列表已刷新。',
+    );
+    expect(errorMessage(new Error('网络不可用'), '列表已刷新。')).toBe('网络不可用');
+    expect(errorMessage('not-an-error', '列表已刷新。')).toBe('请求失败，请稍后重试');
   });
 });

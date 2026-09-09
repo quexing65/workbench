@@ -74,3 +74,12 @@ export async function apiRequest<T>(
 export function isRevisionConflict(error: unknown): error is ApiError {
   return error instanceof ApiError && error.code === 'REVISION_CONFLICT';
 }
+
+/**
+ * 乐观并发冲突要说明「发生了什么 + 已自动刷新」，其余错误沿用服务端文案。
+ * 各页面保留自己的领域措辞，但判断逻辑只在这里维护。
+ */
+export function errorMessage(error: unknown, conflictMessage: string): string {
+  if (isRevisionConflict(error)) return conflictMessage;
+  return error instanceof Error ? error.message : '请求失败，请稍后重试';
+}

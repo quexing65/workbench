@@ -14,12 +14,6 @@ import {
 } from './learning-fixtures';
 
 describe('learning center', () => {
-  beforeEach(() =>
-    vi.stubGlobal(
-      'confirm',
-      vi.fn(() => true),
-    ),
-  );
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
@@ -132,12 +126,20 @@ describe('learning center', () => {
     await waitFor(() => expect(writes.some((value) => value.endsWith('/observe'))).toBe(true));
 
     fireEvent.click(screen.getByRole('button', { name: '标记整项完成' }));
+    fireEvent.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: '标记完成' }),
+    );
     await waitFor(() => expect(writes.some((value) => value.endsWith('/complete'))).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: '重置进度' }));
+    fireEvent.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: '重置进度' }),
+    );
     await waitFor(() => expect(writes.some((value) => value.endsWith('/reset'))).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: '移除资源' }));
+    fireEvent.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: '移除资源' }),
+    );
     expect(await screen.findByText(/还没有学习资源/)).toBeInTheDocument();
-    expect(confirm).toHaveBeenCalledTimes(3);
   });
 
   it('creates, renames, reorders and deletes a series', async () => {
@@ -220,6 +222,9 @@ describe('learning center', () => {
       .closest<HTMLElement>('.series-card');
     if (reorderedEditor === null) throw new Error('排序后的系列编辑器不存在');
     fireEvent.click(within(reorderedEditor).getByRole('button', { name: '删除系列' }));
+    fireEvent.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: '删除系列' }),
+    );
     await waitFor(() =>
       expect(
         writes.some(({ path, method }) => path.endsWith(seriesId) && method === 'DELETE'),

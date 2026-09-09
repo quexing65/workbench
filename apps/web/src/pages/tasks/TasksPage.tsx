@@ -2,7 +2,8 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import type { TaskListItem, TaskStatus } from '@workbench/shared';
 import { useState, type FormEvent } from 'react';
 
-import { isRevisionConflict } from '../../shared/api/client';
+import { errorMessage } from '../../shared/api/client';
+import { businessToday } from '../../shared/api/business-time';
 import { queryKeys } from '../../shared/api/query-keys';
 import {
   createTask,
@@ -12,11 +13,8 @@ import {
   updateTask,
 } from '../../shared/api/tasks';
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
+import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
-
-function today(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
-}
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
   active: '待完成',
@@ -52,6 +50,7 @@ function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
     },
     onError: refresh,
   });
+  const { confirm, dialog } = useConfirm();
 
   return (
     <li className={`work-item work-item--${item.status} task-card`}>
@@ -145,7 +144,13 @@ function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
               <button
                 className="button-danger"
                 disabled={mutation.isPending}
-                onClick={() => window.confirm('确定删除这条任务吗？') && mutation.mutate('delete')}
+                onClick={() =>
+                  confirm({
+                    message: '确定删除这条任务吗？',
+                    confirmLabel: '删除',
+                    onConfirm: () => mutation.mutate('delete'),
+                  })
+                }
               >
                 删除
               </button>
@@ -155,17 +160,18 @@ function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
       )}
       {mutation.error && (
         <p role="alert" className="form-error">
-          {isRevisionConflict(mutation.error)
-            ? '数据已在其他页面修改，已刷新当前列表。'
-            : mutation.error.message}
+          {errorMessage(mutation.error, '数据已在其他页面修改，已刷新当前列表。')}
         </p>
       )}
+      {dialog}
     </li>
   );
 }
 
 export function TasksPage() {
-  const [date, setDate] = useState(today);
+  // 未手动选择日期前始终跟随服务端业务日：健康检查返回时区后自动纠正默认值。
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const date = selectedDate ?? businessToday();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const workList = useAnimatedList<HTMLUListElement>();
@@ -226,7 +232,7 @@ export function TasksPage() {
               required
               type="date"
               value={date}
-              onChange={(event) => setDate(event.target.value)}
+              onChange={(event) => setSelectedDate(event.target.value)}
             />
           </label>
           <button disabled={create.isPending}>{create.isPending ? '保存中…' : '添加任务'}</button>
@@ -248,7 +254,11 @@ export function TasksPage() {
             </div>
             <label>
               切换日期
-              <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+              <input
+                type="date"
+                value={date}
+                onChange={(event) => setSelectedDate(event.target.value)}
+              />
             </label>
           </div>
           {tasks.isPending && <QueryLoading message="正在加载任务…" />}

@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { RecurringTask } from '@workbench/shared';
 import { useState, type FormEvent } from 'react';
 
-import { isRevisionConflict } from '../../shared/api/client';
+import { errorMessage } from '../../shared/api/client';
+import { businessToday } from '../../shared/api/business-time';
 import { queryKeys } from '../../shared/api/query-keys';
 import {
   createRecurringTask,
@@ -11,11 +12,8 @@ import {
   updateRecurringTask,
 } from '../../shared/api/recurring';
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
+import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
-
-function today(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
-}
 
 function RecurringRow({ item }: { item: RecurringTask }) {
   const client = useQueryClient();
@@ -30,12 +28,17 @@ function RecurringRow({ item }: { item: RecurringTask }) {
           title,
           startDate,
           endDate:
-            action === 'stop' ? (today() < startDate ? startDate : today()) : endDate || null,
+            action === 'stop'
+              ? businessToday() < startDate
+                ? startDate
+                : businessToday()
+              : endDate || null,
         });
     },
     onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.recurringTasks }),
     onError: () => client.invalidateQueries({ queryKey: queryKeys.recurringTasks }),
   });
+  const { confirm, dialog } = useConfirm();
 
   return (
     <li className="work-item">
@@ -89,7 +92,13 @@ function RecurringRow({ item }: { item: RecurringTask }) {
             type="button"
             className="button-danger"
             disabled={mutation.isPending}
-            onClick={() => window.confirm('确定删除这条固定任务吗？') && mutation.mutate('delete')}
+            onClick={() =>
+              confirm({
+                message: '确定删除这条固定任务吗？',
+                confirmLabel: '删除',
+                onConfirm: () => mutation.mutate('delete'),
+              })
+            }
           >
             删除
           </button>
@@ -97,11 +106,10 @@ function RecurringRow({ item }: { item: RecurringTask }) {
       </form>
       {mutation.error && (
         <p role="alert" className="form-error">
-          {isRevisionConflict(mutation.error)
-            ? '数据已在其他页面修改，已刷新。'
-            : mutation.error.message}
+          {errorMessage(mutation.error, '数据已在其他页面修改，已刷新。')}
         </p>
       )}
+      {dialog}
     </li>
   );
 }
@@ -115,7 +123,7 @@ export function RecurringPage() {
   });
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState(today);
+  const [startDate, setStartDate] = useState(businessToday);
   const [endDate, setEndDate] = useState('');
   const create = useMutation({
     mutationFn: () =>

@@ -1,4 +1,5 @@
 export const queryKeys = {
+  health: ['health'] as const,
   overview: (date: string) => ['overview', { date }] as const,
   review: (from: string, to: string) => ['review', { from, to }] as const,
   tasks: (date: string) => ['tasks', { date }] as const,

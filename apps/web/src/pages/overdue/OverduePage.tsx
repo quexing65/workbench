@@ -2,14 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { businessDateSpan, type DailyTask } from '@workbench/shared';
 
-import { isRevisionConflict } from '../../shared/api/client';
+import { errorMessage } from '../../shared/api/client';
+import { businessToday } from '../../shared/api/business-time';
 import { queryKeys } from '../../shared/api/query-keys';
 import { deleteTask, getOverdueTasks, updateTask } from '../../shared/api/tasks';
+import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
-
-function today(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date());
-}
 
 function overdueDays(date: string, today: string): number {
   return businessDateSpan(date, today) - 1;
@@ -53,6 +51,7 @@ function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
     onSuccess: refresh,
     onError: refresh,
   });
+  const { confirm, dialog } = useConfirm();
 
   const pill = STATUS_PILLS[task.status];
 
@@ -99,7 +98,11 @@ function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
                 className="button-danger"
                 disabled={mutation.isPending}
                 onClick={() =>
-                  window.confirm('确定删除这条已过期的任务吗？') && mutation.mutate('delete')
+                  confirm({
+                    message: '确定删除这条已过期的任务吗？',
+                    confirmLabel: '删除',
+                    onConfirm: () => mutation.mutate('delete'),
+                  })
                 }
               >
                 删除
@@ -110,17 +113,16 @@ function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
       </div>
       {mutation.error ? (
         <p role="alert" className="form-error">
-          {isRevisionConflict(mutation.error)
-            ? '数据已在其他页面修改，已刷新当前列表。'
-            : mutation.error.message}
+          {errorMessage(mutation.error, '数据已在其他页面修改，已刷新当前列表。')}
         </p>
       ) : null}
+      {dialog}
     </li>
   );
 }
 
 export function OverduePage() {
-  const date = today();
+  const date = businessToday();
   const [view, setView] = useState<StatusView>('active');
   const overdue = useQuery({
     queryKey: queryKeys.overdueTasks(date),

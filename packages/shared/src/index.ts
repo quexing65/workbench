@@ -123,6 +123,7 @@ export {
   businessDayStartEpochMilliseconds,
   compareBusinessDates,
   DEFAULT_BUSINESS_TIME_ZONE,
+  businessToday,
   isBusinessDate,
   MAX_BUSINESS_DATE,
   parseBusinessDate,
