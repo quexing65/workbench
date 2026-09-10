@@ -132,6 +132,7 @@ export {
 export type { BusinessDateParts } from './domain/business-date.js';
 export { isAllowedBiliHostname, normalizeBiliUrl } from './domain/bili-url.js';
 export type { NormalizedBiliUrl } from './domain/bili-url.js';
+export { formatClockInput, parseClockInput } from './domain/time-input.js';
 export {
   LearningObservationConflictError,
   mergeLearningObservation,
