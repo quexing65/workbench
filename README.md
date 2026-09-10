@@ -119,13 +119,13 @@ npm run desktop:dist
 
 ## 当前状态与核心原则
 
-当前版本：**v1.5.0**（2026-09-10；安装包与校验和见
+当前版本：**v1.5.1**（2026-09-10；安装包与校验和见
 <https://github.com/quexing65/workbench/releases> 与 `docs/operations/RELEASES.md`）。
 v1.0.0 已通过阶段 8 全部门槛（备份恢复、远程 Windows CI、桌面分发、真实并行使用 7 天
 与用户核心工作流确认）正式上线；此后迭代：v1.0.1 桌面内存优化、v1.1.0 退役遗留数据
 导入模块、v1.2.x 极简生产力风格界面改版、v1.3.0 清单卡片体系重设计与导航图标动效升级、
 v1.4.0 总览与回顾呈现改版与侧边栏三档自适应、v1.5.0 时区与备份校验加固、CSP 与跨站
-请求防护、界面一致性改版。
+请求防护、界面一致性改版，v1.5.1 迁移校验和行尾符修复。
 完整验收台账见 `docs/ledger/FINAL_ACCEPTANCE.md` 与 `docs/ledger/STATUS.md`，
 各版本变更明细见 `docs/operations/RELEASES.md`。
 

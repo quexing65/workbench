@@ -12,6 +12,28 @@
 X.Y.Z——修 bug 升 patch、加功能或数据库 schema 变更升 minor、不兼容改动升
 major；阶段 8 验收通过、正式切换完成后升 1.0。
 
+## v1.5.1（2026-09-10）
+
+补丁版，修复桌面版在部分环境下的启动失败，无数据库 schema 变更，可覆盖安装。迁移校验和
+此前直接对迁移文件的原始字节求 SHA-256，因而对行尾符敏感：`.gitattributes` 声明
+`*.sql text eol=lf`，但 Windows 上 `core.autocrlf` 会让同一份迁移在工作区呈现 CRLF。当
+数据目录是用 CRLF 形态的迁移创建、而分发包内是 LF 形态时，语义完全相同的 SQL 会被判定为
+"已应用迁移被篡改"，桌面壳启动即抛出 `Applied migration checksum mismatch` 并以原生错误框
+退出。现在校验和先规范化行尾再计算，并额外兼容历史库中已记录的 CRLF 指纹，老数据目录
+无需重建即可继续启动。
+
+- 修复提交：`66a7197`（fix(server): 迁移校验和改为忽略行尾符差异）
+- 变更基线：commit `53d5c1e`（chore: 升至 v1.5.1）；tag `v1.5.1` 打在 `53d5c1e`（CI 全绿点）
+- GitHub Release：<https://github.com/quexing65/workbench/releases/tag/v1.5.1>
+
+| 产物                                 | SHA-256                                                            |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| PersonalWorkbench-Setup-1.5.1.exe    | `7cb657eb74b523e791d2a2b4ddc65e737eabb8ee88495f9190102d41afcae7ba` |
+| PersonalWorkbench-Portable-1.5.1.exe | `1151cff15a44fda9a22f3f3c42b4d31e7552661f8549ab68c1a5ba27fcbfee52` |
+
+注意：NSIS 打包非确定性（内嵌时间戳），同代码重新构建字节会不同；本版由 tag 触发的 CI
+构建，校验和以 GitHub Release 附件及其 `SHA256SUMS.txt` 为准。
+
 ## v1.5.0（2026-09-10）
 
 次要版，含一处兼容性变更（备份格式升到 v2），无数据库 schema 变更，可直接覆盖安装。
