@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { overviewResponseSchema } from './overview.js';
+import { overviewQuerySchema, overviewResponseSchema } from './overview.js';
 import { reviewQuerySchema, reviewResponseSchema } from './review.js';
 
 describe('insight contracts', () => {
@@ -53,5 +53,13 @@ describe('insight contracts', () => {
     expect(reviewQuerySchema.safeParse({ from: '2025-08-14', to: '2026-08-14' }).success).toBe(
       true,
     );
+  });
+
+  it('rejects overview dates too early to form a 7-day lookback window', () => {
+    expect(overviewQuerySchema.safeParse({ date: '0001-01-01' }).success).toBe(false);
+    expect(overviewQuerySchema.safeParse({ date: '0001-01-06' }).success).toBe(false);
+    // 0001-01-07 前移 6 天恰好是最小业务日 0001-01-01，可以构成完整区间
+    expect(overviewQuerySchema.safeParse({ date: '0001-01-07' }).success).toBe(true);
+    expect(overviewQuerySchema.safeParse({ date: '2026-08-13' }).success).toBe(true);
   });
 });

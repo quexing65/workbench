@@ -302,4 +302,15 @@ describe('overview and review API', () => {
       expect.objectContaining({ date: '9999-12-31', learningActivities: 0 }),
     ]);
   });
+
+  it('rejects overview dates too early for the 7-day lookback instead of failing', async () => {
+    // date-6 会越过最小业务日 0001-01-01，此前未映射的 RangeError 会变成 500
+    const rejected = await read('/api/v1/overview?date=0001-01-01');
+    expect(rejected.status).toBe(400);
+    expect(rejected.body.error.code).toBe('VALIDATION_ERROR');
+
+    const accepted = await read('/api/v1/overview?date=0001-01-07');
+    expect(accepted.status).toBe(200);
+    expect(accepted.body.last7Days[0]).toMatchObject({ date: '0001-01-01' });
+  });
 });

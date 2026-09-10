@@ -126,6 +126,7 @@ export {
   businessToday,
   isBusinessDate,
   MAX_BUSINESS_DATE,
+  MIN_BUSINESS_DATE,
   parseBusinessDate,
 } from './domain/business-date.js';
 export type { BusinessDateParts } from './domain/business-date.js';

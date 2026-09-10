@@ -36,6 +36,14 @@ describe('business dates', () => {
     expect(() => addBusinessDays('2026-08-13', 0.5)).toThrow(RangeError);
   });
 
+  it('refuses to step outside the representable business date range', () => {
+    expect(addBusinessDays('0001-01-07', -6)).toBe('0001-01-01');
+    expect(addBusinessDays('9999-12-31', 0)).toBe('9999-12-31');
+    // 此前会静默产出 0000-12-26 / 10000-01-01 这类非法业务日
+    expect(() => addBusinessDays('0001-01-06', -6)).toThrow(RangeError);
+    expect(() => addBusinessDays('9999-12-31', 1)).toThrow(RangeError);
+  });
+
   it('assigns instants to the business day of the configured zone', () => {
     const shanghai = 'Asia/Shanghai';
     expect(businessDateOfEpochMilliseconds(Date.parse('2026-08-13T15:59:59.999Z'), shanghai)).toBe(

@@ -5,6 +5,9 @@ const BUSINESS_DATE = /^(\d{4})-(\d{2})-(\d{2})$/u;
 /** 业务日默认时区；`APP_TIME_ZONE` 未配置时与配置校验共用此常量。 */
 export const DEFAULT_BUSINESS_TIME_ZONE = 'Asia/Shanghai';
 
+/** 四位年份可表示的最小业务日；再往前没有日期可用作总览区间下界。 */
+export const MIN_BUSINESS_DATE = '0001-01-01';
+
 /** 四位年份可表示的最大业务日；该日之后没有次日可用作开区间上界。 */
 export const MAX_BUSINESS_DATE = '9999-12-31';
 
@@ -169,9 +172,20 @@ function toEpochDay(value: string): number {
   return Math.floor(date.getTime() / 86_400_000);
 }
 
+const MIN_EPOCH_DAY = toEpochDay(MIN_BUSINESS_DATE);
+const MAX_EPOCH_DAY = toEpochDay(MAX_BUSINESS_DATE);
+
 export function addBusinessDays(value: string, days: number): string {
   if (!Number.isInteger(days)) throw new RangeError('Days must be an integer');
-  const date = new Date((toEpochDay(value) + days) * 86_400_000);
+  const epochDay = toEpochDay(value) + days;
+  // 守住可表示范围：否则会产出 0000-12-26 或 10000-01-01 这类非法业务日，
+  // 在下游 parseBusinessDate 处炸成未映射的服务器错误。
+  if (epochDay < MIN_EPOCH_DAY || epochDay > MAX_EPOCH_DAY) {
+    throw new RangeError(
+      `Business date ${value} plus ${days} days is outside the representable range`,
+    );
+  }
+  const date = new Date(epochDay * 86_400_000);
   const year = String(date.getUTCFullYear()).padStart(4, '0');
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const day = String(date.getUTCDate()).padStart(2, '0');
