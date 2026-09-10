@@ -12,6 +12,27 @@
 X.Y.Z——修 bug 升 patch、加功能或数据库 schema 变更升 minor、不兼容改动升
 major；阶段 8 验收通过、正式切换完成后升 1.0。
 
+## v1.6.0（2026-09-11）
+
+次要版，新增学习页「从浏览器读取」B站登录态入口，无数据库 schema 变更，可直接覆盖
+安装。此前服务端已具备 CDP 凭据抓取与 `/bili/credential/fetch` 端点，但前端始终没有
+入口，用户只能按教程手工复制 SESSDATA；现在学习页 B站连接面板提供一键读取：默认
+Edge 被动发现调试端口，找不到时经二次确认后受控重启再读取（标签页自动恢复），Chrome
+136+ 受控重启被禁用则指引改用 Edge 或手工录入。读取到的 SESSDATA 与手工录入共用同
+一验活与 DPAPI 加密收口，凭据仍不进入数据库、日志、API 响应或普通备份。
+
+- 功能提交：`c986847`（feat(web): 学习页接入浏览器一键读取B站登录态）
+- 变更基线：commit `bda78f4`（chore: 升至 v1.6.0）；tag `v1.6.0` 打在 `bda78f4`（CI 全绿点）
+- GitHub Release：<https://github.com/quexing65/workbench/releases/tag/v1.6.0>
+
+| 产物                                 | SHA-256                                                            |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| PersonalWorkbench-Setup-1.6.0.exe    | `69270967817153e20898bb8f9b712abfb95ff096d3c4696fbe4b12c8a2c513b9` |
+| PersonalWorkbench-Portable-1.6.0.exe | `8fa72cae151db6970b28db0070b9c5694f22829432237193df9bebcef0685a7a` |
+
+注意：NSIS 打包非确定性（内嵌时间戳），同代码重新构建字节会不同；本版由 tag 触发的 CI
+构建，校验和以 GitHub Release 附件及其 `SHA256SUMS.txt` 为准。
+
 ## v1.5.2（2026-09-11）
 
 补丁版，修复业务日期边界、学习模块与 Web 交互共九处行为缺陷，无数据库 schema
