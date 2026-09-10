@@ -1,4 +1,5 @@
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -106,6 +107,54 @@ describe('Workbench SQLite foundation', () => {
     expect(() =>
       openWorkbenchDatabase({ dataDirectory: root, migrationDirectory: migrations }),
     ).toThrow('checksum mismatch');
+  });
+
+  it('accepts an applied migration whose line endings changed', () => {
+    const root = temporaryDirectory('workbench-eol-');
+    const migrations = temporaryDirectory('workbench-migrations-');
+    cpSync(sourceMigrations, migrations, { recursive: true });
+
+    const first = openWorkbenchDatabase({ dataDirectory: root, migrationDirectory: migrations });
+    first.close();
+
+    const migrationPath = join(migrations, '0001-initial.sql');
+    const sql = readFileSync(migrationPath, 'utf8');
+    writeFileSync(migrationPath, sql.replaceAll('\n', '\r\n'));
+
+    const second = openWorkbenchDatabase({ dataDirectory: root, migrationDirectory: migrations });
+    try {
+      expect(second.migrations.applied).toEqual([]);
+    } finally {
+      second.close();
+    }
+  });
+
+  it('accepts a legacy CRLF checksum recorded before line-ending normalization', () => {
+    const root = temporaryDirectory('workbench-legacy-eol-');
+    const migrations = temporaryDirectory('workbench-migrations-');
+    cpSync(sourceMigrations, migrations, { recursive: true });
+
+    // 复现历史库：迁移文件以 CRLF 应用，ledger 存下对原始字节求得的指纹。
+    const migrationPath = join(migrations, '0001-initial.sql');
+    const crlfSql = readFileSync(migrationPath, 'utf8').replaceAll('\n', '\r\n');
+    writeFileSync(migrationPath, crlfSql);
+
+    const first = openWorkbenchDatabase({ dataDirectory: root, migrationDirectory: migrations });
+    const legacyChecksum = createHash('sha256').update(crlfSql, 'utf8').digest('hex');
+    first.connection
+      .prepare('UPDATE schema_migrations SET checksum = ? WHERE id = ?')
+      .run(legacyChecksum, '0001-initial');
+    first.close();
+
+    // 同一份迁移改回 LF 后仍应被接受：语义未变，只是检出行尾不同。
+    writeFileSync(migrationPath, crlfSql.replaceAll('\r\n', '\n'));
+
+    const second = openWorkbenchDatabase({ dataDirectory: root, migrationDirectory: migrations });
+    try {
+      expect(second.migrations.applied).toEqual([]);
+    } finally {
+      second.close();
+    }
   });
 
   it('rejects unavailable, empty, and incomplete migration directories', () => {

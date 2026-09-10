@@ -29,12 +29,35 @@ function checksum(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
 }
 
+function normalizeLineEndings(sql: string): string {
+  return sql.replace(/\r\n?/gu, '\n');
+}
+
+/**
+ * 迁移 SQL 的语义与行尾符无关，但 `.gitattributes` 的 `eol` 规则、`core.autocrlf`
+ * 以及不同平台的检出会让同一份迁移在磁盘上呈现 CRLF 或 LF 两种字节形态。校验和按
+ * 规范化行尾后的内容计算，保证同一语义内容在任何机器上都得到同一指纹。
+ */
+export function migrationChecksum(sql: string): string {
+  return checksum(normalizeLineEndings(sql));
+}
+
+/**
+ * 兼容在行尾规范化之前就已落库的历史记录：当时直接对原始字节求哈希，因此 CRLF
+ * 形态的迁移会存下 CRLF 指纹。两种形态都视为同一内容，避免仅因换行符差异而拒绝
+ * 启动。
+ */
+function isKnownChecksum(sql: string, stored: string): boolean {
+  const canonical = normalizeLineEndings(sql);
+  return stored === checksum(canonical) || stored === checksum(canonical.replaceAll('\n', '\r\n'));
+}
+
 function migrationFiles(directory: string): MigrationFile[] {
   return readdirSync(directory, { withFileTypes: true })
     .filter((entry) => entry.isFile() && MIGRATION_FILE.test(entry.name))
     .map((entry) => {
       const sql = readFileSync(join(directory, entry.name), 'utf8');
-      return { id: entry.name.slice(0, -4), checksum: checksum(sql), sql };
+      return { id: entry.name.slice(0, -4), checksum: migrationChecksum(sql), sql };
     })
     .sort((left, right) => left.id.localeCompare(right.id));
 }
@@ -89,7 +112,7 @@ export function migrateDatabase(
     if (file === undefined) {
       throw new Error(`Applied migration file is missing: ${id}`);
     }
-    if (file.checksum !== storedChecksum) {
+    if (!isKnownChecksum(file.sql, storedChecksum)) {
       throw new Error(`Applied migration checksum mismatch: ${id}`);
     }
   }
