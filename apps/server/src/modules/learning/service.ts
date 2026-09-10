@@ -38,9 +38,7 @@ export class LearningService {
   }
 
   public async import(input: ImportLearningResourceInput): Promise<LearningImportResult> {
-    if (input.seriesId !== null && this.series.find(input.seriesId) === undefined) {
-      throw new ResourceNotFoundError('LEARNING_SERIES_NOT_FOUND', '学习系列不存在');
-    }
+    if (input.seriesId !== null) this.ensureSeriesExists(input.seriesId);
     let normalized;
     try {
       normalized = normalizeBiliUrl(input.url);
@@ -64,6 +62,11 @@ export class LearningService {
             ),
           };
         }
+        // 短链跳转到直播间/动态等非视频页时，解析器对跳转目标抛 RangeError；
+        // 这是用户输入问题，与直接粘贴非视频链接同样映射为 400，而非 500
+        if (error instanceof RangeError) {
+          throw new DomainValidationError('url', '短链未解析为视频');
+        }
         throw error;
       }
     }
@@ -71,6 +74,10 @@ export class LearningService {
       throw new DomainValidationError('url', '短链未解析为视频');
     }
     const metadata = await this.bili.getVideo(normalized.bvid);
+    // getVideo 让出事件循环期间系列可能被并发删除，开头的校验此时已过期。
+    // 从这里到函数结束全是同步 SQLite 写、无让出点：此刻复查即可保证
+    // upsert → append → resolve 整个序列观察不到系列消失，杜绝部分提交后报 404。
+    if (input.seriesId !== null) this.ensureSeriesExists(input.seriesId);
     const resource = this.resources.upsertMetadata(metadata, this.now(), this.createId);
     if (input.seriesId !== null) {
       if (this.series.appendResource(input.seriesId, resource.id, this.now()) === undefined) {
@@ -137,6 +144,12 @@ export class LearningService {
     if (current.revision !== revision) throw new RevisionConflictError(current);
     if (!this.resources.softDelete(id, revision, this.now())) {
       throw new RevisionConflictError(this.required(id));
+    }
+  }
+
+  private ensureSeriesExists(id: string): void {
+    if (this.series.find(id) === undefined) {
+      throw new ResourceNotFoundError('LEARNING_SERIES_NOT_FOUND', '学习系列不存在');
     }
   }
 

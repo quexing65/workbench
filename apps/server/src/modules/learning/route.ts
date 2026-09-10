@@ -24,7 +24,12 @@ export function createLearningRouter(
 ): Router {
   const router = Router();
 
-  router.get('/resources', (_request, response) => response.json({ items: learning.list() }));
+  // GET 的 ETag 是 resources.revision（服务 DELETE 的 If-Match），而 observe/complete/reset
+  // 只递增 progress.revision；若允许浏览器缓存，If-None-Match 复验会在进度更新后仍返回 304。
+  router.get('/resources', (_request, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    response.json({ items: learning.list() });
+  });
   router.post('/resources', async (request, response) => {
     const result = await learning.import(parseInput(importLearningResourceSchema, request.body));
     if (result.kind === 'resource') setRevisionEtag(response, result.resource.revision);
@@ -32,6 +37,7 @@ export function createLearningRouter(
   });
   router.get('/resources/:id', (request, response) => {
     const resource = learning.find(parseUuidParameter(request));
+    response.setHeader('Cache-Control', 'no-store');
     setRevisionEtag(response, resource.revision);
     response.json(resource);
   });

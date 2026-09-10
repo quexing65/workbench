@@ -64,8 +64,11 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: false });
 });
 
-async function importResource(url = 'https://www.bilibili.com/video/BV1ab411c7de/') {
-  return write('post', '/api/v1/learning/resources').send({ url, seriesId: null });
+async function importResource(
+  url = 'https://www.bilibili.com/video/BV1ab411c7de/',
+  seriesId: string | null = null,
+) {
+  return write('post', '/api/v1/learning/resources').send({ url, seriesId });
 }
 
 describe('learning resource API', () => {
@@ -76,6 +79,55 @@ describe('learning resource API', () => {
       externalId: 'BV1ab411c7de',
       sourceUrl: 'https://www.bilibili.com/video/BV1ab411c7de/',
     });
+  });
+
+  it('serves resource reads uncacheable so progress changes are never stale', async () => {
+    const imported = await importResource();
+    const id = String(imported.body.resource.id);
+    // 资源 GET 的 ETag 基于 resources.revision，而进度写路径只递增 progress.revision；
+    // 禁止缓存以避免 If-None-Match 复验在进度更新后仍返回 304
+    const single = await read(`/api/v1/learning/resources/${id}`);
+    expect(single.status).toBe(200);
+    expect(single.headers['cache-control']).toBe('no-store');
+    const list = await read('/api/v1/learning/resources');
+    expect(list.status).toBe(200);
+    expect(list.headers['cache-control']).toBe('no-store');
+  });
+
+  it('fails atomically when the series is deleted during the metadata fetch', async () => {
+    const series = await write('post', '/api/v1/learning/series').send({ name: '竞态系列' });
+    const seriesId = String(series.body.id);
+
+    // 在 getVideo 的 await 窗口内发起真实的 DELETE 请求，复现并发删除系列的竞态；
+    // 修复前 upsertMetadata 会先行提交，客户端收到 404 但资源已落库
+    vi.mocked(bili.getVideo).mockImplementationOnce(async () => {
+      await request(makeApp({ database: database.connection, biliClient: bili }))
+        .delete(`/api/v1/learning/series/${seriesId}`)
+        .set('Host', allowedHost)
+        .set('Origin', 'http://127.0.0.1:5190')
+        .set('X-Workbench-Request', '1')
+        .set('Content-Type', 'application/json')
+        .set('If-Match', '"1"');
+      return metadata;
+    });
+
+    const result = await importResource('https://www.bilibili.com/video/BV1ab411c7de/', seriesId);
+    expect(result.status).toBe(404);
+    expect(result.body.error.code).toBe('LEARNING_SERIES_NOT_FOUND');
+    expect(
+      database.connection.prepare('SELECT count(*) AS count FROM learning_resources').get(),
+    ).toEqual({ count: 0 });
+    expect(
+      database.connection.prepare('SELECT count(*) AS count FROM learning_series_items').get(),
+    ).toEqual({ count: 0 });
+
+    // 对照：系列未被删除时，同一导入正常写入系列成员
+    const survivor = await write('post', '/api/v1/learning/series').send({ name: '存活系列' });
+    const ok = await importResource(undefined, String(survivor.body.id));
+    expect(ok.status).toBe(201);
+    expect(
+      database.connection.prepare('SELECT count(*) AS count FROM learning_series_items').get(),
+    ).toEqual({ count: 1 });
   });
 
   it('imports idempotently and keeps cid identity across page reordering', async () => {
@@ -292,6 +344,15 @@ describe('learning resource API', () => {
       new ExternalServiceError('BILI_REDIRECT_BLOCKED', '阻止'),
     );
     expect((await importResource('https://b23.tv/blocked')).status).toBe(502);
+    expect(
+      database.connection.prepare('SELECT count(*) AS count FROM unresolved_learning_links').get(),
+    ).toEqual({ count: 1 });
+
+    // b23.tv 跳转到直播间/动态页时解析器抛 RangeError，应映射为 400 而非 500
+    vi.mocked(bili.resolveShortUrl).mockRejectedValueOnce(new RangeError('链接中缺少有效 BVID'));
+    const nonVideo = await importResource('https://b23.tv/live-room');
+    expect(nonVideo.status).toBe(400);
+    expect(nonVideo.body.error.code).toBe('VALIDATION_ERROR');
     expect(
       database.connection.prepare('SELECT count(*) AS count FROM unresolved_learning_links').get(),
     ).toEqual({ count: 1 });
