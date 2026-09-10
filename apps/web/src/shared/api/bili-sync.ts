@@ -2,6 +2,7 @@ import {
   biliCredentialStatusSchema,
   learningSyncRunSchema,
   learningSyncStartResponseSchema,
+  type BiliBrowser,
 } from '@workbench/shared';
 import { z } from 'zod';
 
@@ -22,6 +23,18 @@ export function saveBiliCredential(sessdata: string) {
 
 export function clearBiliCredential() {
   return apiRequest('/api/v1/bili/credential', z.void(), { method: 'DELETE' });
+}
+
+/** 从本机浏览器读取 SESSDATA；forceRestart 重启浏览器时必须携带 confirmation 二次确认。 */
+export function fetchBiliCredential(input: {
+  readonly browser: BiliBrowser;
+  readonly forceRestart?: boolean;
+  readonly confirmation?: 'restart-browser';
+}) {
+  return apiRequest('/api/v1/bili/credential/fetch', biliCredentialStatusSchema, {
+    method: 'POST',
+    body: input,
+  });
 }
 
 export function startLearningSync(resourceId: string, pages = 3) {

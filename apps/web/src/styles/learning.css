@@ -126,6 +126,74 @@
   font-size: 0.88rem;
 }
 
+/* —— 从浏览器读取登录态（BrowserCredentialFetch） —— */
+.credential-browser-fetch {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.credential-browser-fetch__intro {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.credential-browser-fetch__intro strong {
+  font-size: 1rem;
+}
+
+.credential-browser-fetch__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.browser-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  align-items: center;
+}
+
+.browser-choice__option {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+/* 全局 input 规则会把单选框撑到 2.75rem 高，这里还原成原生尺寸。 */
+.browser-choice__option input[type='radio'] {
+  width: 1rem;
+  height: 1rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.credential-divider {
+  display: flex;
+  margin: 0;
+  gap: 0.9rem;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.credential-divider::before,
+.credential-divider::after {
+  height: 1px;
+  background: var(--line);
+  content: '';
+  flex: 1;
+}
+
 .learning-import {
   display: grid;
   margin-top: clamp(2rem, 5vw, 4rem);

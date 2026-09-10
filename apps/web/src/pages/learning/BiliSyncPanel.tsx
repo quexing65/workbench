@@ -7,6 +7,7 @@ import {
   saveBiliCredential,
 } from '../../shared/api/bili-sync';
 import { queryKeys } from '../../shared/api/query-keys';
+import { BrowserCredentialFetch } from './BrowserCredentialFetch';
 
 export function BiliSyncPanel() {
   const client = useQueryClient();
@@ -43,6 +44,8 @@ export function BiliSyncPanel() {
         </p>
       </div>
 
+      <BrowserCredentialFetch />
+      <p className="credential-divider">或手工录入</p>
       <div className="credential-section">
         <div className="credential-intro">
           <strong>登录凭证</strong>

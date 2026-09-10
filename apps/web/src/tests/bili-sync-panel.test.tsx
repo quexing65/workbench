@@ -95,4 +95,145 @@ describe('Bili connection and sync panel', () => {
       await screen.findByText('已同步此资源：读取 4 条记录，更新 2 条进度。'),
     ).toBeInTheDocument();
   });
+
+  function errorResponse(code: string, message: string, status = 409): Response {
+    return json({ error: { code, message, details: [] } }, status);
+  }
+
+  it('reads the credential from Edge without restart when discovery succeeds', async () => {
+    const calls: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const target = requestPath(input);
+        if (target.endsWith('/credential/status')) {
+          return json(
+            calls.length === 0
+              ? { present: false, valid: false, userLabel: '未连接' }
+              : { present: true, valid: true, userLabel: '已连接' },
+          );
+        }
+        if (target.endsWith('/credential/fetch') && init?.method === 'POST') {
+          calls.push(JSON.parse(String(init.body)) as Record<string, unknown>);
+          return json({ present: true, valid: true, userLabel: '已连接' });
+        }
+        return json({});
+      }),
+    );
+    renderPanel();
+    fireEvent.click(await screen.findByRole('button', { name: '从浏览器读取' }));
+    await waitFor(() => expect(calls).toEqual([{ browser: 'edge', forceRestart: false }]));
+    expect(await screen.findByText('已连接')).toBeInTheDocument();
+  });
+
+  it('confirms before restarting Edge and retries with the confirmation token', async () => {
+    const calls: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const target = requestPath(input);
+        if (target.endsWith('/credential/status')) {
+          return json({ present: false, valid: false, userLabel: '未连接' });
+        }
+        if (target.endsWith('/credential/fetch') && init?.method === 'POST') {
+          const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+          calls.push(body);
+          if (body['forceRestart'] === true) {
+            return json({ present: true, valid: true, userLabel: '已连接' });
+          }
+          return errorResponse(
+            'BROWSER_RESTART_REQUIRED',
+            '需要重新启动所选浏览器后才能读取登录态',
+          );
+        }
+        return json({});
+      }),
+    );
+    renderPanel();
+    fireEvent.click(await screen.findByRole('button', { name: '从浏览器读取' }));
+    const dialog = await screen.findByRole('alertdialog');
+    expect(dialog).toHaveTextContent('所有 Edge 窗口会被关闭');
+    fireEvent.click(screen.getByRole('button', { name: '重启并读取' }));
+    await waitFor(() =>
+      expect(calls).toEqual([
+        { browser: 'edge', forceRestart: false },
+        { browser: 'edge', forceRestart: true, confirmation: 'restart-browser' },
+      ]),
+    );
+  });
+
+  it('does not restart the browser when the user cancels the confirmation', async () => {
+    const calls: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const target = requestPath(input);
+        if (target.endsWith('/credential/status')) {
+          return json({ present: false, valid: false, userLabel: '未连接' });
+        }
+        if (target.endsWith('/credential/fetch') && init?.method === 'POST') {
+          calls.push(JSON.parse(String(init.body)) as Record<string, unknown>);
+          return errorResponse(
+            'BROWSER_RESTART_REQUIRED',
+            '需要重新启动所选浏览器后才能读取登录态',
+          );
+        }
+        return json({});
+      }),
+    );
+    renderPanel();
+    fireEvent.click(await screen.findByRole('button', { name: '从浏览器读取' }));
+    await screen.findByRole('alertdialog');
+    fireEvent.click(screen.getByRole('button', { name: '取消' }));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(calls).toEqual([{ browser: 'edge', forceRestart: false }]);
+  });
+
+  it('guides Chrome users to Edge or manual entry without offering restart', async () => {
+    const calls: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const target = requestPath(input);
+        if (target.endsWith('/credential/status')) {
+          return json({ present: false, valid: false, userLabel: '未连接' });
+        }
+        if (target.endsWith('/credential/fetch') && init?.method === 'POST') {
+          calls.push(JSON.parse(String(init.body)) as Record<string, unknown>);
+          return errorResponse(
+            'BROWSER_RESTART_REQUIRED',
+            '需要重新启动所选浏览器后才能读取登录态',
+          );
+        }
+        return json({});
+      }),
+    );
+    renderPanel();
+    fireEvent.click(await screen.findByRole('radio', { name: 'Chrome' }));
+    fireEvent.click(screen.getByRole('button', { name: '从浏览器读取' }));
+    expect(
+      await screen.findByText('Chrome 136 及以上版本不支持受控读取，请改用 Edge 或手工录入。'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(calls).toEqual([{ browser: 'chrome', forceRestart: false }]);
+  });
+
+  it('surfaces server errors when the browser has no B站 login state', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const target = requestPath(input);
+        if (target.endsWith('/credential/status')) {
+          return json({ present: false, valid: false, userLabel: '未连接' });
+        }
+        if (target.endsWith('/credential/fetch') && init?.method === 'POST') {
+          return errorResponse('BILI_CREDENTIAL_NOT_FOUND', '浏览器中没有可用的 B站登录态', 404);
+        }
+        return json({});
+      }),
+    );
+    renderPanel();
+    fireEvent.click(await screen.findByRole('button', { name: '从浏览器读取' }));
+    expect(await screen.findByText('浏览器中没有可用的 B站登录态')).toBeInTheDocument();
+  });
 });
