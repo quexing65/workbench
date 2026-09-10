@@ -8,8 +8,11 @@ import { z } from 'zod';
 
 import { apiRequest } from './client';
 
-export function getNotes(query: string, signal?: AbortSignal) {
-  const search = query === '' ? '' : `?q=${encodeURIComponent(query)}`;
+export function getNotes(query: string, cursor: string | undefined, signal?: AbortSignal) {
+  const parts: string[] = [];
+  if (query !== '') parts.push(`q=${encodeURIComponent(query)}`);
+  if (cursor !== undefined) parts.push(`cursor=${encodeURIComponent(cursor)}`);
+  const search = parts.length === 0 ? '' : `?${parts.join('&')}`;
   return apiRequest(`/api/v1/notes${search}`, noteListResponseSchema, {
     ...(signal === undefined ? {} : { signal }),
   });

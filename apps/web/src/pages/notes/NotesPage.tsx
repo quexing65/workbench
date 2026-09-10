@@ -1,4 +1,9 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import type { Note } from '@workbench/shared';
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react';
 
@@ -18,11 +23,13 @@ function useDebounced(value: string, delay = 300): string {
   return debounced;
 }
 
-function NoteRow({ note, query }: { note: Note; query: string }) {
+function NoteRow({ note }: { note: Note }) {
   const client = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(note.content);
-  const refresh = () => client.invalidateQueries({ queryKey: queryKeys.notes(query) });
+  // 按前缀失效全部搜索词的缓存，与创建路径口径一致；
+  // 只失效当前搜索词会让其他搜索词在 staleTime 内展示陈旧排序
+  const refresh = () => client.invalidateQueries({ queryKey: ['notes'] });
   const mutation = useMutation({
     mutationFn: async (action: 'save' | 'pin' | 'delete') => {
       if (action === 'delete') await deleteNote(note.id, note.revision);
@@ -43,7 +50,8 @@ function NoteRow({ note, query }: { note: Note; query: string }) {
   function keyboardSave(event: KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
       event.preventDefault();
-      mutation.mutate('save');
+      // 键盘 auto-repeat 会在请求进行中连发 keydown，只放行首个请求
+      if (!mutation.isPending) mutation.mutate('save');
     }
   }
   return (
@@ -119,13 +127,17 @@ export function NotesPage() {
   const debouncedQuery = useDebounced(query);
   const noteGrid = useAnimatedList<HTMLUListElement>();
   const [content, setContent] = useState('');
-  const notes = useQuery({
+  const notes = useInfiniteQuery({
     queryKey: queryKeys.notes(debouncedQuery),
-    queryFn: ({ signal }) => getNotes(debouncedQuery, signal),
+    queryFn: ({ pageParam, signal }) => getNotes(debouncedQuery, pageParam, signal),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     // 搜索词即缓存键：保留上一份数据可避免列表闪空，
     // 也避免 auto-animate 在新旧两份列表间产生同文本双节点。
     placeholderData: keepPreviousData,
   });
+  // 后端按 100 条分页；拼接已加载页，剩余条目经「加载更多」按需拉取
+  const items = notes.data?.pages.flatMap((page) => page.items);
   const create = useMutation({
     mutationFn: () => createNote({ content, pinned: false }),
     onSuccess: async () => {
@@ -140,7 +152,8 @@ export function NotesPage() {
   function keyboardSave(event: KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
       event.preventDefault();
-      create.mutate();
+      // 键盘 auto-repeat 会在请求进行中连发 keydown，只放行首个请求
+      if (!create.isPending) create.mutate();
     }
   }
   return (
@@ -186,12 +199,24 @@ export function NotesPage() {
           </div>
           {notes.isPending && <QueryLoading message="正在加载小记…" />}
           {notes.isError && <QueryError message="小记加载失败。" onRetry={() => notes.refetch()} />}
-          {notes.data?.items.length === 0 && <p className="empty-state">还没有匹配的小记。</p>}
+          {notes.data !== undefined && items?.length === 0 && (
+            <p className="empty-state">还没有匹配的小记。</p>
+          )}
           <ul className="note-grid" ref={noteGrid}>
-            {notes.data?.items.map((note) => (
-              <NoteRow key={note.id} note={note} query={debouncedQuery} />
+            {items?.map((note) => (
+              <NoteRow key={note.id} note={note} />
             ))}
           </ul>
+          {notes.hasNextPage && (
+            <button
+              type="button"
+              className="button-secondary list-more"
+              disabled={notes.isFetchingNextPage}
+              onClick={() => void notes.fetchNextPage()}
+            >
+              {notes.isFetchingNextPage ? '正在加载…' : '加载更多'}
+            </button>
+          )}
         </div>
       </div>
     </section>

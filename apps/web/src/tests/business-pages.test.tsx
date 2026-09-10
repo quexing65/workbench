@@ -101,6 +101,93 @@ describe('business pages', () => {
     expect(input).toHaveValue('');
   });
 
+  it('appends the next notes page when the list reports a cursor', async () => {
+    const pageOne = ['第一条小记', '第二条小记', '第三条小记', '第四条小记', '第五条小记'].map(
+      (content, index) => ({
+        id: `aaaaaaaa-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+        content,
+        pinned: false,
+        createdAt: '2026-08-13T00:00:00.000Z',
+        updatedAt: '2026-08-13T00:00:00.000Z',
+        revision: 1,
+      }),
+    );
+    const pageTwo = [
+      {
+        id: 'bbbbbbbb-0000-4000-8000-000000000001',
+        content: '第六条小记',
+        pinned: false,
+        createdAt: '2026-08-12T00:00:00.000Z',
+        updatedAt: '2026-08-12T00:00:00.000Z',
+        revision: 1,
+      },
+    ];
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      // 游标含冒号，会被 encodeURIComponent 转义为 %3A
+      return json(
+        url.includes('cursor=1%3A1770000000000%3A')
+          ? { items: pageTwo, nextCursor: null }
+          : { items: pageOne, nextCursor: '1:1770000000000:aaaa' },
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage(<NotesPage />);
+
+    expect(await screen.findByText('第五条小记')).toBeInTheDocument();
+    expect(screen.queryByText('第六条小记')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '加载更多' }));
+    expect(await screen.findByText('第六条小记')).toBeInTheDocument();
+    expect(screen.getByText('第一条小记')).toBeInTheDocument();
+
+    // 末页游标为 null，不再显示加载入口
+    expect(screen.queryByRole('button', { name: '加载更多' })).not.toBeInTheDocument();
+  });
+
+  it('excludes cancelled and expired tasks from the in-progress count', async () => {
+    const base = { description: '', date: '2026-08-13', revision: 1 };
+    const items = [
+      {
+        ...base,
+        kind: 'daily',
+        id: 'c0c0c0c0-0000-4000-8000-000000000001',
+        title: '进行中任务',
+        status: 'active',
+      },
+      {
+        ...base,
+        kind: 'daily',
+        id: 'c0c0c0c0-0000-4000-8000-000000000002',
+        title: '已完成任务',
+        status: 'completed',
+      },
+      {
+        ...base,
+        kind: 'daily',
+        id: 'c0c0c0c0-0000-4000-8000-000000000003',
+        title: '已取消任务',
+        status: 'cancelled',
+      },
+      {
+        ...base,
+        kind: 'daily',
+        id: 'c0c0c0c0-0000-4000-8000-000000000004',
+        title: '已过期任务',
+        status: 'expired',
+      },
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ items })),
+    );
+    renderPage(<TasksPage />);
+
+    expect(await screen.findByText('进行中任务')).toBeInTheDocument();
+    // 4 项中 1 完成、1 取消、1 过期：只有 active 计入「进行中」
+    expect(screen.getByText('1 项进行中 · 1 项已完成')).toBeInTheDocument();
+  });
+
   it('shows a conflict message and keeps an edited task draft', async () => {
     const item = {
       kind: 'daily',

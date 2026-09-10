@@ -148,7 +148,9 @@ export function OverviewPage() {
   const move = useMutation({
     mutationFn: ({ id, revision }: { id: string; revision: number }) =>
       updateTask(id, revision, { date }),
+    // REVISION_CONFLICT 后本地 revision 已过期；刷新拿到最新数据，避免重试必然再失败
     onSuccess: refresh,
+    onError: refresh,
   });
   const retry = () => {
     void overview.refetch();

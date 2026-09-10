@@ -245,6 +245,11 @@ button:disabled {
   text-align: center;
 }
 
+.list-more {
+  display: block;
+  margin: 1rem auto 0;
+}
+
 .overdue-header {
   display: flex;
   max-width: none;

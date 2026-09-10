@@ -197,6 +197,7 @@ export function TasksPage() {
   }
 
   const items = tasks.data?.items ?? [];
+  const activeCount = items.filter((item) => item.status === 'active').length;
   const doneCount = items.filter((item) => item.status === 'completed').length;
 
   return (
@@ -248,7 +249,7 @@ export function TasksPage() {
               <h2>{date} 的清单</h2>
               {items.length > 0 && (
                 <p className="list-toolbar__meta">
-                  {items.length - doneCount} 项进行中 · {doneCount} 项已完成
+                  {activeCount} 项进行中 · {doneCount} 项已完成
                 </p>
               )}
             </div>

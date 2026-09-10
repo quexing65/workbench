@@ -110,6 +110,45 @@ describe('business page actions', () => {
     expect(await screen.findByText('还没有匹配的小记。')).toBeInTheDocument();
   });
 
+  it('ignores auto-repeated Ctrl+Enter saves while a request is pending', async () => {
+    const note = {
+      id: '55555555-5555-4555-8555-555555555555',
+      content: '原小记',
+      pinned: false,
+      createdAt: '2026-08-13T00:00:00.000Z',
+      updatedAt: '2026-08-13T00:00:00.000Z',
+      revision: 1,
+    };
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      // 写请求挂起不结算，模拟慢网络让 isPending 持续为真
+      if (init?.method === 'POST' || init?.method === 'PATCH')
+        return new Promise<Response>(() => {});
+      return json({ items: [note], nextCursor: null });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderPage(<NotesPage />);
+    const posts = () => fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST');
+    const patches = () => fetchMock.mock.calls.filter(([, init]) => init?.method === 'PATCH');
+
+    // 首个保存请求落地、isPending 置位后，再模拟键盘 auto-repeat 连发
+    const editor = await screen.findByLabelText('内容');
+    fireEvent.change(editor, { target: { value: '重复按键的小记' } });
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true, repeat: true });
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true, repeat: true });
+
+    fireEvent.click(screen.getByRole('button', { name: '编辑' }));
+    const edit = screen.getByLabelText('小记内容');
+    fireEvent.change(edit, { target: { value: '修改后的小记' } });
+    fireEvent.keyDown(edit, { key: 'Enter', ctrlKey: true });
+    await waitFor(() => expect(patches()).toHaveLength(1));
+    fireEvent.keyDown(edit, { key: 'Enter', ctrlKey: true, repeat: true });
+
+    expect(posts()).toHaveLength(1);
+    expect(patches()).toHaveLength(1);
+  });
+
   it('updates a daily status and a recurring occurrence and deletes the daily task', async () => {
     const daily = {
       kind: 'daily',
