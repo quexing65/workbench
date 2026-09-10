@@ -2,11 +2,11 @@
 
 ## 当前阶段
 
-- 阶段：8（完成）；此后为常规迭代，当前版本 **v1.5.1**（2026-09-10 已发布：
-  <https://github.com/quexing65/workbench/releases/tag/v1.5.1>）。
+- 阶段：8（完成）；此后为常规迭代，当前版本 **v1.5.2**（2026-09-11 已发布：
+  <https://github.com/quexing65/workbench/releases/tag/v1.5.2>）。
 - 状态：已完成。工程实现、自动验收、远程 CI、桌面分发、并行使用与用户确认均通过；
   30 天旧项目保留期已由用户于 2026-08-21 主动声明取消，旧项目可自行处置。
-- 最后更新：2026-09-10
+- 最后更新：2026-09-11
 
 ## v1.4.0 之后的加固改动（2026-09-10，v1.5.0 已发布）
 
@@ -147,7 +147,7 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 
 ## 未完成项
 
-- 阶段 8 全部完成；v1.0.0 于 2026-08-21 上线，此后迭代至 v1.5.1（2026-09-10 发布）。
+- 阶段 8 全部完成；v1.0.0 于 2026-08-21 上线，此后迭代至 v1.5.2（2026-09-11 发布）。
 - v1.5.0 已按 `docs/operations/OPERATIONS.md`「桌面应用发布」完成：main CI 全绿（run
   `34381406550`）→ tag `v1.5.0` 打在 `bff2ba9` → Release 流水线 `34381954138` 构建
   NSIS/便携版 → 草稿审阅后正式发布 → 已在 `docs/operations/RELEASES.md` 登记校验和。
@@ -155,6 +155,10 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
   （run `34434240730`）→ tag `v1.5.1` 打在 `53d5c1e` → Release 流水线 `34434563558` 构建
   NSIS/便携版 → 草稿审阅并补写变更说明后正式发布 → 已登记校验和。发布前解包核对过 CI
   产物：`package.json` 为 1.5.1、五个迁移文件均为 LF、`main.js` 含规范化行尾的校验和逻辑。
+- v1.5.2 为业务日期边界、学习模块与 Web 交互九处缺陷修复的补丁版，同样按「桌面应用
+  发布」流程完成：main CI 全绿（run `34456556670`）→ tag `v1.5.2` 打在 `ac5c7e2` →
+  Release 流水线 `34457121620` 构建 NSIS/便携版并生成草稿 → 草稿补写变更摘要与校验和
+  表后正式发布 → 已在 `docs/operations/RELEASES.md` 登记校验和。
 - 旧项目（Personal-Workbench / Personl-Workbench-qoder）由用户 quexing65 主动声明
   取消 30 天保留期，可由用户自行处置。
 
