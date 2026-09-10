@@ -168,6 +168,9 @@ describe('overview page', () => {
     expect(progress).toHaveAttribute('aria-valuenow', '0');
     expect(progress).toHaveAttribute('aria-valuetext', '已完成 0%');
 
+    // 近 7 天趋势：服务端 last7Days 聚合终于有了呈现。
+    expect(screen.getByRole('img', { name: /近 7 天完成趋势/ })).toBeInTheDocument();
+
     // 贡献轨迹：26 周滚动窗口是完整矩形，本周未到的日子渲染为空格子。
     // 窗口为 2026-02-15（周日）至 2026-08-15（周六），数据到 8 月 13 日。
     const heatmap = screen.getByRole('group', { name: '近半年每日任务完成贡献图' });

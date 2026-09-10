@@ -116,7 +116,7 @@ button:disabled {
 
 .filter-chip[aria-pressed='true'] {
   border-color: transparent;
-  color: var(--accent-strong);
+  color: var(--accent-ink);
   background: var(--accent-soft);
 }
 
@@ -186,7 +186,7 @@ button:disabled {
   gap: 0.38rem;
   padding: 0.25rem 0.55rem;
   border-radius: var(--radius-full);
-  color: var(--accent-strong);
+  color: var(--accent-ink);
   background: var(--accent-soft);
   font-size: 0.75rem;
   font-weight: 800;
@@ -214,7 +214,7 @@ button:disabled {
 .status-pill--expired {
   /* 0.75rem 小字要求 4.5:1，--warm 在浅底约 3.4:1 不达标 */
   color: var(--warm-ink);
-  background: #fdeee6;
+  background: var(--expired-bg);
 }
 
 .inline-form {
@@ -228,7 +228,7 @@ button:disabled {
 
 .note-card--pinned {
   border-color: var(--warm);
-  background: #fff9ed;
+  background: var(--pinned-bg);
 }
 
 .form-error {
@@ -334,21 +334,21 @@ button:disabled {
 
 .work-item:hover,
 .note-card:hover {
-  border-color: #d8d6cf;
+  border-color: var(--line-strong);
   box-shadow: var(--shadow);
   transform: translateY(-1px);
 }
 
 /* 完成态：标题划线、卡片降噪 */
 .work-item--completed {
-  background: #fbfbf9;
+  background: var(--surface-muted);
 }
 
 .work-item--completed .work-item__body h2,
 .work-item--completed .work-item__body h3 {
   color: var(--muted);
   text-decoration: line-through;
-  text-decoration-color: rgb(92 96 90 / 45%);
+  text-decoration-color: var(--strike);
   text-decoration-thickness: 1.5px;
 }
 
@@ -380,14 +380,14 @@ button:disabled {
 .work-item .button-row .button-secondary:hover:not(:disabled),
 .note-card .button-row .button-secondary:hover:not(:disabled) {
   border-color: var(--accent);
-  color: var(--accent-strong);
+  color: var(--accent-ink);
   background: var(--accent-soft);
   filter: none;
 }
 
 .work-item .button-row .button-danger:hover:not(:disabled),
 .note-card .button-row .button-danger:hover:not(:disabled) {
-  background: #f9eae9;
+  background: var(--danger-bg);
   filter: none;
 }
 
@@ -496,7 +496,7 @@ button:disabled {
 .work-item--completed .task-card__head h3 {
   color: var(--muted);
   text-decoration: line-through;
-  text-decoration-color: rgb(92 96 90 / 45%);
+  text-decoration-color: var(--strike);
   text-decoration-thickness: 1.5px;
 }
 

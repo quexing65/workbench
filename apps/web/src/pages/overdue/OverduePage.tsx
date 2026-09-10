@@ -8,6 +8,8 @@ import { queryKeys } from '../../shared/api/query-keys';
 import { deleteTask, getOverdueTasks, updateTask } from '../../shared/api/tasks';
 import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
+import { useToast } from '../../shared/ui/Toast';
+import { OverdueBulkBar, type BulkAction } from './OverdueBulkBar';
 
 function overdueDays(date: string, today: string): number {
   return businessDateSpan(date, today) - 1;
@@ -31,8 +33,29 @@ const STATUS_PILLS: Readonly<Record<DailyTask['status'], { label: string; classN
   expired: { label: '已过期', className: 'status-pill--expired' },
 };
 
-function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
+const TOAST_BY_ACTION: Record<OverdueAction, string> = {
+  move: '已移到今天',
+  completed: '已标为完成',
+  expired: '已标记过期',
+  reopen: '已标为未完成',
+  delete: '已删除任务',
+};
+
+function OverdueItem({
+  task,
+  today,
+  selectable,
+  selected,
+  onToggleSelected,
+}: {
+  task: DailyTask;
+  today: string;
+  selectable: boolean;
+  selected: boolean;
+  onToggleSelected: () => void;
+}) {
   const client = useQueryClient();
+  const toast = useToast();
   const refresh = async () => {
     await Promise.all([
       client.invalidateQueries({ queryKey: queryKeys.overdueTasks(today) }),
@@ -48,7 +71,10 @@ function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
       if (action === 'delete') return deleteTask(task.id, task.revision);
       return updateTask(task.id, task.revision, { status: action });
     },
-    onSuccess: refresh,
+    onSuccess: async (_data, action) => {
+      toast.push(TOAST_BY_ACTION[action]);
+      await refresh();
+    },
     onError: refresh,
   });
   const { confirm, dialog } = useConfirm();
@@ -59,6 +85,16 @@ function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
     <li className={`work-item work-item--${task.status} task-card`}>
       <div className="task-card__content">
         <div className="task-card__head">
+          {selectable ? (
+            <label className="overdue-item__select">
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={onToggleSelected}
+                aria-label={`选择任务 ${task.title}`}
+              />
+            </label>
+          ) : null}
           <span className={`status-pill ${pill.className}`}>{pill.label}</span>
           <h3>{task.title}</h3>
           <span className="task-card__tag">
@@ -124,6 +160,10 @@ function OverdueItem({ task, today }: { task: DailyTask; today: string }) {
 export function OverduePage() {
   const date = businessToday();
   const [view, setView] = useState<StatusView>('active');
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const client = useQueryClient();
+  const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   const overdue = useQuery({
     queryKey: queryKeys.overdueTasks(date),
     queryFn: ({ signal }) => getOverdueTasks(date, 'all', signal),
@@ -134,6 +174,7 @@ export function OverduePage() {
   const completedCount = all.filter((task) => task.status === 'completed').length;
   const expiredCount = all.filter((task) => task.status === 'expired').length;
   const visible = view === 'all' ? all : all.filter((task) => task.status === view);
+  const bulkView = view === 'all' ? null : view;
 
   const groups = new Map<string, DailyTask[]>();
   for (const task of visible) {
@@ -141,6 +182,70 @@ export function OverduePage() {
     if (existing === undefined) groups.set(task.date, [task]);
     else existing.push(task);
   }
+
+  const refresh = async () => {
+    await Promise.all([
+      client.invalidateQueries({ queryKey: queryKeys.overdueTasks(date) }),
+      client.invalidateQueries({ queryKey: queryKeys.overview(date) }),
+    ]);
+  };
+
+  function changeView(next: StatusView) {
+    setView(next);
+    setSelected(new Set());
+  }
+
+  function toggleSelected(id: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelected((current) => {
+      if (visible.every((task) => current.has(task.id))) return new Set<string>();
+      return new Set(visible.map((task) => task.id));
+    });
+  }
+
+  const bulk = useMutation({
+    mutationFn: async (action: BulkAction) => {
+      const targets = visible.filter((task) => selected.has(task.id));
+      const results = await Promise.allSettled(
+        targets.map((task) => {
+          if (action === 'delete') return deleteTask(task.id, task.revision);
+          if (action === 'move') return updateTask(task.id, task.revision, { date });
+          return updateTask(task.id, task.revision, {
+            status: action === 'reopen' ? 'active' : action,
+          });
+        }),
+      );
+      return {
+        total: results.length,
+        ok: results.filter((item) => item.status === 'fulfilled').length,
+      };
+    },
+    onSuccess: async (result) => {
+      setSelected(new Set());
+      if (result.total === 0) return;
+      if (result.ok === result.total) {
+        toast.push(`已处理 ${result.ok} 项`);
+      } else {
+        toast.push(`已处理 ${result.ok} 项，${result.total - result.ok} 项未成功，列表已刷新`);
+      }
+      await refresh();
+    },
+    onError: async () => {
+      setSelected(new Set());
+      toast.push('批量操作失败，列表已刷新');
+      await refresh();
+    },
+  });
+
+  const allSelected = visible.length > 0 && visible.every((task) => selected.has(task.id));
 
   return (
     <section className="page business-page" aria-labelledby="overdue-title">
@@ -165,7 +270,7 @@ export function OverduePage() {
                   type="button"
                   className="filter-chip"
                   aria-pressed={view === value}
-                  onClick={() => setView(value)}
+                  onClick={() => changeView(value)}
                 >
                   {label}
                 </button>
@@ -184,6 +289,27 @@ export function OverduePage() {
       {overdue.data !== undefined && all.length > 0 && visible.length === 0 ? (
         <p className="empty-state">当前筛选下没有任务。</p>
       ) : null}
+      {overdue.data !== undefined && bulkView !== null && visible.length > 0 ? (
+        <OverdueBulkBar
+          view={bulkView}
+          count={selected.size}
+          pending={bulk.isPending}
+          allSelected={allSelected}
+          onSelectAll={toggleSelectAll}
+          onClear={() => setSelected(new Set())}
+          onAction={(action) => {
+            if (action === 'delete') {
+              confirm({
+                message: `确定批量删除选中的 ${selected.size} 项已过期任务吗？`,
+                confirmLabel: '删除',
+                onConfirm: () => bulk.mutate('delete'),
+              });
+            } else {
+              bulk.mutate(action);
+            }
+          }}
+        />
+      ) : null}
       {[...groups.entries()].map(([groupDate, items]) => (
         <section className="overdue-group" key={groupDate} aria-labelledby={`overdue-${groupDate}`}>
           <h2 id={`overdue-${groupDate}`}>
@@ -194,11 +320,19 @@ export function OverduePage() {
           </h2>
           <ul className="work-list">
             {items.map((task) => (
-              <OverdueItem key={task.id} task={task} today={date} />
+              <OverdueItem
+                key={task.id}
+                task={task}
+                today={date}
+                selectable={bulkView !== null}
+                selected={selected.has(task.id)}
+                onToggleSelected={() => toggleSelected(task.id)}
+              />
             ))}
           </ul>
         </section>
       ))}
+      {dialog}
     </section>
   );
 }

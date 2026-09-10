@@ -9,6 +9,8 @@ import { queryKeys } from '../../shared/api/query-keys';
 import { createTask, updateTask } from '../../shared/api/tasks';
 import { ContributionHeatmap } from '../../shared/ui/ContributionHeatmap';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
+import { useToast } from '../../shared/ui/Toast';
+import { WeekTrend } from '../../shared/ui/WeekTrend';
 
 const OVERDUE_BATCH_SIZE = 20;
 /** 总览贡献图回看的周数；窗口按周日对齐，本周始终完整呈现。 */
@@ -94,6 +96,7 @@ function Summary({ data }: { data: OverviewResponse }) {
       >
         <span style={{ width: `${progress}%` }} />
       </div>
+      <WeekTrend days={data.last7Days} />
       <dl className="summary-stats">
         <div>
           <dt>完成率</dt>
@@ -121,6 +124,7 @@ export function OverviewPage() {
   const [title, setTitle] = useState('');
   const [visibleOverdueCount, setVisibleOverdueCount] = useState(OVERDUE_BATCH_SIZE);
   const client = useQueryClient();
+  const toast = useToast();
   const overview = useQuery({
     queryKey: queryKeys.overview(date),
     queryFn: ({ signal }) => getOverview(date, signal),
@@ -142,6 +146,7 @@ export function OverviewPage() {
     mutationFn: () => createTask({ title, description: '', date }),
     onSuccess: async () => {
       setTitle('');
+      toast.push('已添加今天的任务');
       await refresh();
     },
   });
@@ -149,7 +154,10 @@ export function OverviewPage() {
     mutationFn: ({ id, revision }: { id: string; revision: number }) =>
       updateTask(id, revision, { date }),
     // REVISION_CONFLICT 后本地 revision 已过期；刷新拿到最新数据，避免重试必然再失败
-    onSuccess: refresh,
+    onSuccess: () => {
+      toast.push('已移到今天');
+      return refresh();
+    },
     onError: refresh,
   });
   const retry = () => {
@@ -195,6 +203,7 @@ export function OverviewPage() {
           <input
             id="quick-task"
             required
+            data-shortcut="new"
             maxLength={500}
             value={title}
             onChange={(event) => setTitle(event.target.value)}

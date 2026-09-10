@@ -3,7 +3,10 @@ import { MotionConfig, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { HealthStatus } from '../shared/ui/HealthStatus';
+import { ShortcutSheet } from '../shared/ui/ShortcutSheet';
+import { ToastProvider } from '../shared/ui/Toast';
 import { navigationItems } from './navigation';
+import { useGlobalShortcuts } from './useGlobalShortcuts';
 
 /** 三档侧栏的断点，与 shell.css 中 .app-shell--rail / .app-shell--drawer 样式对应：
  *  宽（>1100px）：完整侧栏，可手动折叠；
@@ -78,6 +81,8 @@ export function AppShell() {
     }
   });
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  useGlobalShortcuts(() => setHelpOpen((current) => !current));
   const isRail = useMediaQuery(RAIL_QUERY);
   const isDrawer = useMediaQuery(DRAWER_QUERY);
 
@@ -124,85 +129,92 @@ export function AppShell() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={shellClass}>
-        <a className="skip-link" href="#main-content">
-          跳到主要内容
-        </a>
-        <aside className="sidebar">
-          <div className="brand" aria-label="Personal Workbench">
+      <ToastProvider>
+        <div className={shellClass}>
+          <a className="skip-link" href="#main-content">
+            跳到主要内容
+          </a>
+          <aside className="sidebar">
+            <div className="brand" aria-label="Personal Workbench">
+              <button
+                type="button"
+                className="brand__mark brand-toggle"
+                aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
+                aria-expanded={!sidebarCollapsed}
+                onClick={toggleSidebar}
+              >
+                <span className="brand-toggle__glyph brand-toggle__glyph--mark" aria-hidden="true">
+                  W
+                </span>
+                {sidebarCollapsed ? (
+                  <ArrowLineRight
+                    aria-hidden="true"
+                    className="brand-toggle__glyph brand-toggle__glyph--action"
+                    size={18}
+                    weight="fill"
+                  />
+                ) : (
+                  <ArrowLineLeft
+                    aria-hidden="true"
+                    className="brand-toggle__glyph brand-toggle__glyph--action"
+                    size={18}
+                    weight="fill"
+                  />
+                )}
+              </button>
+              <span className="brand__name">
+                <strong>Workbench</strong>
+              </span>
+            </div>
+            <Navigation onNavigate={isDrawer ? () => setDrawerOpen(false) : undefined} />
+            <div className="sidebar__footer">
+              <HealthStatus />
+              <p>数据仅保存在这台设备</p>
+            </div>
+          </aside>
+
+          {isDrawer && drawerOpen ? (
             <button
               type="button"
-              className="brand__mark brand-toggle"
-              aria-label={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
-              aria-expanded={!sidebarCollapsed}
-              onClick={toggleSidebar}
+              className="drawer-scrim"
+              aria-label="关闭导航"
+              onClick={() => setDrawerOpen(false)}
+            />
+          ) : null}
+
+          <div className="workspace">
+            <header className="mobile-header">
+              <div className="brand brand--mobile">
+                <span className="brand__mark" aria-hidden="true">
+                  W
+                </span>
+                <strong>Workbench</strong>
+              </div>
+              <HealthStatus />
+            </header>
+            <main id="main-content" className="main-content" tabIndex={-1}>
+              <Outlet />
+            </main>
+          </div>
+
+          {isDrawer ? (
+            <button
+              type="button"
+              className="drawer-handle"
+              aria-label={drawerOpen ? '收起导航' : '打开导航'}
+              aria-expanded={drawerOpen}
+              onClick={() => setDrawerOpen((current) => !current)}
             >
-              <span className="brand-toggle__glyph brand-toggle__glyph--mark" aria-hidden="true">
-                W
-              </span>
-              {sidebarCollapsed ? (
-                <ArrowLineRight
-                  aria-hidden="true"
-                  className="brand-toggle__glyph brand-toggle__glyph--action"
-                  size={18}
-                  weight="fill"
-                />
-              ) : (
-                <ArrowLineLeft
-                  aria-hidden="true"
-                  className="brand-toggle__glyph brand-toggle__glyph--action"
-                  size={18}
-                  weight="fill"
-                />
-              )}
+              <SidebarSimple
+                aria-hidden="true"
+                size={20}
+                weight={drawerOpen ? 'fill' : 'regular'}
+              />
             </button>
-            <span className="brand__name">
-              <strong>Workbench</strong>
-            </span>
-          </div>
-          <Navigation onNavigate={isDrawer ? () => setDrawerOpen(false) : undefined} />
-          <div className="sidebar__footer">
-            <HealthStatus />
-            <p>数据仅保存在这台设备</p>
-          </div>
-        </aside>
-
-        {isDrawer && drawerOpen ? (
-          <button
-            type="button"
-            className="drawer-scrim"
-            aria-label="关闭导航"
-            onClick={() => setDrawerOpen(false)}
-          />
-        ) : null}
-
-        <div className="workspace">
-          <header className="mobile-header">
-            <div className="brand brand--mobile">
-              <span className="brand__mark" aria-hidden="true">
-                W
-              </span>
-              <strong>Workbench</strong>
-            </div>
-            <HealthStatus />
-          </header>
-          <main id="main-content" className="main-content" tabIndex={-1}>
-            <Outlet />
-          </main>
+          ) : null}
         </div>
-
-        {isDrawer ? (
-          <button
-            type="button"
-            className="drawer-handle"
-            aria-label={drawerOpen ? '收起导航' : '打开导航'}
-            aria-expanded={drawerOpen}
-            onClick={() => setDrawerOpen((current) => !current)}
-          >
-            <SidebarSimple aria-hidden="true" size={20} weight={drawerOpen ? 'fill' : 'regular'} />
-          </button>
-        ) : null}
-      </div>
+        <ShortcutSheet open={helpOpen} onClose={() => setHelpOpen(false)} />
+      </ToastProvider>
     </MotionConfig>
   );
 }

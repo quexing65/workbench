@@ -14,9 +14,11 @@ import {
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
+import { useToast } from '../../shared/ui/Toast';
 
 function RecurringRow({ item }: { item: RecurringTask }) {
   const client = useQueryClient();
+  const toast = useToast();
   const [title, setTitle] = useState(item.title);
   const [startDate, setStartDate] = useState(item.startDate);
   const [endDate, setEndDate] = useState(item.endDate ?? '');
@@ -35,7 +37,12 @@ function RecurringRow({ item }: { item: RecurringTask }) {
               : endDate || null,
         });
     },
-    onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.recurringTasks }),
+    onSuccess: async (_data, action) => {
+      if (action === 'save') toast.push('已保存固定任务');
+      else if (action === 'stop') toast.push('已设为今天停止');
+      else toast.push('已删除固定任务');
+      await client.invalidateQueries({ queryKey: queryKeys.recurringTasks });
+    },
     onError: () => client.invalidateQueries({ queryKey: queryKeys.recurringTasks }),
   });
   const { confirm, dialog } = useConfirm();
@@ -116,6 +123,7 @@ function RecurringRow({ item }: { item: RecurringTask }) {
 
 export function RecurringPage() {
   const client = useQueryClient();
+  const toast = useToast();
   const workList = useAnimatedList<HTMLUListElement>();
   const list = useQuery({
     queryKey: queryKeys.recurringTasks,
@@ -131,6 +139,7 @@ export function RecurringPage() {
     onSuccess: async () => {
       setTitle('');
       setDescription('');
+      toast.push('已创建固定任务');
       await client.invalidateQueries({ queryKey: queryKeys.recurringTasks });
     },
   });
@@ -154,6 +163,7 @@ export function RecurringPage() {
             标题
             <input
               required
+              data-shortcut="new"
               maxLength={500}
               value={title}
               onChange={(event) => setTitle(event.target.value)}

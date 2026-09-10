@@ -59,7 +59,7 @@
 
 .eyebrow {
   margin: 0 0 0.75rem;
-  color: var(--accent);
+  color: var(--accent-ink);
   font-size: 0.78rem;
   font-weight: 750;
   letter-spacing: 0.13em;
@@ -88,7 +88,7 @@ h1 {
   padding: 1rem 1.25rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: rgb(255 255 255 / 55%);
+  background: var(--frost);
   text-align: center;
   flex: 0 0 auto;
 }

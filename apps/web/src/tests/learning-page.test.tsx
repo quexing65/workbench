@@ -68,7 +68,8 @@ describe('learning center', () => {
     fireEvent.click(screen.getByRole('button', { name: '导入 B站学习资源' }));
     const url = screen.getByLabelText('视频链接或 BV 号');
     fireEvent.change(url, { target: { value: 'BV1AB411C7DE' } });
-    await screen.findByRole('option', { name: '前端系列' });
+    // 系列数据同时出现在导入表单与学习库工具栏两个下拉里，等待任一渲染即可。
+    expect((await screen.findAllByRole('option', { name: '前端系列' })).length).toBeGreaterThan(0);
     fireEvent.change(screen.getByLabelText('加入系列（可选）'), { target: { value: seriesId } });
     fireEvent.click(screen.getByRole('button', { name: '导入资源' }));
 
@@ -121,7 +122,7 @@ describe('learning center', () => {
       }),
     );
     renderLearningPage();
-    fireEvent.change(await screen.findByLabelText('基础 看到秒数'), { target: { value: '45' } });
+    fireEvent.change(await screen.findByLabelText('基础 看到位置'), { target: { value: '45' } });
     fireEvent.click(screen.getAllByRole('button', { name: '记录进度' })[0]!);
     await waitFor(() => expect(writes.some((value) => value.endsWith('/observe'))).toBe(true));
 
@@ -327,5 +328,67 @@ describe('learning center', () => {
     expect(screen.getByText('5:50 / 13:20（44%）')).toBeInTheDocument();
     expect(screen.getByRole('progressbar', { name: '本集观看进度' })).toHaveValue(40);
     expect(screen.getByRole('progressbar', { name: '合集总进度' })).toHaveValue(350);
+  });
+
+  it('accepts clock-format progress input and quick steps', async () => {
+    const writes: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const target = requestPath(input);
+        if (init?.method === 'POST' && target.endsWith('/observe')) {
+          writes.push(JSON.parse(String(init.body)) as Record<string, unknown>);
+          return json(resource());
+        }
+        return json(target.endsWith('/series') ? { items: [] } : { items: [resource()] });
+      }),
+    );
+    renderLearningPage();
+    const input = await screen.findByLabelText('基础 看到位置');
+    expect(input).toHaveValue('0:00');
+
+    // 第一分P全长 60 秒：90 秒会被时长上限拒绝，45 秒合法。
+    fireEvent.change(input, { target: { value: '0:45' } });
+    fireEvent.click(screen.getAllByRole('button', { name: '记录进度' })[0]!);
+    await waitFor(() => expect(writes[0]).toMatchObject({ seconds: 45 }));
+
+    // +5 分钟被截到时长上限；「看到结尾」直达 1:00。
+    fireEvent.click(screen.getByRole('button', { name: '+5 分钟' }));
+    expect(input).toHaveValue('1:00');
+    fireEvent.change(input, { target: { value: '0:30' } });
+    fireEvent.click(screen.getByRole('button', { name: '看到结尾' }));
+    expect(input).toHaveValue('1:00');
+    fireEvent.change(input, { target: { value: '1:90' } });
+    expect(screen.getByText('格式应为 分:秒（如 12:30）或直接输入秒数。')).toBeInTheDocument();
+  });
+
+  it('filters the library by completion status', async () => {
+    const done = resource({
+      id: '55555555-5555-4555-8555-555555555555',
+      externalId: 'BV1XY411C7DE',
+      title: '完成课程',
+      progress: { ...resource().progress, completed: true },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) =>
+        json(
+          requestPath(input).endsWith('/series') ? { items: [] } : { items: [resource(), done] },
+        ),
+      ),
+    );
+    renderLearningPage();
+    await screen.findByRole('heading', { name: '安全测试课程' });
+    expect(screen.getByRole('heading', { name: '完成课程' })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('状态'), { target: { value: 'completed' } });
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: '安全测试课程' })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('heading', { name: '完成课程' })).toBeInTheDocument();
+    expect(screen.getByText('共 2 项 · 筛选后 1 项')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('状态'), { target: { value: 'all' } });
+    expect(await screen.findByRole('heading', { name: '安全测试课程' })).toBeInTheDocument();
   });
 });

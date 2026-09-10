@@ -278,7 +278,7 @@ select {
 /* 与清单卡片一致的悬停浮起反馈 */
 .learning-card:hover,
 .series-card:hover {
-  border-color: #d8d6cf;
+  border-color: var(--line-strong);
   box-shadow: var(--shadow);
   transform: translateY(-1px);
 }
@@ -340,7 +340,7 @@ select {
 
 .part-copy progress {
   width: 100%;
-  accent-color: var(--accent-strong);
+  accent-color: var(--accent-ink);
 }
 
 .current-part {
@@ -367,7 +367,7 @@ select {
 
 .current-part > progress {
   width: 100%;
-  accent-color: var(--accent-strong);
+  accent-color: var(--accent-ink);
 }
 
 .part-progress-form {
@@ -397,7 +397,7 @@ select {
 
 .learning-actions .learning-action-button--primary {
   border-color: var(--accent-strong);
-  color: var(--accent-strong);
+  color: var(--accent-ink);
   background: var(--accent-soft);
 }
 
@@ -409,6 +409,11 @@ select {
 
 .learning-actions .learning-action-button:hover:not(:disabled) {
   filter: brightness(0.97);
+}
+
+/* 深色下按钮底色已深，压暗无感；改为提亮反馈。 */
+[data-theme='dark'] .learning-actions .learning-action-button:hover:not(:disabled) {
+  filter: brightness(1.18);
 }
 
 .resource-sync-status {

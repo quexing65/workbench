@@ -114,7 +114,7 @@ npm run desktop:dist
 
 ## 仓库结构
 
-- `apps/web`：React SPA（总览/任务/小记/学习/回顾/数据页面）
+- `apps/web`：React SPA（总览/任务/逾期/固定任务/小记/学习/回顾/数据/设置页面）
 - `apps/server`：Express + SQLite（`node:sqlite`），唯一业务后端
 - `apps/desktop`：Electron 桌面壳（esbuild 单文件打包 + electron-builder）
 - `packages/shared`：前后端共享契约（Zod）与纯领域逻辑

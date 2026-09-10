@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import {
   getLearningResources,
@@ -7,8 +7,15 @@ import {
   importLearningResource,
 } from '../../shared/api/learning';
 import { queryKeys } from '../../shared/api/query-keys';
-import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
+import { useToast } from '../../shared/ui/Toast';
+import { useAnimatedList } from '../../shared/ui/useAnimatedList';
+import {
+  buildSeriesMembership,
+  DEFAULT_LEARNING_VIEW,
+  filterLearningResources,
+  type LearningViewOptions,
+} from './learning-filters';
 import { LearningResourceCard } from './LearningResourceCard';
 import { LearningSeriesPanel } from './LearningSeriesPanel';
 import { BiliSyncPanel } from './BiliSyncPanel';
@@ -24,7 +31,9 @@ export function LearningPage() {
   const [seriesId, setSeriesId] = useState('');
   const [unresolvedMessage, setUnresolvedMessage] = useState('');
   const [visibleResourceCount, setVisibleResourceCount] = useState(RESOURCE_BATCH_SIZE);
+  const [view, setView] = useState<LearningViewOptions>(DEFAULT_LEARNING_VIEW);
   const client = useQueryClient();
+  const toast = useToast();
   const resources = useQuery({
     queryKey: queryKeys.learningResources,
     queryFn: ({ signal }) => getLearningResources(signal),
@@ -42,12 +51,18 @@ export function LearningPage() {
       }
       setUrl('');
       setUnresolvedMessage('');
+      toast.push('已导入学习资源');
       await Promise.all([
         client.invalidateQueries({ queryKey: queryKeys.learningResources }),
         client.invalidateQueries({ queryKey: queryKeys.learningSeries }),
       ]);
     },
   });
+
+  function updateView(patch: Partial<LearningViewOptions>) {
+    setView((current) => ({ ...current, ...patch }));
+    setVisibleResourceCount(RESOURCE_BATCH_SIZE);
+  }
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -56,9 +71,18 @@ export function LearningPage() {
   }
 
   const hasLoadError = resources.isError || series.isError;
-  const resourceItems = resources.data?.items ?? [];
-  const visibleResources = resourceItems.slice(0, visibleResourceCount);
-  const remainingResources = resourceItems.length - visibleResources.length;
+  // resourceItems 必须稳定引用，否则 filtered 的 useMemo 每次渲染都重算。
+  const resourceItems = useMemo(() => resources.data?.items ?? [], [resources.data]);
+  const membership = useMemo(
+    () => buildSeriesMembership(series.data?.items ?? []),
+    [series.data?.items],
+  );
+  const filtered = useMemo(
+    () => filterLearningResources(resourceItems, membership, view),
+    [resourceItems, membership, view],
+  );
+  const visibleResources = filtered.slice(0, visibleResourceCount);
+  const remainingResources = filtered.length - visibleResources.length;
 
   return (
     <section className="page learning-page">
@@ -115,6 +139,7 @@ export function LearningPage() {
             视频链接或 BV 号
             <input
               required
+              data-shortcut="new"
               maxLength={2048}
               placeholder="https://www.bilibili.com/video/BV…"
               value={url}
@@ -172,14 +197,65 @@ export function LearningPage() {
               <p className="eyebrow">学习库</p>
               <h2 id="library-title">资源与进度</h2>
             </div>
+            <div className="learning-toolbar" aria-label="资源筛选与排序">
+              <label>
+                系列
+                <select
+                  value={view.series}
+                  onChange={(event) => updateView({ series: event.target.value })}
+                >
+                  <option value="all">全部系列</option>
+                  <option value="none">未分类</option>
+                  {series.data?.items.map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                状态
+                <select
+                  value={view.status}
+                  onChange={(event) =>
+                    updateView({ status: event.target.value as LearningViewOptions['status'] })
+                  }
+                >
+                  <option value="all">全部</option>
+                  <option value="learning">学习中</option>
+                  <option value="completed">已完成</option>
+                </select>
+              </label>
+              <label>
+                排序
+                <select
+                  value={view.sort}
+                  onChange={(event) =>
+                    updateView({ sort: event.target.value as LearningViewOptions['sort'] })
+                  }
+                >
+                  <option value="recent">最近更新</option>
+                  <option value="progress">完成度</option>
+                  <option value="title">标题</option>
+                </select>
+              </label>
+              <p className="learning-toolbar__meta" role="status">
+                共 {resourceItems.length} 项 · 筛选后 {filtered.length} 项
+              </p>
+            </div>
             {resources.data.items.length === 0 && (
               <p className="empty-state">还没有学习资源，从上方导入一个 B站视频。</p>
             )}
-            <div className="learning-list" ref={learningList}>
-              {visibleResources.map((resource) => (
-                <LearningResourceCard key={resource.id} resource={resource} />
-              ))}
-            </div>
+            {resources.data.items.length > 0 && filtered.length === 0 && (
+              <p className="empty-state">当前筛选下没有学习资源。</p>
+            )}
+            {filtered.length > 0 ? (
+              <div className="learning-list" ref={learningList}>
+                {visibleResources.map((resource) => (
+                  <LearningResourceCard key={resource.id} resource={resource} />
+                ))}
+              </div>
+            ) : null}
             {remainingResources > 0 ? (
               <button
                 className="button-secondary list-more"

@@ -13,6 +13,7 @@ import { queryKeys } from '../../shared/api/query-keys';
 import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
+import { useToast } from '../../shared/ui/Toast';
 
 function useDebounced(value: string, delay = 300): string {
   const [debounced, setDebounced] = useState(value);
@@ -25,6 +26,7 @@ function useDebounced(value: string, delay = 300): string {
 
 function NoteRow({ note }: { note: Note }) {
   const client = useQueryClient();
+  const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(note.content);
   // 按前缀失效全部搜索词的缓存，与创建路径口径一致；
@@ -41,7 +43,14 @@ function NoteRow({ note }: { note: Note }) {
         );
     },
     onSuccess: async (_data, action) => {
-      if (action === 'save') setEditing(false);
+      if (action === 'save') {
+        setEditing(false);
+        toast.push('已保存小记');
+      } else if (action === 'pin') {
+        toast.push(note.pinned ? '已取消置顶' : '已置顶');
+      } else {
+        toast.push('已删除小记');
+      }
       await refresh();
     },
     onError: refresh,
@@ -123,6 +132,7 @@ function NoteRow({ note }: { note: Note }) {
 
 export function NotesPage() {
   const client = useQueryClient();
+  const toast = useToast();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounced(query);
   const noteGrid = useAnimatedList<HTMLUListElement>();
@@ -142,6 +152,7 @@ export function NotesPage() {
     mutationFn: () => createNote({ content, pinned: false }),
     onSuccess: async () => {
       setContent('');
+      toast.push('已记下这条小记');
       await client.invalidateQueries({ queryKey: ['notes'] });
     },
   });
@@ -170,6 +181,7 @@ export function NotesPage() {
             内容
             <textarea
               required
+              data-shortcut="new"
               maxLength={20_000}
               value={content}
               onChange={(event) => setContent(event.target.value)}

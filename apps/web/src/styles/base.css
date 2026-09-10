@@ -1,6 +1,7 @@
 :root {
   color: var(--ink);
   background: var(--canvas);
+  color-scheme: light;
   font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,13 +16,20 @@
   --paper: #ffffff;
   --canvas: #f6f6f3;
   --line: #e6e5e0;
+  --line-strong: #d8d6cf;
+  --surface-muted: #fbfbf9;
   --accent: #315f50;
   --accent-strong: #23493e;
   --accent-soft: #e4efe9;
+  --accent-ink: #23493e;
   --warm: #c96a42;
   --error: #b0413d;
   --success: #326b48;
   --warm-ink: #9c4a26;
+  --danger-bg: #f9eae9;
+  --pinned-bg: #fff9ed;
+  --expired-bg: #fdeee6;
+  --strike: rgb(92 96 90 / 45%);
   --status-ok: #77ba8d;
   --status-warn: #d6a151;
   --status-error: #d97870;
@@ -32,6 +40,15 @@
   --sidebar-hover: rgb(255 255 255 / 6%);
   --sidebar-glider: rgb(255 255 255 / 10%);
   --sidebar-line: rgb(255 255 255 / 8%);
+
+  /* 主视觉深绿卡上的浅绿元素与磨砂玻璃面 */
+  --progress-fill: #e4efe9;
+  --chip-on-primary-bg: #e4efe9;
+  --frost: rgb(255 255 255 / 55%);
+  --header-frost: rgb(246 246 243 / 92%);
+  --handle-bg: rgb(255 255 255 / 62%);
+  --handle-line: rgb(255 255 255 / 55%);
+  --scrollbar-thumb: rgb(28 31 26 / 22%);
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -46,10 +63,50 @@
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* 深色主题：preferences.ts 在 <html> 上落 data-theme，首帧前生效。
+   只覆盖 token，不重复布局规则；白字所在的深绿表面（按钮/主视觉卡）
+   保持深绿，文字型绿色统一走 --accent-ink。 */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ink: #e9ebe6;
+  --muted: #a2a89f;
+  --paper: #222620;
+  --canvas: #171a16;
+  --line: #343833;
+  --line-strong: #4a4f47;
+  --surface-muted: #1d211c;
+  --accent: #357a5c;
+  --accent-strong: #204438;
+  --accent-soft: #2a4a39;
+  --accent-ink: #bfe0cd;
+  --warm: #d98a5f;
+  --error: #e08a86;
+  --success: #8fcaa4;
+  --warm-ink: #eba87f;
+  --danger-bg: #3d2724;
+  --pinned-bg: #37311e;
+  --expired-bg: #3a2a21;
+  --strike: rgb(162 168 159 / 45%);
+
+  --sidebar-bg: #1a2723;
+
+  --progress-fill: #8fd3ae;
+  --chip-on-primary-bg: rgb(255 255 255 / 16%);
+  --frost: rgb(255 255 255 / 4%);
+  --header-frost: rgb(23 26 22 / 92%);
+  --handle-bg: rgb(34 38 31 / 78%);
+  --handle-line: rgb(255 255 255 / 16%);
+  --scrollbar-thumb: rgb(233 235 230 / 16%);
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 30%);
+  --shadow: 0 8px 24px rgb(0 0 0 / 36%);
+}
+
 * {
   box-sizing: border-box;
   scrollbar-width: thin;
-  scrollbar-color: rgb(28 31 26 / 22%) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 html,

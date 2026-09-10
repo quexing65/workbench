@@ -6,6 +6,7 @@ import { ApiError } from '../../shared/api/client';
 import { fetchBiliCredential } from '../../shared/api/bili-sync';
 import { queryKeys } from '../../shared/api/query-keys';
 import { useConfirm } from '../../shared/ui/ConfirmDialog';
+import { useToast } from '../../shared/ui/Toast';
 
 /** Chrome 136+ 封禁了默认用户数据目录的远程调试端口，受控重启会被后端拒绝；
  *  这里先给一条指引，不弹重启确认，避免误导用户。 */
@@ -23,6 +24,7 @@ const BROWSERS: ReadonlyArray<{ readonly value: BiliBrowser; readonly label: str
  *  二次确认后受控重启再读取。读取到的 SESSDATA 走与手工录入相同的验活与加密收口。 */
 export function BrowserCredentialFetch() {
   const client = useQueryClient();
+  const toast = useToast();
   const [browser, setBrowser] = useState<BiliBrowser>('edge');
   const { confirm, dialog } = useConfirm();
 
@@ -33,7 +35,10 @@ export function BrowserCredentialFetch() {
         forceRestart: options.forceRestart,
         ...(options.forceRestart ? { confirmation: 'restart-browser' as const } : {}),
       }),
-    onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.biliCredential }),
+    onSuccess: async () => {
+      toast.push('已从浏览器读取登录态');
+      await client.invalidateQueries({ queryKey: queryKeys.biliCredential });
+    },
     // 重启是侵入式操作：Edge 需要用户显式确认后才带 forceRestart 继续读取。
     onError: (error) => {
       if (

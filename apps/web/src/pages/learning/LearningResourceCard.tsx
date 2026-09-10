@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { LearningResource } from '@workbench/shared';
-import { useState } from 'react';
 
 import { errorMessage, isRevisionConflict } from '../../shared/api/client';
 import {
@@ -11,11 +10,20 @@ import {
 } from '../../shared/api/learning';
 import { queryKeys } from '../../shared/api/query-keys';
 import { useConfirm } from '../../shared/ui/ConfirmDialog';
+import { useToast } from '../../shared/ui/Toast';
+import { PartProgressForm } from './PartProgressForm';
 import { LearningResourceSync } from './LearningResourceSync';
 
 type Action =
   | { readonly kind: 'observe'; readonly partId: string; readonly seconds: number }
   | { readonly kind: 'complete' | 'reset' | 'delete' };
+
+const TOAST_BY_ACTION: Record<Action['kind'], string> = {
+  observe: '已记录进度',
+  complete: '已标记整项完成',
+  reset: '已重置进度',
+  delete: '已移除资源',
+};
 
 function durationLabel(value: number): string {
   const hours = Math.floor(value / 3600);
@@ -33,18 +41,7 @@ function percent(value: number, total: number): number {
 
 export function LearningResourceCard({ resource }: { readonly resource: LearningResource }) {
   const client = useQueryClient();
-  const [seconds, setSeconds] = useState<Record<string, string>>(() =>
-    Object.fromEntries(
-      resource.parts.map((part) => [
-        part.id,
-        String(
-          resource.progress.resumePartId === part.id
-            ? resource.progress.resumeSeconds
-            : (part.progress?.furthestSeconds ?? 0),
-        ),
-      ]),
-    ),
-  );
+  const toast = useToast();
   const refresh = async () => {
     await Promise.all([
       client.invalidateQueries({ queryKey: queryKeys.learningResources }),
@@ -74,7 +71,10 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
           await deleteLearningResource(resource.id, resource.revision);
       }
     },
-    onSuccess: refresh,
+    onSuccess: async (_data, action) => {
+      toast.push(TOAST_BY_ACTION[action.kind]);
+      await refresh();
+    },
     onError: (error) => {
       if (isRevisionConflict(error)) void refresh();
     },
@@ -156,42 +156,18 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
             max={Math.max(resource.durationSeconds, 1)}
             value={overallWatchedSeconds}
           />
-          {(() => {
-            const value = Number(seconds[currentPart.id] ?? 0);
-            return (
-              <div className="part-copy">
-                <form
-                  className="part-progress-form"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    mutation.mutate({ kind: 'observe', partId: currentPart.id, seconds: value });
-                  }}
-                >
-                  <label>
-                    本集看到秒数
-                    <input
-                      aria-label={`${currentPart.title} 看到秒数`}
-                      type="number"
-                      min={0}
-                      max={currentPart.durationSeconds}
-                      step={1}
-                      required
-                      value={seconds[currentPart.id] ?? '0'}
-                      onChange={(event) =>
-                        setSeconds((current) => ({
-                          ...current,
-                          [currentPart.id]: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <button disabled={mutation.isPending || !Number.isInteger(value)}>
-                    记录进度
-                  </button>
-                </form>
-              </div>
-            );
-          })()}
+          <div className="part-copy">
+            <PartProgressForm
+              key={currentPart.id}
+              partTitle={currentPart.title}
+              initialSeconds={currentSeconds}
+              durationSeconds={currentPart.durationSeconds}
+              pending={mutation.isPending}
+              onRecord={(secondsValue) =>
+                mutation.mutate({ kind: 'observe', partId: currentPart.id, seconds: secondsValue })
+              }
+            />
+          </div>
         </div>
       ) : null}
       <div className="button-row learning-actions">

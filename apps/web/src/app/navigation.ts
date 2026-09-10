@@ -3,6 +3,7 @@ import {
   ChartLineUp,
   ClockCountdown,
   Database,
+  Gear,
   ListChecks,
   MonitorPlay,
   NotePencil,
@@ -18,4 +19,5 @@ export const navigationItems = [
   { to: '/learning', label: '学习', shortLabel: '学习', icon: MonitorPlay },
   { to: '/review', label: '回顾', shortLabel: '回顾', icon: ChartLineUp },
   { to: '/data', label: '数据', shortLabel: '数据', icon: Database },
+  { to: '/settings', label: '设置', shortLabel: '设置', icon: Gear },
 ] as const;

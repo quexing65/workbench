@@ -15,6 +15,8 @@ import {
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
+import { useToast } from '../../shared/ui/Toast';
+import { DateNavigator } from './DateNavigator';
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
   active: '待完成',
@@ -23,8 +25,18 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   cancelled: '已取消',
 };
 
+const TOAST_BY_ACTION: Record<'save' | 'delete' | TaskStatus, string> = {
+  save: '已保存修改',
+  delete: '已删除任务',
+  active: '已恢复任务',
+  completed: '已标为完成',
+  cancelled: '已取消任务',
+  expired: '已标记过期',
+};
+
 function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
   const client = useQueryClient();
+  const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(item.title);
   const [description, setDescription] = useState(item.description);
@@ -44,6 +56,7 @@ function TaskRow({ item, date }: { item: TaskListItem; date: string }) {
     },
     onSuccess: async (_data, action) => {
       if (action === 'save') setEditing(false);
+      toast.push(TOAST_BY_ACTION[action]);
       await refresh();
       if (taskDate !== date)
         await client.invalidateQueries({ queryKey: queryKeys.tasks(taskDate) });
@@ -176,6 +189,7 @@ export function TasksPage() {
   const [description, setDescription] = useState('');
   const workList = useAnimatedList<HTMLUListElement>();
   const client = useQueryClient();
+  const toast = useToast();
   const tasks = useQuery({
     queryKey: queryKeys.tasks(date),
     queryFn: ({ signal }) => getTasks(date, signal),
@@ -187,6 +201,7 @@ export function TasksPage() {
     onSuccess: async () => {
       setTitle('');
       setDescription('');
+      toast.push('已添加任务');
       await client.invalidateQueries({ queryKey: queryKeys.tasks(date) });
     },
   });
@@ -214,6 +229,7 @@ export function TasksPage() {
             标题
             <input
               required
+              data-shortcut="new"
               maxLength={500}
               value={title}
               onChange={(event) => setTitle(event.target.value)}
@@ -253,14 +269,7 @@ export function TasksPage() {
                 </p>
               )}
             </div>
-            <label>
-              切换日期
-              <input
-                type="date"
-                value={date}
-                onChange={(event) => setSelectedDate(event.target.value)}
-              />
-            </label>
+            <DateNavigator date={date} onDateChange={setSelectedDate} />
           </div>
           {tasks.isPending && <QueryLoading message="正在加载任务…" />}
           {tasks.isError && <QueryError message="任务加载失败。" onRetry={() => tasks.refetch()} />}

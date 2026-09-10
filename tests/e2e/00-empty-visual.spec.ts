@@ -16,6 +16,7 @@ const pages = [
   ['/learning', '学习'],
   ['/review', '回顾'],
   ['/data', '数据'],
+  ['/settings', '设置'],
 ] as const;
 
 test('matches the empty-state reference of every page', async ({ page }) => {

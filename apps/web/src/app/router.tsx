@@ -14,6 +14,7 @@ const NotesPage = page(() => import('../pages/notes/NotesPage'), 'NotesPage');
 const LearningPage = page(() => import('../pages/learning/LearningPage'), 'LearningPage');
 const ReviewPage = page(() => import('../pages/review/ReviewPage'), 'ReviewPage');
 const DataPage = page(() => import('../pages/data/DataPage'), 'DataPage');
+const SettingsPage = page(() => import('../pages/settings/SettingsPage'), 'SettingsPage');
 
 function PageLoader() {
   return (
@@ -90,6 +91,14 @@ export function AppRouter() {
             element={
               <Suspense fallback={<PageLoader />}>
                 <DataPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <SettingsPage />
               </Suspense>
             }
           />

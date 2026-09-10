@@ -47,7 +47,7 @@ describe('Personal Workbench application shell', () => {
     vi.unstubAllGlobals();
   });
 
-  it('redirects the root route to the overview and renders the seven destinations', async () => {
+  it('redirects the root route to the overview and renders every destination', async () => {
     renderApp();
 
     expect(
@@ -55,7 +55,17 @@ describe('Personal Workbench application shell', () => {
     ).toBeInTheDocument();
     expect(window.location.pathname).toBe('/overview');
 
-    for (const label of ['总览', '任务', '固定任务', '小记', '学习', '回顾', '数据']) {
+    for (const label of [
+      '总览',
+      '任务',
+      '逾期',
+      '固定任务',
+      '小记',
+      '学习',
+      '回顾',
+      '数据',
+      '设置',
+    ]) {
       expect(screen.getAllByRole('link', { name: label }).length).toBeGreaterThan(0);
     }
   });
@@ -80,6 +90,7 @@ describe('Personal Workbench application shell', () => {
     ['/learning', '学习'],
     ['/review', '回顾'],
     ['/data', '数据'],
+    ['/settings', '设置'],
   ])('renders the fixed route %s', async (path, heading) => {
     window.history.replaceState({}, '', path);
     renderApp();

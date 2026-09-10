@@ -7,10 +7,12 @@ import {
   saveBiliCredential,
 } from '../../shared/api/bili-sync';
 import { queryKeys } from '../../shared/api/query-keys';
+import { useToast } from '../../shared/ui/Toast';
 import { BrowserCredentialFetch } from './BrowserCredentialFetch';
 
 export function BiliSyncPanel() {
   const client = useQueryClient();
+  const toast = useToast();
   const [sessdata, setSessdata] = useState('');
   const credential = useQuery({
     queryKey: queryKeys.biliCredential,
@@ -19,12 +21,18 @@ export function BiliSyncPanel() {
   });
   const save = useMutation({
     mutationFn: saveBiliCredential,
-    onSuccess: async () => client.invalidateQueries({ queryKey: queryKeys.biliCredential }),
+    onSuccess: async () => {
+      toast.push('已保存 B站登录态');
+      await client.invalidateQueries({ queryKey: queryKeys.biliCredential });
+    },
     onSettled: () => setSessdata(''),
   });
   const clear = useMutation({
     mutationFn: clearBiliCredential,
-    onSuccess: async () => client.invalidateQueries({ queryKey: queryKeys.biliCredential }),
+    onSuccess: async () => {
+      toast.push('已清除本机登录态');
+      await client.invalidateQueries({ queryKey: queryKeys.biliCredential });
+    },
   });
 
   function submitCredential(event: FormEvent) {

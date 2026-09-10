@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OverduePage } from '../pages/overdue/OverduePage';
+import { ToastProvider } from '../shared/ui/Toast';
 
 const items = [
   {
@@ -57,7 +58,9 @@ function renderPage() {
       <QueryClientProvider
         client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
       >
-        <OverduePage />
+        <ToastProvider>
+          <OverduePage />
+        </ToastProvider>
       </QueryClientProvider>
     </BrowserRouter>,
   );
@@ -212,5 +215,60 @@ describe('overdue page', () => {
     stubFetch([]);
     renderPage();
     expect(await screen.findByText('没有过期待办，保持得很好。')).toBeInTheDocument();
+  });
+
+  it('moves every selected task to today in one bulk action', async () => {
+    const calls = stubFetch();
+    renderPage();
+    await screen.findByText('写周报');
+
+    // 默认「未完成」视图有两条；逐条勾选后批量移回今天。
+    fireEvent.click(screen.getByRole('checkbox', { name: '选择任务 写周报' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: '选择任务 预约体检' }));
+    expect(screen.getByText('已选 2 项')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '批量移到今天' }));
+    await waitFor(() => {
+      const patches = calls.filter(([, init]) => init?.method === 'PATCH');
+      expect(patches).toHaveLength(2);
+    });
+    expect(await screen.findByText('已处理 2 项')).toBeInTheDocument();
+  });
+
+  it('selects the whole filtered view and reports partial bulk failures', async () => {
+    const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        calls.push([input, init]);
+        if (init?.method === 'PATCH') {
+          // 第一条任务模拟乐观锁冲突，其余成功。
+          if (String(input).includes('000000000001')) {
+            return json(
+              { error: { code: 'REVISION_CONFLICT', message: '冲突', details: [] } },
+              409,
+            );
+          }
+          return json({
+            kind: 'daily',
+            id: '10000000-0000-4000-8000-000000000003',
+            title: '预约体检',
+            description: '',
+            date: '2026-08-13',
+            status: 'active',
+            revision: 2,
+          });
+        }
+        return json({ items });
+      }),
+    );
+    renderPage();
+    await screen.findByText('写周报');
+
+    fireEvent.click(screen.getByRole('checkbox', { name: '全选当前筛选' }));
+    expect(screen.getByText('已选 2 项')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '批量移到今天' }));
+    expect(await screen.findByText('已处理 1 项，1 项未成功，列表已刷新')).toBeInTheDocument();
   });
 });
