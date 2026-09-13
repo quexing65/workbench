@@ -25,7 +25,7 @@
   display: flex;
   width: 100%;
   max-width: none;
-  align-items: flex-start;
+  align-items: center;
   gap: 1.5rem;
 }
 
@@ -34,9 +34,10 @@
 }
 
 .learning-tools-menu {
-  display: grid;
-  width: 11.5rem;
+  display: flex;
+  flex-wrap: wrap;
   margin-left: auto;
+  justify-content: flex-end;
   flex: 0 0 auto;
   gap: 0.65rem;
 }
@@ -209,7 +210,6 @@
 
 .learning-import h2,
 .learning-import p,
-.learning-library h2,
 .series-panel h2 {
   margin-block: 0;
 }
@@ -261,6 +261,20 @@ select {
   gap: 1rem;
 }
 
+/* 资源卡排布：视口 ≥1280px（80rem）固定两列，以下单列。
+   两档都必须显式 minmax(0,1fr)——隐式 auto 轨道会被 nowrap 长标题
+   撑到 max-content，整卡横向溢出容器。 */
+.learning-list {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 80rem) {
+  .learning-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .list-more {
   width: 100%;
   margin-top: 1rem;
@@ -273,6 +287,12 @@ select {
     border-color var(--motion-base) var(--ease-out),
     box-shadow var(--motion-base) var(--ease-out),
     transform var(--motion-base) var(--ease-out);
+}
+
+/* 资源卡密度高于常规卡片：字号与行距整体收紧 */
+.learning-card {
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 /* 与清单卡片一致的悬停浮起反馈 */
@@ -289,15 +309,78 @@ select {
   gap: 1rem;
 }
 
-.learning-card__header h2 {
-  margin: 0.65rem 0 0;
-  font-size: 1.3rem;
+.learning-card__header > div {
+  min-width: 0;
+}
+
+.learning-card__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.learning-card__meta {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.learning-card__title-row {
+  display: flex;
+  margin-top: 0.35rem;
+  gap: 0.5rem;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.learning-card__title-row h2 {
+  /* 撑满可用宽度：短标题时渐隐区落在空白处不显形，长标题才在右缘淡出 */
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 1.1rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  /* 长标题尾部渐隐；完整内容由原生 title 悬浮提示 */
+  mask-image: linear-gradient(to right, #000 calc(100% - 2em), transparent);
+}
+
+.learning-card__rename {
+  flex: none;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.learning-card__rename:hover:not(:disabled) {
+  color: var(--accent-ink);
+  text-decoration: underline;
+}
+
+.learning-card__rename-form {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.learning-card__rename-form input {
+  flex: 1 1 12rem;
+  width: auto;
+  min-width: 0;
 }
 
 .learning-card__header p,
 .learning-card__header a,
-.resume-note,
-.part-copy small {
+.resume-note {
   color: var(--muted);
 }
 
@@ -331,25 +414,15 @@ select {
   justify-content: space-between;
 }
 
-.part-copy {
-  display: grid;
-  min-width: 0;
-  flex: 1;
-  gap: 0.35rem;
-}
-
-.part-copy progress {
-  width: 100%;
-  accent-color: var(--accent-ink);
-}
-
 .current-part {
   display: grid;
-  margin: 1rem 0;
-  padding: 1rem;
+  margin: 0.9rem 0;
+  padding: 0.85rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  gap: 0.55rem;
+  /* 显式钳制列宽：nowrap 的分P标题会把 auto 轨道撑到 max-content 而横向溢出 */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.4rem;
   background: var(--accent-soft);
 }
 
@@ -358,6 +431,20 @@ select {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.current-part__heading strong {
+  /* 撑满时间左侧的可用宽度：放得下就不渐隐，放不下才在时间前淡出 */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  mask-image: linear-gradient(to right, #000 calc(100% - 2em), transparent);
+}
+
+.current-part__heading > span {
+  flex: none;
 }
 
 .current-part__heading span,
@@ -370,25 +457,18 @@ select {
   accent-color: var(--accent-ink);
 }
 
-.part-progress-form {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.part-progress-form input {
-  width: 6rem;
-}
-
 .learning-actions {
   display: grid;
   padding-top: 0.75rem;
   border-top: 1px solid var(--line);
-  grid-template-columns: repeat(4, minmax(9rem, max-content));
+  /* 单列卡：四钮一行，同步信息经 grid-column 1/-1 落在按钮下方 */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
 }
 
 .learning-actions .learning-action-button {
-  min-width: 9rem;
+  width: 100%;
+  min-width: 0;
   border-color: var(--line);
   color: var(--ink);
   background: var(--paper);
@@ -420,6 +500,30 @@ select {
   margin: 0;
   grid-column: 1 / -1;
   color: var(--muted);
+}
+
+/* 双列卡：按钮二二两行，右侧整列预留给同步信息，出现时是一个信息框。
+   信息列不进显式模板（自动排布只填前两列），由状态元素的显式定位
+   触发隐式列；状态槽位固定，点击同步不会引起按钮重排。 */
+@media (min-width: 80rem) {
+  .learning-actions {
+    /* 按钮列以标签不换行为下限；信息列上限换预算给按钮 */
+    grid-template-columns: repeat(2, minmax(min-content, 1fr));
+    grid-auto-columns: minmax(7rem, 10rem);
+  }
+
+  .learning-actions .resource-sync-status {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    display: flex;
+    align-items: center;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--canvas);
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
 }
 
 .series-panel {
@@ -529,11 +633,6 @@ select {
   .learning-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .learning-actions .learning-action-button {
-    width: 100%;
-    min-width: 0;
-  }
 }
 
 @media (max-width: 900px) {
@@ -555,27 +654,23 @@ select {
 @media (max-width: 560px) {
   .learning-page__header {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .learning-tools-menu {
-    width: 100%;
     margin-left: 0;
+    justify-content: flex-start;
   }
 
   .learning-tools-toggle {
-    align-self: stretch;
+    flex: 1 1 auto;
   }
   .learning-card__header,
   .series-summary__header,
   .part-list > li,
-  .series-items > li,
-  .part-progress-form {
+  .series-items > li {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .part-progress-form input {
-    width: 100%;
   }
 
   .bili-sync-panel__header,

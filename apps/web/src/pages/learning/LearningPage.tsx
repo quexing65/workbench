@@ -87,11 +87,7 @@ export function LearningPage() {
   return (
     <section className="page learning-page">
       <header className="page-header learning-page__header">
-        <div>
-          <p className="eyebrow">持续前进</p>
-          <h1>学习</h1>
-          <p className="page-lead">整理 B站课程、分P与真实观看进度，随时从上次的位置继续。</p>
-        </div>
+        <h1>学习</h1>
         <div className="learning-tools-menu">
           <button
             type="button"
@@ -192,11 +188,7 @@ export function LearningPage() {
 
       {resources.data && series.data && (
         <div className="learning-sections">
-          <section className="learning-library" aria-labelledby="library-title">
-            <div>
-              <p className="eyebrow">学习库</p>
-              <h2 id="library-title">资源与进度</h2>
-            </div>
+          <section className="learning-library" aria-label="学习库">
             <div className="learning-toolbar" aria-label="资源筛选与排序">
               <label>
                 系列
