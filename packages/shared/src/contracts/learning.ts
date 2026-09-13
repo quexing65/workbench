@@ -43,6 +43,7 @@ export const learningResourceSchema = z.object({
   externalId: z.string().regex(/^BV[0-9A-Za-z]{10}$/u),
   sourceUrl: z.string().url(),
   title: z.string().min(1).max(500),
+  customTitle: z.string().min(1).max(500).nullable(),
   coverUrl: z.string().url().nullable(),
   uploaderName: z.string().max(500).nullable(),
   durationSeconds: z.number().int().nonnegative(),
@@ -101,6 +102,15 @@ export const resetLearningProgressSchema = z
     confirmation: z.literal('reset-learning'),
   })
   .strict();
+
+// null 表示清除自定义标题、恢复 B站原标题
+export const renameLearningResourceSchema = z
+  .object({
+    revision: z.number().int().positive(),
+    customTitle: z.string().trim().min(1, '标题不能为空').max(500).nullable(),
+  })
+  .strict();
+export type RenameLearningResourceInput = z.infer<typeof renameLearningResourceSchema>;
 
 export const learningSeriesSchema = z.object({
   id: z.string().uuid(),

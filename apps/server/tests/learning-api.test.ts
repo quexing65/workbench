@@ -9,6 +9,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { openWorkbenchDatabase, type WorkbenchDatabase } from '../src/db/connection.js';
 import { ExternalServiceError } from '../src/modules/domain-errors.js';
 import type { BiliClient, BiliVideoMetadata } from '../src/modules/learning/bili-client.js';
+import { LearningResourceRepository } from '../src/modules/learning/resource-repository.js';
+import { LearningSeriesRepository } from '../src/modules/learning/series-repository.js';
+import { LearningService } from '../src/modules/learning/service.js';
 import { allowedHost, makeApp } from './test-app.js';
 
 let database: WorkbenchDatabase;
@@ -18,6 +21,16 @@ let bili: BiliClient;
 
 function api() {
   return request(makeApp({ database: database.connection, biliClient: bili }));
+}
+
+// 观察写入已无 HTTP 入口（手动录入退役，同步走 service 内部调用），
+// 行为用例直接装配 service 层驱动。
+function makeLearningService(timeZone?: string) {
+  return new LearningService(
+    new LearningResourceRepository(database.connection, timeZone),
+    new LearningSeriesRepository(database.connection),
+    bili,
+  );
 }
 
 function read(path: string) {
@@ -167,37 +180,16 @@ describe('learning resource API', () => {
     ).toEqual({ count: 2 });
   });
 
-  it('observes monotonic furthest, movable resume and clamps duration changes', async () => {
-    const resource = (await importResource()).body.resource;
-    const partA = resource.parts[0];
-    const partB = resource.parts[1];
-    const path = `/api/v1/learning/resources/${resource.id}/progress/observe`;
-    const forward = await write('post', path).send({
+  it('clamps observed progress when a resync shrinks part durations', async () => {
+    const service = makeLearningService();
+    const imported = await importResource();
+    const partB = imported.body.resource.parts[1];
+    service.observe(String(imported.body.resource.id), {
       revision: 1,
       partId: partB.id,
       seconds: 150,
       observedAt: '2026-08-13T12:00:00.000Z',
-      source: 'manual',
-    });
-    expect(forward.body.progress).toMatchObject({
-      furthestPartId: partB.id,
-      resumePartId: partB.id,
-      resumeSeconds: 150,
-      revision: 2,
-    });
-    const replay = await write('post', path).send({
-      revision: 2,
-      partId: partA.id,
-      seconds: 20,
-      observedAt: '2026-08-13T13:00:00.000Z',
-      source: 'manual',
-    });
-    expect(replay.body.progress).toMatchObject({
-      furthestPartId: partB.id,
-      furthestSeconds: 150,
-      resumePartId: partA.id,
-      resumeSeconds: 20,
-      revision: 3,
+      source: 'sync',
     });
 
     metadata = {
@@ -210,22 +202,22 @@ describe('learning resource API', () => {
   });
 
   it('records watched seconds on the business day of the configured time zone', async () => {
-    const resource = (await importResource()).body.resource;
-    const partId = String(resource.parts[0].id);
-    const path = `/api/v1/learning/resources/${resource.id}/progress/observe`;
-    const observe = (timeZone: string, revision: number, observedAt: string, seconds: number) =>
-      request(makeApp({ database: database.connection, biliClient: bili, timeZone }))
-        .post(path)
-        .set('Host', allowedHost)
-        .set('Origin', 'http://127.0.0.1:5190')
-        .set('X-Workbench-Request', '1')
-        .set('Content-Type', 'application/json')
-        .send({ revision, partId, seconds, observedAt, source: 'manual' });
+    const imported = await importResource();
+    const resourceId = String(imported.body.resource.id);
+    const partId = String(imported.body.resource.parts[0].id);
+    const observeIn = (timeZone: string, revision: number, observedAt: string, seconds: number) =>
+      makeLearningService(timeZone).observe(resourceId, {
+        revision,
+        partId,
+        seconds,
+        observedAt,
+        source: 'sync',
+      });
 
     // 第一次观察只建立基线，第二次与第三次各贡献 10 秒实际观看。
-    await observe('Asia/Shanghai', 1, '2026-08-13T20:00:00.000Z', 10);
-    await observe('Asia/Shanghai', 2, '2026-08-13T20:30:00.000Z', 20);
-    await observe('America/New_York', 3, '2026-08-13T21:00:00.000Z', 30);
+    await observeIn('Asia/Shanghai', 1, '2026-08-13T20:00:00.000Z', 10);
+    await observeIn('Asia/Shanghai', 2, '2026-08-13T20:30:00.000Z', 20);
+    await observeIn('America/New_York', 3, '2026-08-13T21:00:00.000Z', 30);
 
     expect(
       database.connection
@@ -238,14 +230,16 @@ describe('learning resource API', () => {
   });
 
   it('clears progress pointers when a previously observed part disappears', async () => {
-    const resource = (await importResource()).body.resource;
-    const removedPart = resource.parts[1];
-    await write('post', `/api/v1/learning/resources/${resource.id}/progress/observe`).send({
+    const service = makeLearningService();
+    const imported = await importResource();
+    const resourceId = String(imported.body.resource.id);
+    const removedPart = imported.body.resource.parts[1];
+    service.observe(resourceId, {
       revision: 1,
       partId: removedPart.id,
       seconds: 50,
       observedAt: '2026-08-13T12:00:00.000Z',
-      source: 'manual',
+      source: 'sync',
     });
     metadata = { ...metadata, parts: [metadata.parts[0]!] };
     const refreshed = await importResource();
@@ -258,7 +252,7 @@ describe('learning resource API', () => {
     });
   });
 
-  it('requires confirmations and blocks old observations after reset', async () => {
+  it('requires explicit confirmations for complete and reset', async () => {
     const resource = (await importResource()).body.resource;
     const base = `/api/v1/learning/resources/${resource.id}/progress`;
     expect((await write('post', `${base}/complete`).send({ revision: 1 })).status).toBe(400);
@@ -277,51 +271,10 @@ describe('learning resource API', () => {
       furthestPartId: null,
       revision: 3,
     });
-    const old = await write('post', `${base}/observe`).send({
-      revision: 3,
-      partId: resource.parts[0].id,
-      seconds: 80,
-      observedAt: '2026-08-13T00:00:00.000Z',
-      source: 'sync',
-    });
-    expect(old.body.progress).toMatchObject({ revision: 3, resumePartId: null });
   });
 
-  it('validates ownership, bounds, conflicts, revisions and soft deletion', async () => {
+  it('soft deletes a resource through If-Match and hides it afterwards', async () => {
     const resource = (await importResource()).body.resource;
-    const path = `/api/v1/learning/resources/${resource.id}/progress/observe`;
-    const base = { revision: 1, observedAt: '2026-08-13T12:00:00.000Z', source: 'manual' };
-    expect(
-      (
-        await write('post', path).send({
-          ...base,
-          partId: '99999999-9999-4999-8999-999999999999',
-          seconds: 1,
-        })
-      ).status,
-    ).toBe(400);
-    expect(
-      (await write('post', path).send({ ...base, partId: resource.parts[0].id, seconds: 101 }))
-        .status,
-    ).toBe(400);
-    await write('post', path).send({ ...base, partId: resource.parts[0].id, seconds: 10 });
-    const conflict = await write('post', path).send({
-      ...base,
-      revision: 2,
-      partId: resource.parts[0].id,
-      seconds: 11,
-    });
-    expect(conflict.body.error.code).toBe('OBSERVATION_CONFLICT');
-    expect(
-      (
-        await write('post', path).send({
-          ...base,
-          partId: resource.parts[0].id,
-          seconds: 12,
-          observedAt: '2026-08-13T13:00:00.000Z',
-        })
-      ).status,
-    ).toBe(409);
     expect(
       (await write('delete', `/api/v1/learning/resources/${resource.id}`).set('If-Match', '"1"'))
         .status,
@@ -369,5 +322,65 @@ describe('learning resource API', () => {
     });
     expect(task.status).toBe(201);
     expect((await read('/api/v1/tasks?date=2026-08-13')).body.items).toHaveLength(1);
+  });
+});
+
+describe('learning resource rename API', () => {
+  // 复用模块级 beforeEach/afterEach 的数据库与 B站 mock，仅在用例内替换元数据。
+
+  it('renames with revision guard, clears back to null and survives metadata resync', async () => {
+    metadata = {
+      bvid: 'BV1ab411c7de',
+      sourceUrl: 'https://www.bilibili.com/video/BV1ab411c7de/',
+      title: '很长的原始标题',
+      coverUrl: null,
+      uploaderName: '讲师',
+      durationSeconds: 300,
+      parts: [{ cid: 'cid-a', partNumber: 1, title: '第一讲', durationSeconds: 300 }],
+    };
+    const resource = (await importResource()).body.resource;
+    const path = `/api/v1/learning/resources/${resource.id}/title`;
+
+    const renamed = await write('patch', path).send({ revision: 1, customTitle: '我的数据库课' });
+    expect(renamed.status).toBe(200);
+    expect(renamed.body).toMatchObject({ customTitle: '我的数据库课', title: '很长的原始标题' });
+    expect(renamed.body.revision).toBe(2);
+
+    const conflict = await write('patch', path).send({ revision: 1, customTitle: '过期改名' });
+    expect(conflict.status).toBe(409);
+
+    const cleared = await write('patch', path).send({ revision: 2, customTitle: null });
+    expect(cleared.status).toBe(200);
+    expect(cleared.body).toMatchObject({ customTitle: null, revision: 3 });
+
+    // 重新拉取元数据同步标题：原始标题更新，且不触碰已设置的自定义标题
+    await write('patch', path).send({ revision: 3, customTitle: '我的数据库课' });
+    metadata = { ...metadata, title: '很长的原始标题（第二季）' };
+    const resynced = await importResource();
+    expect(resynced.body.resource).toMatchObject({
+      title: '很长的原始标题（第二季）',
+      customTitle: '我的数据库课',
+    });
+  });
+
+  it('rejects blanks, oversized titles, unknown fields and unknown resources', async () => {
+    const resource = (await importResource()).body.resource;
+    const path = `/api/v1/learning/resources/${resource.id}/title`;
+    expect((await write('patch', path).send({ revision: 1, customTitle: '' })).status).toBe(400);
+    expect((await write('patch', path).send({ revision: 1, customTitle: '   ' })).status).toBe(400);
+    expect(
+      (await write('patch', path).send({ revision: 1, customTitle: 'x'.repeat(501) })).status,
+    ).toBe(400);
+    expect(
+      (await write('patch', path).send({ revision: 1, customTitle: '可以', extra: 1 })).status,
+    ).toBe(400);
+    expect(
+      (
+        await write(
+          'patch',
+          '/api/v1/learning/resources/99999999-9999-4999-8999-999999999999/title',
+        ).send({ revision: 1, customTitle: '不存在' })
+      ).status,
+    ).toBe(404);
   });
 });

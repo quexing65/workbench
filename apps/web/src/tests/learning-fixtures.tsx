@@ -16,6 +16,7 @@ export function resource(overrides: Partial<LearningResource> = {}): LearningRes
     externalId: 'BV1AB411C7DE',
     sourceUrl: 'https://www.bilibili.com/video/BV1AB411C7DE/',
     title: '安全测试课程',
+    customTitle: null,
     coverUrl: null,
     uploaderName: '测试作者',
     durationSeconds: 180,

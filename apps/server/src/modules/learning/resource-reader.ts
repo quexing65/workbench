@@ -12,6 +12,7 @@ interface ResourceRow {
   external_id: string;
   source_url: string;
   title: string;
+  custom_title: string | null;
   cover_url: string | null;
   uploader_name: string | null;
   duration_seconds: number;
@@ -105,7 +106,7 @@ export class LearningResourceReader {
   public find(id: string): LearningResource | undefined {
     const row = this.database
       .prepare(
-        `SELECT id, external_id, source_url, title, cover_url, uploader_name,
+        `SELECT id, external_id, source_url, title, custom_title, cover_url, uploader_name,
                 duration_seconds, revision
          FROM learning_resources
          WHERE id = ? AND deleted_at_ms IS NULL AND external_id IS NOT NULL`,
@@ -121,6 +122,7 @@ export class LearningResourceReader {
       externalId: row.external_id,
       sourceUrl: row.source_url,
       title: row.title,
+      customTitle: row.custom_title,
       coverUrl: row.cover_url,
       uploaderName: row.uploader_name,
       durationSeconds: row.duration_seconds,

@@ -7,6 +7,7 @@ import {
   type LearningImportResult,
   type LearningResource,
   type ObserveLearningProgressInput,
+  type RenameLearningResourceInput,
 } from '@workbench/shared';
 
 import {
@@ -135,6 +136,14 @@ export class LearningService {
     const current = this.required(id);
     if (current.progress.revision !== revision) throw new RevisionConflictError(current);
     const updated = this.resources.manualProgress(id, revision, action, this.now());
+    if (updated === undefined) throw new RevisionConflictError(this.required(id));
+    return updated;
+  }
+
+  public rename(id: string, input: RenameLearningResourceInput): LearningResource {
+    const current = this.required(id);
+    if (current.revision !== input.revision) throw new RevisionConflictError(current);
+    const updated = this.resources.rename(id, input.revision, input.customTitle, this.now());
     if (updated === undefined) throw new RevisionConflictError(this.required(id));
     return updated;
   }

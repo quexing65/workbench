@@ -5,7 +5,7 @@ import {
   learningSeriesListResponseSchema,
   learningSeriesSchema,
   type ImportLearningResourceInput,
-  type ObserveLearningProgressInput,
+  type RenameLearningResourceInput,
   type ReplaceLearningSeriesItemsInput,
   type UpdateLearningSeriesInput,
 } from '@workbench/shared';
@@ -26,13 +26,6 @@ export function importLearningResource(input: ImportLearningResourceInput) {
   });
 }
 
-export function observeLearningProgress(id: string, input: ObserveLearningProgressInput) {
-  return apiRequest(`/api/v1/learning/resources/${id}/progress/observe`, learningResourceSchema, {
-    method: 'POST',
-    body: input,
-  });
-}
-
 export function completeLearningProgress(id: string, revision: number) {
   return apiRequest(`/api/v1/learning/resources/${id}/progress/complete`, learningResourceSchema, {
     method: 'POST',
@@ -44,6 +37,13 @@ export function resetLearningProgress(id: string, revision: number) {
   return apiRequest(`/api/v1/learning/resources/${id}/progress/reset`, learningResourceSchema, {
     method: 'POST',
     body: { revision, confirmation: 'reset-learning' },
+  });
+}
+
+export function renameLearningResource(id: string, input: RenameLearningResourceInput) {
+  return apiRequest(`/api/v1/learning/resources/${id}/title`, learningResourceSchema, {
+    method: 'PATCH',
+    body: input,
   });
 }
 

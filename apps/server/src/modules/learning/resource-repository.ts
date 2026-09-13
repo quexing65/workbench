@@ -83,6 +83,22 @@ export class LearningResourceRepository {
     return this.progress.manualProgress(resourceId, revision, action, now);
   }
 
+  public rename(
+    id: string,
+    expectedRevision: number,
+    customTitle: string | null,
+    now: number,
+  ): LearningResource | undefined {
+    const result = this.database
+      .prepare(
+        `UPDATE learning_resources SET custom_title = ?, updated_at_ms = ?, revision = revision + 1
+         WHERE id = ? AND deleted_at_ms IS NULL AND revision = ?`,
+      )
+      .run(customTitle, now, id, expectedRevision);
+    if (result.changes === 0) return undefined;
+    return this.reader.findRequired(id);
+  }
+
   public softDelete(id: string, revision: number, now: number): boolean {
     return withTransaction(this.database, () => {
       const result = this.database

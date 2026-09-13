@@ -2,7 +2,7 @@ import {
   completeLearningProgressSchema,
   createLearningSeriesSchema,
   importLearningResourceSchema,
-  observeLearningProgressSchema,
+  renameLearningResourceSchema,
   replaceLearningSeriesItemsSchema,
   resetLearningProgressSchema,
   updateLearningSeriesSchema,
@@ -41,17 +41,17 @@ export function createLearningRouter(
     setRevisionEtag(response, resource.revision);
     response.json(resource);
   });
+  router.patch('/resources/:id/title', (request, response) => {
+    const resource = learning.rename(
+      parseUuidParameter(request),
+      parseInput(renameLearningResourceSchema, request.body),
+    );
+    setRevisionEtag(response, resource.revision);
+    response.json(resource);
+  });
   router.delete('/resources/:id', (request, response) => {
     learning.delete(parseUuidParameter(request), parseIfMatch(request));
     response.status(204).end();
-  });
-  router.post('/resources/:id/progress/observe', (request, response) => {
-    const resource = learning.observe(
-      parseUuidParameter(request),
-      parseInput(observeLearningProgressSchema, request.body),
-    );
-    setRevisionEtag(response, resource.progress.revision);
-    response.json(resource);
   });
   router.post('/resources/:id/progress/complete', (request, response) => {
     const input = parseInput(completeLearningProgressSchema, request.body);

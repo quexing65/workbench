@@ -5,6 +5,7 @@ import {
   importLearningResourceSchema,
   learningImportResultSchema,
   learningResourceSchema,
+  renameLearningResourceSchema,
   replaceLearningSeriesItemsSchema,
   resetLearningProgressSchema,
 } from './learning.js';
@@ -14,6 +15,7 @@ const resource = {
   externalId: 'BV1AB411C7DE',
   sourceUrl: 'https://www.bilibili.com/video/BV1AB411C7DE/',
   title: '测试课程',
+  customTitle: null,
   coverUrl: null,
   uploaderName: null,
   durationSeconds: 60,
@@ -90,6 +92,24 @@ describe('learning contracts', () => {
         revision: 1,
         resourceIds: [resource.id, resource.id],
       }).success,
+    ).toBe(false);
+  });
+
+  it('accepts clearing or non-blank custom titles and rejects blanks', () => {
+    expect(renameLearningResourceSchema.safeParse({ revision: 1, customTitle: null }).success).toBe(
+      true,
+    );
+    expect(
+      renameLearningResourceSchema.safeParse({ revision: 1, customTitle: '  我的课  ' }).success,
+    ).toBe(true);
+    expect(renameLearningResourceSchema.safeParse({ revision: 1, customTitle: '' }).success).toBe(
+      false,
+    );
+    expect(
+      renameLearningResourceSchema.safeParse({ revision: 1, customTitle: '   ' }).success,
+    ).toBe(false);
+    expect(
+      renameLearningResourceSchema.safeParse({ revision: 1, customTitle: 'x'.repeat(501) }).success,
     ).toBe(false);
   });
 });

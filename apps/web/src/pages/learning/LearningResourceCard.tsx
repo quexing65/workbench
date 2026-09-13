@@ -1,25 +1,25 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import type { LearningResource } from '@workbench/shared';
 
 import { errorMessage, isRevisionConflict } from '../../shared/api/client';
 import {
   completeLearningProgress,
   deleteLearningResource,
-  observeLearningProgress,
+  renameLearningResource,
   resetLearningProgress,
 } from '../../shared/api/learning';
 import { queryKeys } from '../../shared/api/query-keys';
 import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { useToast } from '../../shared/ui/Toast';
-import { PartProgressForm } from './PartProgressForm';
 import { LearningResourceSync } from './LearningResourceSync';
 
 type Action =
-  | { readonly kind: 'observe'; readonly partId: string; readonly seconds: number }
+  | { readonly kind: 'rename'; readonly customTitle: string | null }
   | { readonly kind: 'complete' | 'reset' | 'delete' };
 
 const TOAST_BY_ACTION: Record<Action['kind'], string> = {
-  observe: '已记录进度',
+  rename: '已更新标题',
   complete: '已标记整项完成',
   reset: '已重置进度',
   delete: '已移除资源',
@@ -39,9 +39,30 @@ function percent(value: number, total: number): number {
   return Math.min(100, Math.round((value / total) * 100));
 }
 
+// 原生 title 悬浮提示只在文本真正被截断时挂上，放得下的标题不弹框。
+function useOverflowTooltip<T extends HTMLElement>(text: string) {
+  const ref = useRef<T | null>(null);
+  useEffect(() => {
+    const element = ref.current;
+    if (element === null) return;
+    const sync = () => {
+      if (element.scrollWidth > element.clientWidth + 1) element.setAttribute('title', text);
+      else element.removeAttribute('title');
+    };
+    sync();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(sync);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [text]);
+  return ref;
+}
+
 export function LearningResourceCard({ resource }: { readonly resource: LearningResource }) {
   const client = useQueryClient();
   const toast = useToast();
+  const [renaming, setRenaming] = useState(false);
+  const [draftTitle, setDraftTitle] = useState('');
   const refresh = async () => {
     await Promise.all([
       client.invalidateQueries({ queryKey: queryKeys.learningResources }),
@@ -52,13 +73,10 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
   const mutation = useMutation({
     mutationFn: async (action: Action): Promise<void> => {
       switch (action.kind) {
-        case 'observe':
-          await observeLearningProgress(resource.id, {
-            revision: resource.progress.revision,
-            partId: action.partId,
-            seconds: action.seconds,
-            observedAt: new Date().toISOString(),
-            source: 'manual',
+        case 'rename':
+          await renameLearningResource(resource.id, {
+            revision: resource.revision,
+            customTitle: action.customTitle,
           });
           return;
         case 'complete':
@@ -102,21 +120,94 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
   const resumeUrl = currentPart
     ? `${resource.sourceUrl.replace(/[?#].*$/u, '')}?p=${currentPart.partNumber}${currentSeconds > 5 ? `&t=${currentSeconds}` : ''}`
     : resource.sourceUrl;
+  const displayTitle = resource.customTitle ?? resource.title;
+  const currentHeading = currentPart
+    ? `当前观看：P${currentPart.partNumber} · ${currentPart.title}`
+    : '';
+  const titleRef = useOverflowTooltip<HTMLHeadingElement>(displayTitle);
+  const headingRef = useOverflowTooltip<HTMLDivElement>(currentHeading);
+
+  function startRename() {
+    setDraftTitle(displayTitle);
+    setRenaming(true);
+  }
+
+  function submitRename() {
+    const trimmed = draftTitle.trim();
+    if (trimmed === '') return;
+    mutation.mutate({ kind: 'rename', customTitle: trimmed });
+    setRenaming(false);
+  }
 
   return (
     <article className="learning-card">
       <header className="learning-card__header">
         <div>
-          <span
-            className={`status-pill${resource.progress.completed ? ' status-pill--completed' : ''}`}
-          >
-            {resource.progress.completed ? '已完成' : '学习中'}
-          </span>
-          <h2>{resource.title}</h2>
-          <p>
-            {resource.uploaderName ?? '未知 UP 主'} · {resource.parts.length} 个分P ·{' '}
-            {durationLabel(resource.durationSeconds)}
-          </p>
+          <div className="learning-card__meta-row">
+            <span
+              className={`status-pill${resource.progress.completed ? ' status-pill--completed' : ''}`}
+            >
+              {resource.progress.completed ? '已完成' : '学习中'}
+            </span>
+            <p className="learning-card__meta">
+              {resource.uploaderName ?? '未知 UP 主'} · {resource.parts.length} 个分P ·{' '}
+              {durationLabel(resource.durationSeconds)}
+            </p>
+          </div>
+          {renaming ? (
+            <form
+              className="learning-card__rename-form"
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') setRenaming(false);
+              }}
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitRename();
+              }}
+            >
+              <input
+                autoFocus
+                aria-label="自定义标题"
+                maxLength={500}
+                value={draftTitle}
+                onChange={(event) => setDraftTitle(event.target.value)}
+              />
+              <button disabled={mutation.isPending}>保存</button>
+              <button
+                type="button"
+                className="button-secondary"
+                disabled={mutation.isPending}
+                onClick={() => setRenaming(false)}
+              >
+                取消
+              </button>
+              {resource.customTitle !== null && (
+                <button
+                  type="button"
+                  className="button-secondary"
+                  disabled={mutation.isPending}
+                  onClick={() => {
+                    mutation.mutate({ kind: 'rename', customTitle: null });
+                    setRenaming(false);
+                  }}
+                >
+                  恢复原标题
+                </button>
+              )}
+            </form>
+          ) : (
+            <div className="learning-card__title-row">
+              <h2 ref={titleRef}>{displayTitle}</h2>
+              <button
+                type="button"
+                className="learning-card__rename"
+                aria-label={`重命名 ${displayTitle}`}
+                onClick={startRename}
+              >
+                重命名
+              </button>
+            </div>
+          )}
         </div>
         <a
           href={resumeUrl}
@@ -131,9 +222,7 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
       {currentPart ? (
         <div className="current-part" aria-label="当前观看进度">
           <div className="current-part__heading">
-            <strong>
-              当前观看：P{currentPart.partNumber} · {currentPart.title}
-            </strong>
+            <strong ref={headingRef}>{currentHeading}</strong>
             <span>
               {durationLabel(currentSeconds)} / {durationLabel(currentPart.durationSeconds)}（
               {currentPercent}%）
@@ -156,18 +245,6 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
             max={Math.max(resource.durationSeconds, 1)}
             value={overallWatchedSeconds}
           />
-          <div className="part-copy">
-            <PartProgressForm
-              key={currentPart.id}
-              partTitle={currentPart.title}
-              initialSeconds={currentSeconds}
-              durationSeconds={currentPart.durationSeconds}
-              pending={mutation.isPending}
-              onRecord={(secondsValue) =>
-                mutation.mutate({ kind: 'observe', partId: currentPart.id, seconds: secondsValue })
-              }
-            />
-          </div>
         </div>
       ) : null}
       <div className="button-row learning-actions">

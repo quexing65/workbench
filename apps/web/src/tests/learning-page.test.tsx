@@ -81,7 +81,7 @@ describe('learning center', () => {
     expect(screen.queryByLabelText('视频链接或 BV 号')).not.toBeInTheDocument();
   });
 
-  it('records progress, completes, resets and deletes with explicit confirmations', async () => {
+  it('completes, resets and deletes with explicit confirmations', async () => {
     let item: LearningResource | null = resource();
     const writes: string[] = [];
     vi.stubGlobal(
@@ -90,21 +90,6 @@ describe('learning center', () => {
         const target = requestPath(input);
         if (init?.method !== undefined && init.method !== 'GET') {
           writes.push(target);
-          if (target.endsWith('/observe')) {
-            const body = JSON.parse(String(init.body));
-            item = resource({
-              progress: {
-                ...resource().progress,
-                furthestPartId: firstPartId,
-                furthestSeconds: body.seconds,
-                resumePartId: firstPartId,
-                resumeSeconds: body.seconds,
-                lastObservedAt: body.observedAt,
-                revision: 2,
-              },
-            });
-            return json(item);
-          }
           if (target.endsWith('/complete')) {
             item = resource({ progress: { ...resource().progress, completed: true, revision: 2 } });
             return json(item);
@@ -122,9 +107,7 @@ describe('learning center', () => {
       }),
     );
     renderLearningPage();
-    fireEvent.change(await screen.findByLabelText('基础 看到位置'), { target: { value: '45' } });
-    fireEvent.click(screen.getAllByRole('button', { name: '记录进度' })[0]!);
-    await waitFor(() => expect(writes.some((value) => value.endsWith('/observe'))).toBe(true));
+    await screen.findByRole('heading', { name: '安全测试课程' });
 
     fireEvent.click(screen.getByRole('button', { name: '标记整项完成' }));
     fireEvent.click(
@@ -328,38 +311,6 @@ describe('learning center', () => {
     expect(screen.getByText('5:50 / 13:20（44%）')).toBeInTheDocument();
     expect(screen.getByRole('progressbar', { name: '本集观看进度' })).toHaveValue(40);
     expect(screen.getByRole('progressbar', { name: '合集总进度' })).toHaveValue(350);
-  });
-
-  it('accepts clock-format progress input and quick steps', async () => {
-    const writes: Array<Record<string, unknown>> = [];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        const target = requestPath(input);
-        if (init?.method === 'POST' && target.endsWith('/observe')) {
-          writes.push(JSON.parse(String(init.body)) as Record<string, unknown>);
-          return json(resource());
-        }
-        return json(target.endsWith('/series') ? { items: [] } : { items: [resource()] });
-      }),
-    );
-    renderLearningPage();
-    const input = await screen.findByLabelText('基础 看到位置');
-    expect(input).toHaveValue('0:00');
-
-    // 第一分P全长 60 秒：90 秒会被时长上限拒绝，45 秒合法。
-    fireEvent.change(input, { target: { value: '0:45' } });
-    fireEvent.click(screen.getAllByRole('button', { name: '记录进度' })[0]!);
-    await waitFor(() => expect(writes[0]).toMatchObject({ seconds: 45 }));
-
-    // +5 分钟被截到时长上限；「看到结尾」直达 1:00。
-    fireEvent.click(screen.getByRole('button', { name: '+5 分钟' }));
-    expect(input).toHaveValue('1:00');
-    fireEvent.change(input, { target: { value: '0:30' } });
-    fireEvent.click(screen.getByRole('button', { name: '看到结尾' }));
-    expect(input).toHaveValue('1:00');
-    fireEvent.change(input, { target: { value: '1:90' } });
-    expect(screen.getByText('格式应为 分:秒（如 12:30）或直接输入秒数。')).toBeInTheDocument();
   });
 
   it('filters the library by completion status', async () => {
