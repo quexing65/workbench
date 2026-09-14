@@ -10,3 +10,5 @@ credentials/
 backups/
 logs/
 EXECUTION_PLAN.md
+# 图标源文件为手工维护的矢量图，不经格式化
+apps/desktop/build/icon.svg
