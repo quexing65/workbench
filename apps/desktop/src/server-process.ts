@@ -19,7 +19,8 @@ export interface EmbeddedServerOptions {
 export interface EmbeddedServer {
   readonly host: string;
   readonly port: number;
-  stop(): void;
+  /** 关闭 HTTP server、数据库连接与数据目录锁；返回 Promise 以便调用方 await。 */
+  stop(): Promise<void>;
 }
 
 /**
@@ -79,13 +80,16 @@ export async function startEmbeddedServer(options: EmbeddedServerOptions): Promi
   return {
     host: config.host,
     port: config.port,
-    stop(): void {
+    async stop(): Promise<void> {
       if (stopped) {
         return;
       }
       stopped = true;
-      server.close();
+      // 先关连接再 close，让 server.close() 尽快完成而非等待 keep-alive 超时。
       server.closeAllConnections();
+      await new Promise<void>((resolve) => {
+        server.close(() => resolve());
+      });
       database.close();
       lock.release();
     },

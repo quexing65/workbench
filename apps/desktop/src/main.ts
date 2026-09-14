@@ -171,8 +171,10 @@ app.on('window-all-closed', () => {
   app.quit();
 });
 
-app.on('will-quit', () => {
-  server?.stop();
+app.on('will-quit', (event) => {
+  if (server === undefined) return;
+  event.preventDefault();
+  void server.stop().finally(() => app.exit(0));
 });
 
 void bootstrap();

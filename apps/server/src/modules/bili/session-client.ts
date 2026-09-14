@@ -72,8 +72,21 @@ export class BiliSessionHttpClient implements BiliSessionClient {
       const url = new URL('https://api.bilibili.com/x/v2/history');
       url.searchParams.set('pn', String(page));
       url.searchParams.set('ps', '100');
-      const parsed = historySchema.safeParse(await this.requestJson(url.toString(), sessdata));
-      if (!parsed.success) return this.getCursorHistory(sessdata, pages);
+      const raw = await this.requestJson(url.toString(), sessdata);
+      const parsed = historySchema.safeParse(raw);
+      if (!parsed.success) {
+        // legacy 接口返回非预期结构（已废弃/下线），降级到 cursor API。
+        // 但如果根本没拿到 code 字段，说明是真正的传输/解析错误，直接抛出。
+        if (
+          typeof raw === 'object' &&
+          raw !== null &&
+          'code' in raw &&
+          typeof (raw as { code: unknown }).code === 'number'
+        ) {
+          return this.getCursorHistory(sessdata, pages);
+        }
+        throw invalidResponse();
+      }
       if (parsed.data.code === -101) throw invalidCredential();
       if (parsed.data.code !== 0 && page === 1) {
         return this.getCursorHistory(sessdata, pages);

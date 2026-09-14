@@ -74,8 +74,8 @@ async function start(
   return server;
 }
 
-afterEach(() => {
-  for (const server of servers.splice(0)) server.stop();
+afterEach(async () => {
+  for (const server of servers.splice(0)) await server.stop();
   for (const directory of roots.splice(0)) rmSync(directory, { recursive: true, force: true });
   for (const key of Object.keys(process.env)) {
     if (!(key in savedEnvironment)) delete process.env[key];
@@ -101,7 +101,7 @@ describe('embedded desktop server', () => {
     const page = await fetch(`http://127.0.0.1:${port}/`);
     expect(await page.text()).toContain('desktop-shell');
 
-    server.stop();
+    await server.stop();
     expect(existsSync(join(directory, '.workbench.lock'))).toBe(false);
 
     // 锁已释放：同一数据目录可以再次启动。
@@ -115,7 +115,7 @@ describe('embedded desktop server', () => {
 
     await expect(start(directory, await freePort())).rejects.toThrow('already in use');
 
-    first.stop();
+    await first.stop();
   });
 
   it('releases the data directory when migrations cannot open', async () => {

@@ -54,7 +54,7 @@ function useOverflowTooltip<T extends HTMLElement>(text: string) {
     const observer = new ResizeObserver(sync);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [text]);
+  }, [text, ref]);
   return ref;
 }
 

@@ -31,7 +31,7 @@ export function parseUuidParameter(request: Request): string {
 
 export function parseIfMatch(request: Request): number {
   const value = request.header('if-match');
-  const match = value?.match(/^"([1-9][0-9]*)"$/u);
+  const match = value?.match(/^"([0-9]+)"$/u);
   if (match?.[1] === undefined) {
     throw new AppError(400, 'IF_MATCH_REQUIRED', 'If-Match 必须是当前 revision 的实体标签');
   }

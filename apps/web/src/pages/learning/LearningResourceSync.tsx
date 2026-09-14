@@ -8,6 +8,17 @@ import {
 } from '../../shared/api/bili-sync';
 import { queryKeys } from '../../shared/api/query-keys';
 
+// 同步完成后需要失效的查询键。组件卸载后轮询停止，useEffect 不再触发；
+// 这里通过 queryCache 全局订阅兜底：只要 run 变为终态就失效缓存，
+// 即使使用者在同步期间离开了学习页。
+const TERMINAL_STATUSES = ['succeeded', 'failed'] as const;
+
+function isTerminalStatus(
+  status: string | undefined,
+): status is (typeof TERMINAL_STATUSES)[number] {
+  return status !== undefined && (TERMINAL_STATUSES as readonly string[]).includes(status);
+}
+
 export function LearningResourceSync({
   resourceId,
   resourceTitle,
@@ -18,6 +29,27 @@ export function LearningResourceSync({
   const client = useQueryClient();
   const [runId, setRunId] = useState<string | null>(null);
   const refreshedRun = useRef<string | null>(null);
+
+  // 全局缓存订阅：即使本组件卸载、轮询停止，只要 sync run 查询缓存
+  // 更新为终态，就失效学习资源/系列/总览查询。
+  useEffect(() => {
+    return client.getQueryCache().subscribe((event) => {
+      if (event.type !== 'updated') return;
+      const data = event.query.state.data;
+      if (
+        data !== undefined &&
+        typeof data === 'object' &&
+        'status' in data &&
+        isTerminalStatus((data as { status: string }).status)
+      ) {
+        void Promise.all([
+          client.invalidateQueries({ queryKey: queryKeys.learningResources }),
+          client.invalidateQueries({ queryKey: queryKeys.learningSeries }),
+          client.invalidateQueries({ queryKey: ['overview'] }),
+        ]);
+      }
+    });
+  }, [client]);
   const credential = useQuery({
     queryKey: queryKeys.biliCredential,
     queryFn: ({ signal }) => getBiliCredentialStatus(signal),
