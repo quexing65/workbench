@@ -79,7 +79,13 @@ describe('BiliPassportHttpClient', () => {
           code: 0,
           message: '0',
           ttl: 1,
-          data: { url: '', refresh_token: 'scan-refresh-token', timestamp: 0, code: 0, message: '' },
+          data: {
+            url: '',
+            refresh_token: 'scan-refresh-token',
+            timestamp: 0,
+            code: 0,
+            message: '',
+          },
         },
         {
           headers: [
