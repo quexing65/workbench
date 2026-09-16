@@ -4,7 +4,41 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { BiliSyncPanel } from '../pages/learning/BiliSyncPanel';
 import { LearningResourceSync } from '../pages/learning/LearningResourceSync';
+import { QrLoginCard } from '../pages/learning/QrLoginCard';
+import { ToastProvider } from '../shared/ui/Toast';
 import { json, requestPath } from './learning-fixtures';
+
+const QR_IMAGE = 'data:image/png;base64,QUJDRA==';
+
+function renderQrCard(pollIntervalMs = 5) {
+  return render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <ToastProvider>
+        <QrLoginCard pollIntervalMs={pollIntervalMs} />
+      </ToastProvider>
+    </QueryClientProvider>,
+  );
+}
+
+function qrFetchMock(
+  statuses: Array<Record<string, unknown>>,
+  onStart?: () => void,
+): ReturnType<typeof vi.fn> {
+  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const target = requestPath(input);
+    if (target.endsWith('/credential/qr/start') && init?.method === 'POST') {
+      onStart?.();
+      return json({ qrImage: QR_IMAGE });
+    }
+    if (target.endsWith('/credential/qr/status')) {
+      const next = statuses.shift();
+      return json(next ?? { state: 'waiting' });
+    }
+    return json({});
+  });
+}
 
 function renderPanel() {
   return render(
@@ -235,5 +269,105 @@ describe('Bili connection and sync panel', () => {
     renderPanel();
     fireEvent.click(await screen.findByRole('button', { name: '从浏览器读取' }));
     expect(await screen.findByText('浏览器中没有可用的 B站登录态')).toBeInTheDocument();
+  });
+
+  it('offers qr login as the primary entry above browser reading', async () => {
+    vi.stubGlobal('fetch', qrFetchMock([{ state: 'waiting' }]));
+    renderPanel();
+    expect(screen.getByText('或从浏览器读取')).toBeInTheDocument();
+    const intro = screen.getByText('扫码登录', { selector: 'strong' });
+    expect(intro).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '扫码登录' }));
+    expect(await screen.findByRole('img', { name: 'B站登录二维码' })).toHaveAttribute(
+      'src',
+      QR_IMAGE,
+    );
+    expect(await screen.findByText('打开手机 B站 App 扫码登录')).toBeInTheDocument();
+  });
+});
+
+describe('B站 qr login card', () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it('walks through waiting, scanned and succeeded states', async () => {
+    vi.stubGlobal(
+      'fetch',
+      qrFetchMock([
+        { state: 'waiting' },
+        { state: 'scanned' },
+        {
+          state: 'succeeded',
+          credential: { present: true, valid: true, userLabel: '已连接' },
+        },
+      ]),
+    );
+    renderQrCard();
+    fireEvent.click(await screen.findByRole('button', { name: '扫码登录' }));
+    expect(await screen.findByText('已扫码，请在手机上确认')).toBeInTheDocument();
+    expect(await screen.findByText('已通过扫码连接 B站')).toBeInTheDocument();
+    // 成功后卡片回到待机入口。
+    expect(await screen.findByRole('button', { name: '扫码登录' })).toBeInTheDocument();
+  });
+
+  it('regenerates the qr code on expiry and pauses after five rounds', async () => {
+    const statuses: Array<Record<string, unknown>> = [];
+    for (let round = 0; round < 5; round += 1) {
+      statuses.push({ state: 'expired' }, { state: 'waiting' });
+    }
+    statuses.push({ state: 'expired' });
+    let starts = 0;
+    const fetcher = qrFetchMock(statuses, () => {
+      starts += 1;
+    });
+    vi.stubGlobal('fetch', fetcher);
+    renderQrCard();
+    fireEvent.click(await screen.findByRole('button', { name: '扫码登录' }));
+    expect(await screen.findByRole('button', { name: '刷新二维码' })).toBeInTheDocument();
+    expect(starts).toBe(6);
+
+    // 手动刷新会重置计数并重新开始。
+    fireEvent.click(screen.getByRole('button', { name: '刷新二维码' }));
+    await waitFor(() => expect(starts).toBe(7));
+  });
+
+  it('regenerates only once per expiry episode without cascading', async () => {
+    let starts = 0;
+    const fetcher = qrFetchMock([{ state: 'expired' }, { state: 'waiting' }], () => {
+      starts += 1;
+    });
+    vi.stubGlobal('fetch', fetcher);
+    renderQrCard();
+    fireEvent.click(await screen.findByRole('button', { name: '扫码登录' }));
+    // 初次生成 + 一次换码，且不会级联连发把用户正在扫的码换掉。
+    await waitFor(() => expect(starts).toBe(2));
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(starts).toBe(2);
+    expect(screen.queryByRole('button', { name: '刷新二维码' })).toBeNull();
+  });
+
+  it('stops polling once the login has succeeded', async () => {
+    const statuses: Array<Record<string, unknown>> = [
+      { state: 'waiting' },
+      {
+        state: 'succeeded',
+        credential: { present: true, valid: true, userLabel: '已连接' },
+      },
+    ];
+    const fetcher = qrFetchMock(statuses);
+    vi.stubGlobal('fetch', fetcher);
+    renderQrCard();
+    fireEvent.click(await screen.findByRole('button', { name: '扫码登录' }));
+    expect(await screen.findByText('已通过扫码连接 B站')).toBeInTheDocument();
+    const pollsBefore = fetcher.mock.calls.filter(([input]) =>
+      requestPath(input as RequestInfo | URL).endsWith('/credential/qr/status'),
+    ).length;
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const pollsAfter = fetcher.mock.calls.filter(([input]) =>
+      requestPath(input as RequestInfo | URL).endsWith('/credential/qr/status'),
+    ).length;
+    expect(pollsAfter).toBe(pollsBefore);
   });
 });

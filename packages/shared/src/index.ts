@@ -10,6 +10,9 @@ export type { BackupManifest } from './contracts/backups.js';
 export {
   biliBrowserSchema,
   biliCredentialStatusSchema,
+  biliQrLoginStartSchema,
+  biliQrLoginStateSchema,
+  biliQrLoginStatusSchema,
   fetchBiliCredentialSchema,
   learningSyncRunSchema,
   learningSyncStartResponseSchema,
@@ -19,6 +22,9 @@ export {
 export type {
   BiliBrowser,
   BiliCredentialStatus,
+  BiliQrLoginStartResponse,
+  BiliQrLoginState,
+  BiliQrLoginStatus,
   FetchBiliCredentialInput,
   LearningSyncRun,
   LearningSyncStartResponse,

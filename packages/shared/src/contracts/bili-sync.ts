@@ -33,6 +33,30 @@ export const fetchBiliCredentialSchema = z
   .strict();
 export type FetchBiliCredentialInput = z.infer<typeof fetchBiliCredentialSchema>;
 
+export const biliQrLoginStartSchema = z
+  .object({
+    qrImage: z.string().regex(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/u),
+  })
+  .strict();
+export type BiliQrLoginStartResponse = z.infer<typeof biliQrLoginStartSchema>;
+
+export const biliQrLoginStateSchema = z.enum([
+  'absent',
+  'waiting',
+  'scanned',
+  'expired',
+  'succeeded',
+]);
+export type BiliQrLoginState = z.infer<typeof biliQrLoginStateSchema>;
+
+export const biliQrLoginStatusSchema = z
+  .object({
+    state: biliQrLoginStateSchema,
+    credential: biliCredentialStatusSchema.optional(),
+  })
+  .strict();
+export type BiliQrLoginStatus = z.infer<typeof biliQrLoginStatusSchema>;
+
 export const startLearningSyncSchema = z
   .object({
     resourceId: z.string().uuid(),

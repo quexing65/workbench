@@ -1,5 +1,7 @@
 import {
   biliCredentialStatusSchema,
+  biliQrLoginStartSchema,
+  biliQrLoginStatusSchema,
   learningSyncRunSchema,
   learningSyncStartResponseSchema,
   type BiliBrowser,
@@ -10,6 +12,18 @@ import { apiRequest } from './client';
 
 export function getBiliCredentialStatus(signal?: AbortSignal) {
   return apiRequest('/api/v1/bili/credential/status', biliCredentialStatusSchema, {
+    ...(signal === undefined ? {} : { signal }),
+  });
+}
+
+export function startBiliQrLogin() {
+  return apiRequest('/api/v1/bili/credential/qr/start', biliQrLoginStartSchema, {
+    method: 'POST',
+  });
+}
+
+export function getBiliQrLoginStatus(signal?: AbortSignal) {
+  return apiRequest('/api/v1/bili/credential/qr/status', biliQrLoginStatusSchema, {
     ...(signal === undefined ? {} : { signal }),
   });
 }

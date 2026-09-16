@@ -4,6 +4,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { createApp } from '../src/app.js';
 import type { ServerConfig } from '../src/config.js';
 import { createLogger } from '../src/http/logger.js';
+import type { BiliPassportClient } from '../src/modules/bili/passport-client.js';
 import type { BiliClient } from '../src/modules/learning/bili-client.js';
 import type { BiliSessionClient } from '../src/modules/bili/session-client.js';
 import type { BrowserCredentialAdapter } from '../src/modules/credentials/cdp-adapter.js';
@@ -29,6 +30,7 @@ export function makeApp(
     database?: DatabaseSync;
     biliClient?: BiliClient;
     biliSessionClient?: BiliSessionClient;
+    biliPassportClient?: BiliPassportClient;
     credentialStore?: BiliCredentialStore;
     browserCredentialAdapter?: BrowserCredentialAdapter;
     mountBackups?: boolean;
@@ -55,6 +57,9 @@ export function makeApp(
     ...(options.biliSessionClient === undefined
       ? {}
       : { biliSessionClient: options.biliSessionClient }),
+    ...(options.biliPassportClient === undefined
+      ? {}
+      : { biliPassportClient: options.biliPassportClient }),
     ...(options.credentialStore === undefined ? {} : { credentialStore: options.credentialStore }),
     ...(options.browserCredentialAdapter === undefined
       ? {}

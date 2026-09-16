@@ -17,5 +17,11 @@ export function createCredentialRouter(service: CredentialService): Router {
   router.post('/fetch', async (request, response) => {
     response.json(await service.fetch(parseInput(fetchBiliCredentialSchema, request.body)));
   });
+  router.post('/qr/start', async (_request, response) => {
+    response.json(await service.startQrLogin());
+  });
+  router.get('/qr/status', async (_request, response) => {
+    response.json(await service.pollQrLogin());
+  });
   return router;
 }

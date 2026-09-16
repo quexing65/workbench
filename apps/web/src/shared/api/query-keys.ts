@@ -9,5 +9,6 @@ export const queryKeys = {
   learningResources: ['learningResources'] as const,
   learningSeries: ['learningSeries'] as const,
   biliCredential: ['biliCredential'] as const,
+  biliQrLogin: ['biliQrLogin'] as const,
   learningSync: (runId: string) => ['learningSync', { runId }] as const,
 };

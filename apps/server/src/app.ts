@@ -17,6 +17,7 @@ import type { HealthDatabaseState } from './modules/health/route.js';
 import { InsightRepository } from './modules/insights/repository.js';
 import { createInsightRouter } from './modules/insights/route.js';
 import { InsightService } from './modules/insights/service.js';
+import { BiliPassportHttpClient, type BiliPassportClient } from './modules/bili/passport-client.js';
 import { BiliSessionHttpClient, type BiliSessionClient } from './modules/bili/session-client.js';
 import {
   LocalCdpAdapter,
@@ -56,6 +57,7 @@ export interface CreateAppOptions {
   readonly logger?: Logger;
   readonly biliClient?: BiliClient;
   readonly biliSessionClient?: BiliSessionClient;
+  readonly biliPassportClient?: BiliPassportClient;
   readonly credentialStore?: BiliCredentialStore;
   readonly browserCredentialAdapter?: BrowserCredentialAdapter;
   readonly mountBackups?: boolean;
@@ -73,10 +75,17 @@ export function createApp(options: CreateAppOptions): Express {
   const app = express();
   const logger = options.logger ?? createLogger(config);
   const sessionClient = options.biliSessionClient ?? new BiliSessionHttpClient();
+  const passportClient = options.biliPassportClient ?? new BiliPassportHttpClient();
   const credentialStore =
     options.credentialStore ??
     new DpapiCredentialStore(join(config.dataDirectory, 'credentials', 'credentials.bin'));
   const browserAdapter = options.browserCredentialAdapter ?? new LocalCdpAdapter();
+  const credentialService = new CredentialService(
+    credentialStore,
+    sessionClient,
+    browserAdapter,
+    passportClient,
+  );
 
   app.disable('x-powered-by');
   app.set('trust proxy', false);
@@ -91,10 +100,7 @@ export function createApp(options: CreateAppOptions): Express {
     '/health',
     createHealthRouter(config, options.database, options.version ?? SERVER_VERSION),
   );
-  api.use(
-    '/bili/credential',
-    createCredentialRouter(new CredentialService(credentialStore, sessionClient, browserAdapter)),
-  );
+  api.use('/bili/credential', createCredentialRouter(credentialService));
   if (options.database.connection !== undefined) {
     const tasks = new TaskRepository(options.database.connection);
     const learningResources = new LearningResourceRepository(
@@ -142,6 +148,7 @@ export function createApp(options: CreateAppOptions): Express {
       sessionClient,
       learningResources,
       learningService,
+      () => credentialService.ensureFreshCredential(),
     );
     api.use('/learning/sync', createLearningSyncRouter(syncService));
     api.use(

@@ -9,6 +9,7 @@ import {
   ResourceNotFoundError,
 } from '../domain-errors.js';
 import type { BiliCredentialStore } from '../credentials/store.js';
+import { decodeRecord } from '../credentials/credential-record.js';
 import { isSafeCredential } from '../credentials/service.js';
 import type { LearningResourceRepository } from '../learning/resource-repository.js';
 import type { LearningService } from '../learning/service.js';
@@ -25,6 +26,7 @@ export class LearningSyncService {
     private readonly bili: BiliSessionClient,
     private readonly resources: LearningResourceRepository,
     private readonly learning: LearningService,
+    private readonly ensureFresh: () => Promise<void> = async () => undefined,
     private readonly now: () => number = Date.now,
     private readonly createId: () => string = randomUUID,
     private readonly schedule: Scheduler = queueMicrotask,
@@ -42,8 +44,11 @@ export class LearningSyncService {
       if (resource === undefined) {
         throw new ResourceNotFoundError('LEARNING_RESOURCE_NOT_FOUND', '学习资源不存在');
       }
-      const sessdata = await this.credentials.read();
-      if (sessdata === null) {
+      // 续期要发生在读取凭据之前：换发后旧 SESSDATA 会被作废，先读拿到的是即将失效的值。
+      await this.ensureFresh();
+      const record = decodeRecord(await this.credentials.read());
+      const sessdata = record?.sessdata;
+      if (sessdata === undefined) {
         throw new DomainConflictError('BILI_CREDENTIAL_REQUIRED', '请先连接 B站登录态');
       }
       if (!isSafeCredential(sessdata)) {

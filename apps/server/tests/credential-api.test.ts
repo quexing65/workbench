@@ -6,6 +6,7 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { BiliSessionClient } from '../src/modules/bili/session-client.js';
+import type { BiliPassportClient } from '../src/modules/bili/passport-client.js';
 import type { BrowserCredentialAdapter } from '../src/modules/credentials/cdp-adapter.js';
 import { MemoryCredentialStore } from '../src/modules/credentials/store.js';
 import { openWorkbenchDatabase } from '../src/db/connection.js';
@@ -29,11 +30,20 @@ const bili: BiliSessionClient = {
 const browser: BrowserCredentialAdapter = {
   fetch: vi.fn().mockResolvedValue({ kind: 'restartRequired' }),
 };
+const passport: BiliPassportClient = {
+  createQrSession: vi.fn(),
+  pollQrSession: vi.fn(),
+  getCookieInfo: vi.fn(),
+  getRefreshCsrf: vi.fn(),
+  refreshCookie: vi.fn(),
+  confirmRefresh: vi.fn(),
+};
 function app() {
   return makeApp({
     credentialStore: store,
     biliSessionClient: bili,
     browserCredentialAdapter: browser,
+    biliPassportClient: passport,
   });
 }
 
@@ -84,6 +94,75 @@ describe('credential API', () => {
       .set('Content-Type', 'application/json');
     expect(response.status).toBe(204);
     expect(await store.has()).toBe(false);
+  });
+
+  it('starts a qr login session and reports scan progress without secrets', async () => {
+    await store.clear();
+    const application = app();
+    vi.mocked(passport.createQrSession).mockResolvedValue({
+      url: 'https://account.bilibili.com/scan?qrcode_key=api-key',
+      key: 'api-key',
+    });
+    vi.mocked(passport.pollQrSession).mockResolvedValue({ state: 'waiting' });
+
+    const start = await request(application)
+      .post('/api/v1/bili/credential/qr/start')
+      .set('Host', allowedHost)
+      .set('Origin', 'http://127.0.0.1:5190')
+      .set('X-Workbench-Request', '1')
+      .set('Content-Type', 'application/json')
+      .send();
+    expect(start.status).toBe(200);
+    expect(start.body.qrImage).toMatch(/^data:image\/png;base64,/u);
+
+    const waiting = await request(application)
+      .get('/api/v1/bili/credential/qr/status')
+      .set('Host', allowedHost);
+    expect(waiting.status).toBe(200);
+    expect(waiting.body).toEqual({ state: 'waiting' });
+  });
+
+  it('completes a qr login and never echoes credential material', async () => {
+    await store.clear();
+    const application = app();
+    const sessdata = 'api-qr-sessdata-sentinel';
+    const refreshToken = 'api-qr-refresh-sentinel';
+    vi.mocked(passport.createQrSession).mockResolvedValue({
+      url: 'https://account.bilibili.com/scan',
+      key: 'api-key',
+    });
+    vi.mocked(passport.pollQrSession).mockResolvedValue({
+      state: 'succeeded',
+      login: { sessdata, biliJct: 'api-jct', dedeUserId: null, refreshToken },
+    });
+    await request(application)
+      .post('/api/v1/bili/credential/qr/start')
+      .set('Host', allowedHost)
+      .set('Origin', 'http://127.0.0.1:5190')
+      .set('X-Workbench-Request', '1')
+      .set('Content-Type', 'application/json')
+      .send();
+
+    const response = await request(application)
+      .get('/api/v1/bili/credential/qr/status')
+      .set('Host', allowedHost);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      state: 'succeeded',
+      credential: { present: true, valid: true, userLabel: '已连接' },
+    });
+    expect(JSON.stringify(response.body)).not.toContain(sessdata);
+    expect(JSON.stringify(response.body)).not.toContain(refreshToken);
+    expect(await store.read()).toContain(refreshToken);
+  });
+
+  it('reports absent when no qr session is active', async () => {
+    await store.clear();
+    const response = await request(app())
+      .get('/api/v1/bili/credential/qr/status')
+      .set('Host', allowedHost);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ state: 'absent' });
   });
 
   it('keeps credential material out of API responses, logs and SQLite', async () => {

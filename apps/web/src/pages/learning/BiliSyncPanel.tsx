@@ -9,6 +9,7 @@ import {
 import { queryKeys } from '../../shared/api/query-keys';
 import { useToast } from '../../shared/ui/Toast';
 import { BrowserCredentialFetch } from './BrowserCredentialFetch';
+import { QrLoginCard } from './QrLoginCard';
 
 export function BiliSyncPanel() {
   const client = useQueryClient();
@@ -52,6 +53,8 @@ export function BiliSyncPanel() {
         </p>
       </div>
 
+      <QrLoginCard />
+      <p className="credential-divider">或从浏览器读取</p>
       <BrowserCredentialFetch />
       <p className="credential-divider">或手工录入</p>
       <div className="credential-section">
