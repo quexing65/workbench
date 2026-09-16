@@ -2,11 +2,11 @@
 
 ## 当前阶段
 
-- 阶段：8（完成）；此后为常规迭代，当前版本 **v1.8.2**（2026-09-14 已发布：
-  <https://github.com/quexing65/workbench/releases/tag/v1.8.2>）。
+- 阶段：8（完成）；此后为常规迭代，当前版本 **v1.9.0**（2026-09-16 已发布：
+  <https://github.com/quexing65/workbench/releases/tag/v1.9.0>）。
 - 状态：已完成。工程实现、自动验收、远程 CI、桌面分发、并行使用与用户确认均通过；
   30 天旧项目保留期已由用户于 2026-08-21 主动声明取消，旧项目可自行处置。
-- 最后更新：2026-09-14
+- 最后更新：2026-09-16
 
 ## v1.4.0 之后的加固改动（2026-09-10，v1.5.0 已发布）
 
@@ -147,7 +147,7 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
 
 ## 未完成项
 
-- 阶段 8 全部完成；v1.0.0 于 2026-08-21 上线，此后迭代至 v1.8.2（2026-09-14 发布）。
+- 阶段 8 全部完成；v1.0.0 于 2026-08-21 上线，此后迭代至 v1.9.0（2026-09-16 发布）。
 - v1.5.0 已按 `docs/operations/OPERATIONS.md`「桌面应用发布」完成：main CI 全绿（run
   `34381406550`）→ tag `v1.5.0` 打在 `bff2ba9` → Release 流水线 `34381954138` 构建
   NSIS/便携版 → 草稿审阅后正式发布 → 已在 `docs/operations/RELEASES.md` 登记校验和。
@@ -181,6 +181,11 @@ backup/performance/restore tests、shared backup contract、Web backup API/UI、
   `29dc67e` → Release 流水线 `34811340798` 构建 NSIS/便携版并生成草稿 → 核对校验和
   与 CI 附件 digest 一致 → 草稿补写变更摘要与校验和表后正式发布 → 已在
   `docs/operations/RELEASES.md` 登记校验和。
+- v1.9.0 为B站扫码登录与登录态自动续期的功能版（含弱网轮询补试、假过期防护、防级联
+  换码、成功素材双通道提取，以及学习卡同步消息拆断按钮行的布局修复），同样按「桌面
+  应用发布」流程完成：main CI 全绿（run `35092127487`）→ tag `v1.9.0` 打在
+  `b39720d` → Release 流水线 `35092570405` 构建 NSIS/便携版并生成草稿 → 草稿补写
+  变更摘要与校验和表后正式发布 → 已在 `docs/operations/RELEASES.md` 登记校验和。
 - 旧项目（Personal-Workbench / Personl-Workbench-qoder）由用户 quexing65 主动声明
   取消 30 天保留期，可由用户自行处置。
 
