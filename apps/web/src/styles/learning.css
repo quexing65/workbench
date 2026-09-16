@@ -539,6 +539,10 @@ select {
 .resource-sync-status {
   margin: 0;
   grid-column: 1 / -1;
+  /* 消息在 DOM 里位于同步按钮之后、其余按钮之前，会把自动排布的
+     按钮行拆断；order 将其排到末尾，按钮先填满整行，消息落在下方。
+     宽屏布局为显式定位，不受 order 影响。 */
+  order: 1;
   color: var(--muted);
 }
 
@@ -669,7 +673,9 @@ select {
   }
 }
 
-@media (max-width: 820px) {
+/* 四个按钮的标签不换行，一行约需 430px 内容宽；700px 以下一行放不下，
+   降级为二二两行，同步信息仍经 grid-column 1/-1 显示在按钮下方。 */
+@media (max-width: 700px) {
   .learning-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
