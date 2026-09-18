@@ -130,11 +130,7 @@ export class LearningSyncService {
     }
   }
 
-  private async executeAll(
-    id: string,
-    pages: number,
-    sessdata: string,
-  ): Promise<void> {
+  private async executeAll(id: string, pages: number, sessdata: string): Promise<void> {
     try {
       this.runs.markRunning(id, this.now());
       const history = await this.bili.getHistory(sessdata, pages);
@@ -143,9 +139,7 @@ export class LearningSyncService {
       for (const resource of allResources) {
         const matching =
           resource.biliSeasonId === null
-            ? history.filter(
-                (obs) => obs.bvid.toLowerCase() === resource.externalId.toLowerCase(),
-              )
+            ? history.filter((obs) => obs.bvid.toLowerCase() === resource.externalId.toLowerCase())
             : history.filter((obs) =>
                 resource.parts.some(
                   (part) => part.episodeBvid?.toLowerCase() === obs.bvid.toLowerCase(),
