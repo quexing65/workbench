@@ -25,10 +25,10 @@ major；阶段 8 验收通过、正式切换完成后升 1.0。
 - 变更基线：commit `543ebb6`（chore: 升至 v1.11.0）；tag `v1.11.0` 打在 `1b35013`（CI 全绿点）
 - GitHub Release：<https://github.com/quexing65/workbench/releases/tag/v1.11.0>
 
-| 产物                                  | SHA-256           |
-| ------------------------------------- | ----------------- |
-| PersonalWorkbench-Setup-1.11.0.exe    | （CI 构建后回填） |
-| PersonalWorkbench-Portable-1.11.0.exe | （CI 构建后回填） |
+| 产物                                  | SHA-256                                                            |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| PersonalWorkbench-Setup-1.11.0.exe    | `d2c15d4758bb9f2a78c4975ae460b623e9026d0ed74119dd55ca418483d82eaf` |
+| PersonalWorkbench-Portable-1.11.0.exe | `63d184c02e338296a2d150e4c94af70089cafb6eaf69c75fe26a7b715cdf2e07` |
 
 注意：NSIS 打包非确定性（内嵌时间戳），同代码重新构建字节会不同；本版由 tag 触发的 CI
 构建，校验和以 GitHub Release 附件及其 `SHA256SUMS.txt` 为准。
