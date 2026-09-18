@@ -21,10 +21,10 @@ major；阶段 8 验收通过、正式切换完成后升 1.0。
 - 变更基线：commit `eb4b27d`（chore: 升至 v1.10.0）；tag `v1.10.0` 打在 `d1bbec5`（CI 全绿点）
 - GitHub Release：<https://github.com/quexing65/workbench/releases/tag/v1.10.0>
 
-| 产物                                 | SHA-256                                                            |
-| ------------------------------------ | ------------------------------------------------------------------ |
-| PersonalWorkbench-Setup-1.10.0.exe   | `95a31803584fef930d2b5f68ee50775f26e4ad5cb7426f241f9fa6c2cf19f891` |
-| PersonalWorkbench-Portable-1.10.0.exe| `aa6591e87cfa8fe2296ad3bbbcdad166d6eced23691493fc3a23283569002d26` |
+| 产物                                  | SHA-256                                                            |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| PersonalWorkbench-Setup-1.10.0.exe    | `95a31803584fef930d2b5f68ee50775f26e4ad5cb7426f241f9fa6c2cf19f891` |
+| PersonalWorkbench-Portable-1.10.0.exe | `aa6591e87cfa8fe2296ad3bbbcdad166d6eced23691493fc3a23283569002d26` |
 
 注意：NSIS 打包非确定性（内嵌时间戳），同代码重新构建字节会不同；本版由 tag 触发的 CI
 构建，校验和以 GitHub Release 附件及其 `SHA256SUMS.txt` 为准。
