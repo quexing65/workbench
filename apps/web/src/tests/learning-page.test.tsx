@@ -81,6 +81,99 @@ describe('learning center', () => {
     expect(screen.queryByLabelText('视频链接或 BV 号')).not.toBeInTheDocument();
   });
 
+  it('prompts for a detected season and imports it as a single card', async () => {
+    const posts: Array<{ path: string; body: unknown }> = [];
+    let items: LearningResource[] = [];
+    const seasonPreview = {
+      seasonId: 636182,
+      title: '合集课程',
+      episodeCount: 3,
+      totalDurationSeconds: 3600,
+    };
+    const seasonResource = resource({
+      title: '合集课程',
+      durationSeconds: 3600,
+      biliSeasonId: 636182,
+      parts: [
+        {
+          id: firstPartId,
+          externalPartId: '901',
+          partNumber: 1,
+          title: '第一集',
+          durationSeconds: 1200,
+          episodeBvid: 'BV1ab411c7de',
+          progress: null,
+          revision: 1,
+        },
+        {
+          id: '77777777-7777-4777-8777-777777777777',
+          externalPartId: '902',
+          partNumber: 2,
+          title: '第二集',
+          durationSeconds: 2400,
+          episodeBvid: 'BV1xy411c7fg',
+          progress: null,
+          revision: 1,
+        },
+      ],
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const target = requestPath(input);
+        if (init?.method === 'POST') {
+          posts.push({ path: target, body: JSON.parse(String(init.body)) });
+          if (target.endsWith('/resources/season')) {
+            items = [seasonResource];
+            return json({ season: seasonPreview, resource: seasonResource }, 201);
+          }
+          items = [resource()];
+          return json({ kind: 'resource', resource: items[0], season: seasonPreview }, 201);
+        }
+        return json(target.endsWith('/series') ? { items: [] } : { items });
+      }),
+    );
+    renderLearningPage();
+    fireEvent.click(screen.getByRole('button', { name: '导入 B站学习资源' }));
+    fireEvent.change(screen.getByLabelText('视频链接或 BV 号'), {
+      target: { value: 'BV1AB411C7DE' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '导入资源' }));
+
+    expect(
+      await screen.findByText(/该视频属于合集《合集课程》，共 3 个视频 · 总时长 1:00:00。/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '导入整个合集' }));
+    await waitFor(() =>
+      expect(posts.some(({ path }) => path.endsWith('/resources/season'))).toBe(true),
+    );
+    expect(posts.find(({ path }) => path.endsWith('/resources/season'))?.body).toEqual({
+      bvid: 'BV1AB411C7DE',
+    });
+    // 合集只呈现为一张卡片，标出合集身份与分集数
+    expect(await screen.findByRole('heading', { name: '合集课程' })).toBeInTheDocument();
+    expect(screen.getByText(/合集 · 2 个分集 · 1:00:00/)).toBeInTheDocument();
+    expect(screen.getByText('当前观看：第1集 · 第一集')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText(/该视频属于合集/)).not.toBeInTheDocument());
+  });
+
+  it('shows series totals with duration and completion in the series panel', async () => {
+    const item = resource({
+      progress: { ...resource().progress, completed: true },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) =>
+        json(requestPath(input).endsWith('/series') ? { items: [series()] } : { items: [item] }),
+      ),
+    );
+    renderLearningPage();
+    await screen.findByRole('heading', { name: '安全测试课程' });
+    fireEvent.click(screen.getByRole('button', { name: '学习系列' }));
+
+    expect(await screen.findByText('1 项资源 · 总时长 3:00 · 已完成 1/1')).toBeInTheDocument();
+  });
+
   it('completes, resets and deletes with explicit confirmations', async () => {
     let item: LearningResource | null = resource();
     const writes: string[] = [];

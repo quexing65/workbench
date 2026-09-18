@@ -30,7 +30,7 @@ describe('Workbench SQLite foundation', () => {
     const database = openWorkbenchDatabase({ dataDirectory: root });
 
     try {
-      expect(database.schemaVersion).toBe(6);
+      expect(database.schemaVersion).toBe(8);
       expect(database.migrations.applied).toEqual([
         '0001-initial',
         '0002-source-contributions',
@@ -38,6 +38,8 @@ describe('Workbench SQLite foundation', () => {
         '0004-watched-seconds',
         '0005-task-expired-status',
         '0006-resource-custom-title',
+        '0007-learning-series-bili-season',
+        '0008-season-as-resource',
       ]);
       expect(readDatabasePragmas(database.connection)).toEqual({
         foreignKeys: 1,

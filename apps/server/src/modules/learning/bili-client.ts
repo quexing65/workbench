@@ -8,6 +8,23 @@ interface BiliPartMetadata {
   readonly partNumber: number;
   readonly title: string;
   readonly durationSeconds: number;
+  /** 合集分集各自的 BV 号；普通视频分P不携带（与资源同 BV）。 */
+  readonly episodeBvid?: string | null;
+}
+
+export interface BiliSeasonEpisode {
+  readonly bvid: string;
+  readonly title: string;
+  readonly coverUrl: string | null;
+  readonly uploaderName: string | null;
+  readonly durationSeconds: number;
+  readonly parts: readonly BiliPartMetadata[];
+}
+
+export interface BiliSeason {
+  readonly seasonId: number;
+  readonly title: string;
+  readonly episodes: readonly BiliSeasonEpisode[];
 }
 
 export interface BiliVideoMetadata {
@@ -18,6 +35,8 @@ export interface BiliVideoMetadata {
   readonly uploaderName: string | null;
   readonly durationSeconds: number;
   readonly parts: readonly BiliPartMetadata[];
+  /** 所属合集；仅导入时透出，不持久化。解析失败时为 null，不影响单视频导入。 */
+  readonly season: BiliSeason | null;
 }
 
 export interface BiliClient {
@@ -32,6 +51,58 @@ const pageSchema = z.object({
   duration: z.number().int().nonnegative(),
 });
 
+// B站 ugc_season：episodes[].duration 顶层字段恒为 null，时长取 arc.duration（整集）
+// 与 pages[].duration（分P）；一次 view 请求即可拿到合集全部元数据。
+// 每集、每个分区独立容错：单集畸形只丢弃该集，整个合集仍可导入。
+const seasonEpisodeSchema = z.object({
+  bvid: z.string().regex(/^BV[0-9A-Za-z]{10}$/u),
+  title: z.string().trim().min(1).max(500),
+  arc: z.object({
+    pic: z.string().optional(),
+    duration: z.number().int().nonnegative(),
+    author: z.object({ name: z.string().max(500) }).optional(),
+  }),
+  pages: z.array(pageSchema).min(1),
+});
+
+const seasonSectionSchema = z.object({
+  episodes: z.array(seasonEpisodeSchema.nullable().catch(null)),
+});
+
+const seasonSchema = z
+  .object({
+    id: z.number().int().positive(),
+    title: z.string().trim().min(1).max(500),
+    sections: z.array(seasonSectionSchema.nullable().catch(null)).min(1),
+  })
+  .transform((season): BiliSeason => ({
+    seasonId: season.id,
+    title: season.title,
+    episodes: season.sections
+      .filter((section): section is z.infer<typeof seasonSectionSchema> => section !== null)
+      .flatMap((section) =>
+        section.episodes.filter((episode): episode is z.infer<typeof seasonEpisodeSchema> => {
+          if (episode === null) return false;
+          const cids = new Set(episode.pages.map(({ cid }) => cid));
+          const numbers = new Set(episode.pages.map(({ page }) => page));
+          return cids.size === episode.pages.length && numbers.size === episode.pages.length;
+        }),
+      )
+      .map((episode) => ({
+        bvid: episode.bvid,
+        title: episode.title,
+        coverUrl: secureUrl(episode.arc.pic ?? ''),
+        uploaderName: episode.arc.author?.name ?? null,
+        durationSeconds: episode.arc.duration,
+        parts: episode.pages.map((page) => ({
+          cid: page.cid,
+          partNumber: page.page,
+          title: page.part,
+          durationSeconds: page.duration,
+        })),
+      })),
+  }));
+
 const apiSchema = z.object({
   code: z.number().int(),
   data: z
@@ -43,6 +114,8 @@ const apiSchema = z.object({
       duration: z.number().int().nonnegative(),
       owner: z.object({ name: z.string().max(500) }).optional(),
       pages: z.array(pageSchema).optional(),
+      // 合集是增强信息：畸形时 catch 为 null，绝不阻塞单视频导入主流程
+      ugc_season: seasonSchema.nullish().catch(null),
     })
     .optional(),
 });
@@ -146,6 +219,12 @@ export class BiliHttpClient implements BiliClient {
     ) {
       throw new ExternalServiceError('BILI_INVALID_RESPONSE', 'B站返回了重复分P');
     }
+    const season =
+      data.ugc_season === undefined || data.ugc_season === null
+        ? null
+        : data.ugc_season.episodes.length === 0
+          ? null
+          : data.ugc_season;
     return {
       bvid: data.bvid,
       sourceUrl: `https://www.bilibili.com/video/${data.bvid}/`,
@@ -154,6 +233,7 @@ export class BiliHttpClient implements BiliClient {
       uploaderName: data.owner?.name ?? null,
       durationSeconds: data.duration,
       parts,
+      season,
     };
   }
 

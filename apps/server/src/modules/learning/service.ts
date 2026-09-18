@@ -1,8 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import {
+  epochMillisecondsToIso,
   LearningObservationConflictError,
   mergeLearningObservation,
   normalizeBiliUrl,
+  type BiliSeasonImportResult,
+  type BiliSeasonPreview,
   type ImportLearningResourceInput,
   type LearningImportResult,
   type LearningResource,
@@ -17,9 +20,36 @@ import {
   ResourceNotFoundError,
   RevisionConflictError,
 } from '../domain-errors.js';
-import type { BiliClient } from './bili-client.js';
+import type { BiliClient, BiliSeason, BiliVideoMetadata } from './bili-client.js';
 import type { LearningResourceRepository } from './resource-repository.js';
 import type { LearningSeriesRepository } from './series-repository.js';
+
+// 合集分集数上限，防止异常响应撑爆导入
+const MAX_SEASON_EPISODES = 500;
+
+function toSeasonPreview(season: BiliSeason): BiliSeasonPreview {
+  return {
+    seasonId: season.seasonId,
+    title: season.title,
+    episodeCount: season.episodes.length,
+    totalDurationSeconds: season.episodes.reduce(
+      (total, episode) => total + episode.durationSeconds,
+      0,
+    ),
+  };
+}
+
+/** 与卡片同一口径：furthest 之前分P时长和 + furthestSeconds；已完成取整项时长。 */
+function overallWatchedSeconds(resource: LearningResource): number {
+  if (resource.progress.completed) return resource.durationSeconds;
+  const furthestIndex = resource.parts.findIndex(
+    (part) => part.id === resource.progress.furthestPartId,
+  );
+  const watchedBefore = resource.parts
+    .slice(0, Math.max(furthestIndex, 0))
+    .reduce((sum, part) => sum + part.durationSeconds, 0);
+  return watchedBefore + resource.progress.furthestSeconds;
+}
 
 export class LearningService {
   public constructor(
@@ -86,7 +116,94 @@ export class LearningService {
       }
     }
     this.resources.resolveUnresolved(requestedUrl, resource.id, this.now());
-    return { kind: 'resource', resource };
+    return {
+      kind: 'resource',
+      resource,
+      season: metadata.season === null ? null : toSeasonPreview(metadata.season),
+    };
+  }
+
+  /**
+   * 一键导入整个 B站合集：合集存为一个学习资源，每集存为一个分P，
+   * 一次 view 请求已带回全部分集元数据。按 bili_season_id 幂等，
+   * 重复导入刷新元数据；已单独导入的分集会被吸收（进度并入对应分集后移除）。
+   */
+  public async importSeason(bvid: string): Promise<BiliSeasonImportResult> {
+    const metadata = await this.bili.getVideo(bvid);
+    const season = metadata.season;
+    if (season === null) {
+      throw new DomainValidationError('bvid', '该视频不属于任何合集');
+    }
+    if (season.episodes.length > MAX_SEASON_EPISODES) {
+      throw new DomainValidationError('bvid', '合集分集数量超出上限');
+    }
+    const now = this.now();
+    const seasonMetadata: BiliVideoMetadata = {
+      bvid: metadata.bvid,
+      sourceUrl: metadata.sourceUrl,
+      title: season.title,
+      coverUrl: metadata.coverUrl ?? season.episodes[0]?.coverUrl ?? null,
+      uploaderName: metadata.uploaderName,
+      durationSeconds: season.episodes.reduce(
+        (total, episode) => total + episode.durationSeconds,
+        0,
+      ),
+      parts: season.episodes.map((episode, index) => ({
+        cid: episode.parts[0]!.cid,
+        partNumber: index + 1,
+        title: episode.title,
+        durationSeconds: episode.durationSeconds,
+        episodeBvid: episode.bvid,
+      })),
+      season: null,
+    };
+    if (this.resources.findByBiliSeasonId(season.seasonId) !== undefined) {
+      const resource = this.resources.upsertMetadata(
+        seasonMetadata,
+        now,
+        this.createId,
+        season.seasonId,
+      );
+      return { season: toSeasonPreview(season), resource };
+    }
+    // 先吸收后建卡：独立资源占着分集 BV（含入口视频），不先移除会撞 external_id 唯一索引。
+    // 各操作各自一个事务（withTransaction 不支持嵌套），顺序保证合集卡片先于进度迁移存在。
+    const absorbed: Array<{ bvid: string; seconds: number; observedAt: string }> = [];
+    for (const episode of season.episodes) {
+      const standalone = this.resources.findStandaloneByExternalId(episode.bvid);
+      if (standalone === undefined) continue;
+      absorbed.push({
+        bvid: episode.bvid,
+        seconds: overallWatchedSeconds(standalone),
+        observedAt: standalone.progress.lastObservedAt ?? epochMillisecondsToIso(now),
+      });
+      if (!this.resources.softDelete(standalone.id, standalone.revision, now)) {
+        throw new RevisionConflictError(standalone);
+      }
+    }
+    const resource = this.resources.upsertMetadata(
+      seasonMetadata,
+      now,
+      this.createId,
+      season.seasonId,
+    );
+    for (const entry of absorbed) {
+      if (entry.seconds <= 0) continue;
+      const part = resource.parts.find((item) => item.episodeBvid === entry.bvid);
+      const current = this.resources.find(resource.id);
+      if (part === undefined || current === undefined) continue;
+      this.observe(resource.id, {
+        revision: current.progress.revision,
+        partId: part.id,
+        seconds: Math.min(entry.seconds, part.durationSeconds),
+        observedAt: entry.observedAt,
+        source: 'import',
+      });
+    }
+    return {
+      season: toSeasonPreview(season),
+      resource: this.resources.find(resource.id) ?? resource,
+    };
   }
 
   public observe(id: string, input: ObserveLearningProgressInput): LearningResource {

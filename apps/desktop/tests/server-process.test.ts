@@ -94,7 +94,7 @@ describe('embedded desktop server', () => {
     const health = await fetch(`http://127.0.0.1:${port}/api/v1/health`);
     expect(health.status).toBe(200);
     const body: unknown = await health.json();
-    expect(body).toMatchObject({ status: 'ok', schemaVersion: 6, version: '9.9.9-test' });
+    expect(body).toMatchObject({ status: 'ok', schemaVersion: 8, version: '9.9.9-test' });
     // 正式运行不返回本机绝对数据目录。
     expect(body).not.toHaveProperty('dataDirectory');
 

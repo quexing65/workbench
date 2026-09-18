@@ -20,6 +20,7 @@ export function resource(overrides: Partial<LearningResource> = {}): LearningRes
     coverUrl: null,
     uploaderName: '测试作者',
     durationSeconds: 180,
+    biliSeasonId: null,
     parts: [
       {
         id: firstPartId,
@@ -27,6 +28,7 @@ export function resource(overrides: Partial<LearningResource> = {}): LearningRes
         partNumber: 1,
         title: '基础',
         durationSeconds: 60,
+        episodeBvid: null,
         progress: null,
         revision: 1,
       },
@@ -36,6 +38,7 @@ export function resource(overrides: Partial<LearningResource> = {}): LearningRes
         partNumber: 2,
         title: '进阶',
         durationSeconds: 120,
+        episodeBvid: null,
         progress: null,
         revision: 1,
       },
@@ -57,7 +60,13 @@ export function resource(overrides: Partial<LearningResource> = {}): LearningRes
 }
 
 export function series(overrides: Partial<LearningSeries> = {}): LearningSeries {
-  return { id: seriesId, name: '前端系列', resourceIds: [resourceId], revision: 1, ...overrides };
+  return {
+    id: seriesId,
+    name: '前端系列',
+    resourceIds: [resourceId],
+    revision: 1,
+    ...overrides,
+  };
 }
 
 export function json(value: unknown, status = 200): Response {

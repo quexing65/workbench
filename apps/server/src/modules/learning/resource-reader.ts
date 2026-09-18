@@ -16,6 +16,7 @@ interface ResourceRow {
   cover_url: string | null;
   uploader_name: string | null;
   duration_seconds: number;
+  bili_season_id: number | null;
   revision: number;
 }
 
@@ -37,6 +38,7 @@ interface PartRow {
   part_number: number;
   title: string;
   duration_seconds: number;
+  episode_bvid: string | null;
   revision: number;
   furthest_seconds: number | null;
   watched_seconds: number | null;
@@ -86,6 +88,7 @@ function mapPart(row: PartRow): LearningPart {
     partNumber: row.part_number,
     title: row.title,
     durationSeconds: row.duration_seconds,
+    episodeBvid: row.episode_bvid,
     progress: mapPartProgress(row),
     revision: row.revision,
   };
@@ -107,7 +110,7 @@ export class LearningResourceReader {
     const row = this.database
       .prepare(
         `SELECT id, external_id, source_url, title, custom_title, cover_url, uploader_name,
-                duration_seconds, revision
+                duration_seconds, bili_season_id, revision
          FROM learning_resources
          WHERE id = ? AND deleted_at_ms IS NULL AND external_id IS NOT NULL`,
       )
@@ -126,6 +129,7 @@ export class LearningResourceReader {
       coverUrl: row.cover_url,
       uploaderName: row.uploader_name,
       durationSeconds: row.duration_seconds,
+      biliSeasonId: row.bili_season_id,
       parts: this.partRows(id).map(mapPart),
       progress: mapProgress(progressRow),
       revision: row.revision,
@@ -142,6 +146,16 @@ export class LearningResourceReader {
     return row === undefined ? undefined : this.findRequired(row.id);
   }
 
+  public findByBiliSeasonId(seasonId: number): LearningResource | undefined {
+    const row = this.database
+      .prepare(
+        `SELECT id FROM learning_resources
+         WHERE platform = 'bilibili' AND bili_season_id = ? AND deleted_at_ms IS NULL`,
+      )
+      .get(seasonId) as { id: string } | undefined;
+    return row === undefined ? undefined : this.findRequired(row.id);
+  }
+
   public findRequired(id: string): LearningResource {
     const result = this.find(id);
     if (result === undefined) throw new Error('Learning resource write did not produce an entity');
@@ -151,7 +165,8 @@ export class LearningResourceReader {
   private partRows(resourceId: string): PartRow[] {
     return this.database
       .prepare(
-        `SELECT p.id, p.external_part_id, p.part_number, p.title, p.duration_seconds, p.revision,
+        `SELECT p.id, p.external_part_id, p.part_number, p.title, p.duration_seconds, p.episode_bvid,
+                p.revision,
                 progress.furthest_seconds, progress.watched_seconds, progress.last_seconds,
                 progress.completed, progress.completed_at_ms,
                 progress.last_observed_at_ms, progress.revision AS progress_revision

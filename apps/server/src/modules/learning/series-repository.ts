@@ -123,8 +123,8 @@ export class LearningSeriesRepository {
     return {
       id: row.id,
       name: row.name,
-      revision: row.revision,
       resourceIds: items.map(({ resource_id }) => resource_id),
+      revision: row.revision,
     };
   }
 

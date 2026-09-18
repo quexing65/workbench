@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import {
   getLearningResources,
   getLearningSeries,
+  importBiliSeason,
   importLearningResource,
 } from '../../shared/api/learning';
 import { queryKeys } from '../../shared/api/query-keys';
@@ -13,6 +14,7 @@ import { useAnimatedList } from '../../shared/ui/useAnimatedList';
 import {
   buildSeriesMembership,
   DEFAULT_LEARNING_VIEW,
+  durationLabel,
   filterLearningResources,
   type LearningViewOptions,
 } from './learning-filters';
@@ -30,6 +32,12 @@ export function LearningPage() {
   const [url, setUrl] = useState('');
   const [seriesId, setSeriesId] = useState('');
   const [unresolvedMessage, setUnresolvedMessage] = useState('');
+  const [seasonPrompt, setSeasonPrompt] = useState<{
+    bvid: string;
+    title: string;
+    episodeCount: number;
+    totalDurationSeconds: number;
+  } | null>(null);
   const [visibleResourceCount, setVisibleResourceCount] = useState(RESOURCE_BATCH_SIZE);
   const [view, setView] = useState<LearningViewOptions>(DEFAULT_LEARNING_VIEW);
   const client = useQueryClient();
@@ -52,6 +60,28 @@ export function LearningPage() {
       setUrl('');
       setUnresolvedMessage('');
       toast.push('已导入学习资源');
+      // 该视频已被导入为合集卡片时不再提示，避免重复引导
+      setSeasonPrompt(
+        result.season === null || result.resource.biliSeasonId !== null
+          ? null
+          : {
+              bvid: result.resource.externalId,
+              title: result.season.title,
+              episodeCount: result.season.episodeCount,
+              totalDurationSeconds: result.season.totalDurationSeconds,
+            },
+      );
+      await Promise.all([
+        client.invalidateQueries({ queryKey: queryKeys.learningResources }),
+        client.invalidateQueries({ queryKey: queryKeys.learningSeries }),
+      ]);
+    },
+  });
+  const importSeason = useMutation({
+    mutationFn: (bvid: string) => importBiliSeason({ bvid }),
+    onSuccess: async (result) => {
+      setSeasonPrompt(null);
+      toast.push(`已导入合集《${result.season.title}》共 ${result.season.episodeCount} 个视频`);
       await Promise.all([
         client.invalidateQueries({ queryKey: queryKeys.learningResources }),
         client.invalidateQueries({ queryKey: queryKeys.learningSeries }),
@@ -166,6 +196,35 @@ export function LearningPage() {
               {unresolvedMessage}
             </p>
           )}
+          {seasonPrompt ? (
+            <div role="status" className="season-prompt">
+              <p>
+                该视频属于合集《{seasonPrompt.title}》，共 {seasonPrompt.episodeCount} 个视频 ·
+                总时长 {durationLabel(seasonPrompt.totalDurationSeconds)}。
+              </p>
+              <div className="season-prompt__actions">
+                <button
+                  type="button"
+                  disabled={importSeason.isPending}
+                  onClick={() => importSeason.mutate(seasonPrompt.bvid)}
+                >
+                  {importSeason.isPending ? '正在导入合集…' : '导入整个合集'}
+                </button>
+                <button
+                  type="button"
+                  className="button-secondary"
+                  onClick={() => setSeasonPrompt(null)}
+                >
+                  暂不
+                </button>
+              </div>
+              {importSeason.error && (
+                <p role="alert" className="form-error">
+                  {importSeason.error.message}
+                </p>
+              )}
+            </div>
+          ) : null}
         </form>
       ) : null}
 

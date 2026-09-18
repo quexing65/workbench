@@ -43,6 +43,7 @@ beforeEach(() => {
     uploaderName: '脱敏讲师',
     durationSeconds: 300,
     parts: [{ cid: 'cid-a', partNumber: 1, title: '第一讲', durationSeconds: 300 }],
+    season: null,
   };
   bili = {
     resolveShortUrl: vi.fn(async (): Promise<NormalizedBiliUrl> => ({

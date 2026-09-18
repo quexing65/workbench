@@ -44,16 +44,48 @@ export class LearningResourceRepository {
     return this.reader.findByExternalId(externalId);
   }
 
+  public findByBiliSeasonId(seasonId: number): LearningResource | undefined {
+    return this.reader.findByBiliSeasonId(seasonId);
+  }
+
+  /** 只匹配普通视频资源；合集资源不占单视频导入的 bvid 匹配，避免被单视频元数据覆盖。 */
+  public findStandaloneByExternalId(externalId: string): LearningResource | undefined {
+    const row = this.database
+      .prepare(
+        `SELECT id FROM learning_resources
+         WHERE platform = 'bilibili' AND external_id = ?
+           AND bili_season_id IS NULL AND deleted_at_ms IS NULL`,
+      )
+      .get(externalId) as { id: string } | undefined;
+    return row === undefined ? undefined : this.reader.findRequired(row.id);
+  }
+
   public upsertMetadata(
     metadata: BiliVideoMetadata,
     now: number,
     createId: () => string,
+    biliSeasonId: number | null = null,
   ): LearningResource {
     return withTransaction(this.database, () => {
-      const existing = this.findByExternalId(metadata.bvid);
+      const existing =
+        biliSeasonId !== null
+          ? this.findByBiliSeasonId(biliSeasonId)
+          : this.findStandaloneByExternalId(metadata.bvid);
       const resourceId = existing?.id ?? createId();
-      if (existing === undefined) this.insertResource(resourceId, metadata, now);
-      else this.updateResource(resourceId, metadata, now);
+      if (existing === undefined) {
+        try {
+          this.insertResource(resourceId, metadata, now, biliSeasonId);
+        } catch (error) {
+          // 合集资源持有入口视频 BV：单视频导入撞 external_id 唯一索引时直接返回合集卡片
+          if (biliSeasonId === null && error instanceof Error && error.message.includes('UNIQUE')) {
+            const seasonResource = this.findByExternalId(metadata.bvid);
+            if (seasonResource !== undefined) return seasonResource;
+          }
+          throw error;
+        }
+      } else {
+        this.updateResource(resourceId, metadata, now);
+      }
       this.upsertParts(resourceId, metadata, now, createId);
       return this.reader.findRequired(resourceId);
     });
@@ -155,13 +187,18 @@ export class LearningResourceRepository {
       .run(resourceId, now, now, normalizedUrl);
   }
 
-  private insertResource(id: string, metadata: BiliVideoMetadata, now: number): void {
+  private insertResource(
+    id: string,
+    metadata: BiliVideoMetadata,
+    now: number,
+    biliSeasonId: number | null,
+  ): void {
     this.database
       .prepare(
         `INSERT INTO learning_resources
          (id, platform, external_id, source_url, title, cover_url, uploader_name,
-          duration_seconds, metadata_updated_at_ms, created_at_ms, updated_at_ms, revision)
-         VALUES (?, 'bilibili', ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+          duration_seconds, bili_season_id, metadata_updated_at_ms, created_at_ms, updated_at_ms, revision)
+         VALUES (?, 'bilibili', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       )
       .run(
         id,
@@ -171,6 +208,7 @@ export class LearningResourceRepository {
         metadata.coverUrl,
         metadata.uploaderName,
         metadata.durationSeconds,
+        biliSeasonId,
         now,
         now,
         now,
@@ -238,12 +276,13 @@ export class LearningResourceRepository {
          WHERE resource_id = ? AND external_part_id = ? AND deleted_at_ms IS NULL`,
       )
       .get(resourceId, item.cid) as { id: string } | undefined;
+    const episodeBvid = item.episodeBvid ?? null;
     if (existing === undefined) {
       this.database
         .prepare(
           `INSERT INTO learning_parts
            (id, resource_id, external_part_id, part_number, title, duration_seconds,
-            created_at_ms, updated_at_ms, revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+            episode_bvid, created_at_ms, updated_at_ms, revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         )
         .run(
           createId(),
@@ -252,6 +291,7 @@ export class LearningResourceRepository {
           item.partNumber,
           item.title,
           item.durationSeconds,
+          episodeBvid,
           now,
           now,
         );
@@ -259,10 +299,10 @@ export class LearningResourceRepository {
     }
     this.database
       .prepare(
-        `UPDATE learning_parts SET part_number = ?, title = ?, duration_seconds = ?,
+        `UPDATE learning_parts SET part_number = ?, title = ?, duration_seconds = ?, episode_bvid = ?,
          updated_at_ms = ?, revision = revision + 1 WHERE id = ?`,
       )
-      .run(item.partNumber, item.title, item.durationSeconds, now, existing.id);
+      .run(item.partNumber, item.title, item.durationSeconds, episodeBvid, now, existing.id);
     this.clampProgress(existing.id, item.durationSeconds, now);
   }
 

@@ -1,6 +1,7 @@
 import {
   completeLearningProgressSchema,
   createLearningSeriesSchema,
+  importBiliSeasonSchema,
   importLearningResourceSchema,
   renameLearningResourceSchema,
   replaceLearningSeriesItemsSchema,
@@ -34,6 +35,12 @@ export function createLearningRouter(
     const result = await learning.import(parseInput(importLearningResourceSchema, request.body));
     if (result.kind === 'resource') setRevisionEtag(response, result.resource.revision);
     response.status(result.kind === 'resource' ? 201 : 202).json(result);
+  });
+  router.post('/resources/season', async (request, response) => {
+    const input = parseInput(importBiliSeasonSchema, request.body);
+    const result = await learning.importSeason(input.bvid);
+    setRevisionEtag(response, result.resource.revision);
+    response.status(201).json(result);
   });
   router.get('/resources/:id', (request, response) => {
     const resource = learning.find(parseUuidParameter(request));

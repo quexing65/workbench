@@ -40,7 +40,7 @@ describe('migration CLI data directory lock', () => {
 
     const migrated = migrate(root);
     expect(migrated.status, migrated.stderr).toBe(0);
-    expect(JSON.parse(migrated.stdout)).toMatchObject({ schemaVersion: 6 });
+    expect(JSON.parse(migrated.stdout)).toMatchObject({ schemaVersion: 8 });
     // CLI 退出后释放锁，后续服务或恢复可以重新取得。
     expect(existsSync(join(root, '.workbench.lock'))).toBe(false);
     const reacquired = acquireDataDirectoryLock(root, 'server');

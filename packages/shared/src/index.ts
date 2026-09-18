@@ -32,8 +32,11 @@ export type {
   StartLearningSyncInput,
 } from './contracts/bili-sync.js';
 export {
+  biliSeasonImportResultSchema,
+  biliSeasonPreviewSchema,
   completeLearningProgressSchema,
   createLearningSeriesSchema,
+  importBiliSeasonSchema,
   importLearningResourceSchema,
   learningImportResultSchema,
   learningPartProgressSchema,
@@ -51,7 +54,10 @@ export {
   updateLearningSeriesSchema,
 } from './contracts/learning.js';
 export type {
+  BiliSeasonImportResult,
+  BiliSeasonPreview,
   CreateLearningSeriesInput,
+  ImportBiliSeasonInput,
   ImportLearningResourceInput,
   LearningImportResult,
   LearningPart,

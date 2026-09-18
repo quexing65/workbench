@@ -12,6 +12,7 @@ import {
 import { queryKeys } from '../../shared/api/query-keys';
 import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { useToast } from '../../shared/ui/Toast';
+import { durationLabel } from './learning-filters';
 import { LearningResourceSync } from './LearningResourceSync';
 
 type Action =
@@ -24,15 +25,6 @@ const TOAST_BY_ACTION: Record<Action['kind'], string> = {
   reset: '已重置进度',
   delete: '已移除资源',
 };
-
-function durationLabel(value: number): string {
-  const hours = Math.floor(value / 3600);
-  const minutes = Math.floor((value % 3600) / 60);
-  const seconds = value % 60;
-  return hours > 0
-    ? `${String(hours)}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-    : `${String(minutes)}:${String(seconds).padStart(2, '0')}`;
-}
 
 function percent(value: number, total: number): number {
   if (total <= 0) return 0;
@@ -117,12 +109,18 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
       : (currentPart.progress?.furthestSeconds ?? 0)
     : 0;
   const currentPercent = currentPart ? percent(currentSeconds, currentPart.durationSeconds) : 0;
+  // 合集分集是各自独立的 BV 页面，直接跳分集页；普通视频分P用 ?p=N 定位
   const resumeUrl = currentPart
-    ? `${resource.sourceUrl.replace(/[?#].*$/u, '')}?p=${currentPart.partNumber}${currentSeconds > 5 ? `&t=${currentSeconds}` : ''}`
+    ? currentPart.episodeBvid !== null
+      ? `https://www.bilibili.com/video/${currentPart.episodeBvid}/${currentSeconds > 5 ? `?t=${currentSeconds}` : ''}`
+      : `${resource.sourceUrl.replace(/[?#].*$/u, '')}?p=${currentPart.partNumber}${currentSeconds > 5 ? `&t=${currentSeconds}` : ''}`
     : resource.sourceUrl;
   const displayTitle = resource.customTitle ?? resource.title;
+  const isSeason = resource.biliSeasonId !== null;
   const currentHeading = currentPart
-    ? `当前观看：P${currentPart.partNumber} · ${currentPart.title}`
+    ? isSeason
+      ? `当前观看：第${currentPart.partNumber}集 · ${currentPart.title}`
+      : `当前观看：P${currentPart.partNumber} · ${currentPart.title}`
     : '';
   const titleRef = useOverflowTooltip<HTMLHeadingElement>(displayTitle);
   const headingRef = useOverflowTooltip<HTMLDivElement>(currentHeading);
@@ -150,8 +148,11 @@ export function LearningResourceCard({ resource }: { readonly resource: Learning
               {resource.progress.completed ? '已完成' : '学习中'}
             </span>
             <p className="learning-card__meta">
-              {resource.uploaderName ?? '未知 UP 主'} · {resource.parts.length} 个分P ·{' '}
-              {durationLabel(resource.durationSeconds)}
+              {resource.uploaderName ?? '未知 UP 主'} ·{' '}
+              {isSeason
+                ? `合集 · ${resource.parts.length} 个分集`
+                : `${resource.parts.length} 个分P`}{' '}
+              · {durationLabel(resource.durationSeconds)}
             </p>
           </div>
           {renaming ? (

@@ -1,9 +1,11 @@
 import {
+  biliSeasonImportResultSchema,
   learningImportResultSchema,
   learningResourceListResponseSchema,
   learningResourceSchema,
   learningSeriesListResponseSchema,
   learningSeriesSchema,
+  type ImportBiliSeasonInput,
   type ImportLearningResourceInput,
   type RenameLearningResourceInput,
   type ReplaceLearningSeriesItemsInput,
@@ -21,6 +23,13 @@ export function getLearningResources(signal?: AbortSignal) {
 
 export function importLearningResource(input: ImportLearningResourceInput) {
   return apiRequest('/api/v1/learning/resources', learningImportResultSchema, {
+    method: 'POST',
+    body: input,
+  });
+}
+
+export function importBiliSeason(input: ImportBiliSeasonInput) {
+  return apiRequest('/api/v1/learning/resources/season', biliSeasonImportResultSchema, {
     method: 'POST',
     body: input,
   });

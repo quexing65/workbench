@@ -16,6 +16,16 @@ export const DEFAULT_LEARNING_VIEW: LearningViewOptions = {
   sort: 'recent',
 };
 
+/** 学习页统一的时长展示：H:MM:SS 或 M:SS。 */
+export function durationLabel(value: number): string {
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  const seconds = value % 60;
+  return hours > 0
+    ? `${String(hours)}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    : `${String(minutes)}:${String(seconds).padStart(2, '0')}`;
+}
+
 /** 与学习卡片一致的整体完成度口径：已完成记 1，否则取 furthest 之前分P全长 + furthest 秒数。 */
 export function watchedRatio(resource: LearningResource): number {
   if (resource.progress.completed) return 1;

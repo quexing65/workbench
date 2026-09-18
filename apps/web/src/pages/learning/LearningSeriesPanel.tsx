@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { LearningResource, LearningSeries } from '@workbench/shared';
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import { errorMessage, isRevisionConflict } from '../../shared/api/client';
 import {
@@ -12,6 +12,7 @@ import {
 import { queryKeys } from '../../shared/api/query-keys';
 import { useConfirm } from '../../shared/ui/ConfirmDialog';
 import { useAnimatedList } from '../../shared/ui/useAnimatedList';
+import { durationLabel } from './learning-filters';
 
 type SeriesAction =
   { readonly kind: 'save-name' } | { readonly kind: 'save-items' } | { readonly kind: 'delete' };
@@ -189,6 +190,10 @@ export function LearningSeriesPanel({
   const [editingId, setEditingId] = useState<string | null>(null);
   const seriesList = useAnimatedList<HTMLUListElement>();
   const client = useQueryClient();
+  const resourceById = useMemo(
+    () => new Map(resources.map((resource) => [resource.id, resource])),
+    [resources],
+  );
   const create = useMutation({
     mutationFn: () => createLearningSeries(name),
     onSuccess: async () => {
@@ -227,31 +232,42 @@ export function LearningSeriesPanel({
       )}
       {series.length === 0 && <p className="empty-state">还没有学习系列。</p>}
       <ul className="series-list" ref={seriesList}>
-        {series.map((item) => (
-          <li className="series-summary" key={item.id}>
-            <div className="series-summary__header">
-              <div>
-                <strong>{item.name}</strong>
-                <small>{item.resourceIds.length} 项资源</small>
+        {series.map((item) => {
+          // 汇总口径与资源卡片一致：总时长取成员资源时长之和，完成数取 progress.completed
+          const members = item.resourceIds
+            .map((id) => resourceById.get(id))
+            .filter((resource): resource is LearningResource => resource !== undefined);
+          const totalSeconds = members.reduce((sum, resource) => sum + resource.durationSeconds, 0);
+          const completed = members.filter((resource) => resource.progress.completed).length;
+          return (
+            <li className="series-summary" key={item.id}>
+              <div className="series-summary__header">
+                <div>
+                  <strong>{item.name}</strong>
+                  <small>
+                    {item.resourceIds.length} 项资源 · 总时长 {durationLabel(totalSeconds)}
+                    {members.length > 0 ? ` · 已完成 ${completed}/${members.length}` : ''}
+                  </small>
+                </div>
+                <button
+                  type="button"
+                  className="button-secondary"
+                  aria-expanded={editingId === item.id}
+                  onClick={() => setEditingId((current) => (current === item.id ? null : item.id))}
+                >
+                  {editingId === item.id ? '收起编辑' : `编辑系列 ${item.name}`}
+                </button>
               </div>
-              <button
-                type="button"
-                className="button-secondary"
-                aria-expanded={editingId === item.id}
-                onClick={() => setEditingId((current) => (current === item.id ? null : item.id))}
-              >
-                {editingId === item.id ? '收起编辑' : `编辑系列 ${item.name}`}
-              </button>
-            </div>
-            {editingId === item.id ? (
-              <SeriesEditor
-                key={`${item.id}:${item.revision}`}
-                series={item}
-                resources={resources}
-              />
-            ) : null}
-          </li>
-        ))}
+              {editingId === item.id ? (
+                <SeriesEditor
+                  key={`${item.id}:${item.revision}`}
+                  series={item}
+                  resources={resources}
+                />
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

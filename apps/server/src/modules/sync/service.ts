@@ -56,7 +56,7 @@ export class LearningSyncService {
       }
       const id = this.createId();
       this.runs.create(id, pages, this.now());
-      this.schedule(() => void this.execute(id, pages, sessdata, resource.id, resource.externalId));
+      this.schedule(() => void this.execute(id, pages, sessdata, resource.id));
       return id;
     } catch (error) {
       this.active = false;
@@ -75,14 +75,25 @@ export class LearningSyncService {
     pages: number,
     sessdata: string,
     resourceId: string,
-    externalId: string,
   ): Promise<void> {
     try {
       this.runs.markRunning(id, this.now());
+      const resource = this.resources.find(resourceId);
+      if (resource === undefined) {
+        throw new ResourceNotFoundError('LEARNING_RESOURCE_NOT_FOUND', '学习资源不存在');
+      }
       const history = await this.bili.getHistory(sessdata, pages);
-      const matchingHistory = history.filter(
-        (observation) => observation.bvid.toLowerCase() === externalId.toLowerCase(),
-      );
+      // 合集资源的分集各有独立 BV：按分集 BV 集合匹配；普通视频按资源 BV 匹配
+      const matchingHistory =
+        resource.biliSeasonId === null
+          ? history.filter(
+              (observation) => observation.bvid.toLowerCase() === resource.externalId.toLowerCase(),
+            )
+          : history.filter((observation) =>
+              resource.parts.some(
+                (part) => part.episodeBvid?.toLowerCase() === observation.bvid.toLowerCase(),
+              ),
+            );
       let updated = 0;
       for (const observation of matchingHistory) updated += this.apply(resourceId, observation);
       this.runs.succeed(id, matchingHistory.length, updated, this.now());
@@ -100,7 +111,13 @@ export class LearningSyncService {
   private apply(resourceId: string, observation: BiliHistoryObservation): number {
     const resource = this.resources.find(resourceId);
     if (resource === undefined || observation.progressSeconds < -1) return 0;
-    const part = resource.parts.find(({ partNumber }) => partNumber === observation.partNumber);
+    // 合集分集按各自的 BV 匹配；多页集的历史进度只精确到页，这里按整集近似（课程合集绝大多数为单页集）
+    const part =
+      resource.biliSeasonId === null
+        ? resource.parts.find(({ partNumber }) => partNumber === observation.partNumber)
+        : resource.parts.find(
+            ({ episodeBvid }) => episodeBvid?.toLowerCase() === observation.bvid.toLowerCase(),
+          );
     if (part === undefined) return 0;
     const seconds =
       observation.progressSeconds === -1

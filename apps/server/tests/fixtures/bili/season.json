@@ -1,0 +1,83 @@
+{
+  "code": 0,
+  "data": {
+    "bvid": "BV1ab411c7de",
+    "cid": 101,
+    "title": "00 - 学前必看 ｜合集课程",
+    "pic": "//i0.hdslb.com/bfs/archive/cover.jpg",
+    "duration": 67,
+    "owner": { "name": "讲师" },
+    "pages": [{ "cid": 101, "page": 1, "part": "00 - 学前必看", "duration": 67 }],
+    "ugc_season": {
+      "id": 636182,
+      "title": "合集课程",
+      "sections": [
+        {
+          "season_id": 636182,
+          "id": 45678,
+          "title": "正片",
+          "episodes": [
+            {
+              "season_id": 636182,
+              "section_id": 45678,
+              "id": 56789,
+              "aid": 472095826,
+              "cid": 101,
+              "title": "00 - 学前必看 ｜合集课程",
+              "bvid": "BV1ab411c7de",
+              "duration": null,
+              "arc": {
+                "aid": 472095826,
+                "pic": "//i0.hdslb.com/bfs/archive/cover-0.jpg",
+                "title": "00 - 学前必看 ｜合集课程",
+                "duration": 67,
+                "author": { "mid": 327247876, "name": "讲师" }
+              },
+              "page": { "cid": 101, "page": 1, "part": "00 - 学前必看", "duration": 67 },
+              "pages": [{ "cid": 101, "page": 1, "part": "00 - 学前必看", "duration": 67 }]
+            },
+            {
+              "season_id": 636182,
+              "section_id": 45678,
+              "id": 56790,
+              "aid": 472095827,
+              "cid": 102,
+              "title": "01 - 第一课 ｜合集课程",
+              "bvid": "BV1xy411c7fg",
+              "duration": null,
+              "arc": {
+                "aid": 472095827,
+                "pic": "//i0.hdslb.com/bfs/archive/cover-1.jpg",
+                "title": "01 - 第一课 ｜合集课程",
+                "duration": 204,
+                "author": { "mid": 327247876, "name": "讲师" }
+              },
+              "pages": [{ "cid": 102, "page": 1, "part": "01 - 第一课", "duration": 204 }]
+            },
+            {
+              "season_id": 636182,
+              "section_id": 45678,
+              "id": 56791,
+              "aid": 472095828,
+              "cid": 103,
+              "title": "02 - 第二课 ｜合集课程",
+              "bvid": "BV1em411c7ty",
+              "duration": null,
+              "arc": {
+                "aid": 472095828,
+                "pic": "//i0.hdslb.com/bfs/archive/cover-2.jpg",
+                "title": "02 - 第二课 ｜合集课程",
+                "duration": 180,
+                "author": { "mid": 327247876, "name": "讲师" }
+              },
+              "pages": [
+                { "cid": 103, "page": 1, "part": "上", "duration": 90 },
+                { "cid": 104, "page": 2, "part": "下", "duration": 90 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

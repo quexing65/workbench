@@ -52,6 +52,7 @@ beforeEach(async () => {
       { cid: 'part-1', partNumber: 1, title: '第一讲', durationSeconds: 100 },
       { cid: 'part-2', partNumber: 2, title: '第二讲', durationSeconds: 200 },
     ],
+    season: null,
   };
   resourceId = new LearningResourceRepository(database.connection).upsertMetadata(
     metadata,
@@ -130,6 +131,64 @@ describe('learning sync API', () => {
     });
     const resource = new LearningResourceRepository(database.connection).list()[0];
     expect(resource?.parts[1]?.progress).toMatchObject({ furthestSeconds: 200, completed: true });
+  });
+
+  it('matches history to season episodes by their own bvids', async () => {
+    // 合集资源：分集是不同 BV，同步须按分集 BV 而非资源 BV 匹配
+    const seasonResourceId = new LearningResourceRepository(database.connection).upsertMetadata(
+      {
+        bvid: 'BV1qq411w7qe',
+        sourceUrl: 'https://www.bilibili.com/video/BV1qq411w7qe/',
+        title: '合集课程',
+        coverUrl: null,
+        uploaderName: null,
+        durationSeconds: 300,
+        parts: [
+          {
+            cid: 'ep-1',
+            partNumber: 1,
+            title: '第一集',
+            durationSeconds: 100,
+            episodeBvid: 'BV1ab411c7de',
+          },
+          {
+            cid: 'ep-2',
+            partNumber: 2,
+            title: '第二集',
+            durationSeconds: 200,
+            episodeBvid: 'BV1cd411e7fg',
+          },
+        ],
+        season: null,
+      },
+      Date.parse('2026-08-13T00:00:00.000Z'),
+      () => crypto.randomUUID(),
+      636182,
+    ).id;
+    session.getHistory = vi.fn().mockResolvedValue([
+      {
+        bvid: 'BV1cd411e7fg',
+        partNumber: 1,
+        progressSeconds: 150,
+        observedAt: '2026-08-13T01:00:00.000Z',
+      },
+      {
+        bvid: 'BV1qq411w7zz',
+        partNumber: 1,
+        progressSeconds: 10,
+        observedAt: '2026-08-13T01:01:00.000Z',
+      },
+    ]);
+    const app = createTestApp();
+    const run = await start(app, seasonResourceId);
+    expect(run.status).toBe(202);
+    const finished = await waitForRun(app, String(run.body.runId));
+    expect(finished.body).toMatchObject({ status: 'succeeded', historyCount: 1, updatedCount: 1 });
+    const resource = new LearningResourceRepository(database.connection)
+      .list()
+      .find((item) => item.id === seasonResourceId);
+    expect(resource?.parts[1]?.progress).toMatchObject({ furthestSeconds: 150 });
+    expect(resource?.parts[0]?.progress).toBeNull();
   });
 
   it('finishes an empty history safely and persists only a safe failure code', async () => {

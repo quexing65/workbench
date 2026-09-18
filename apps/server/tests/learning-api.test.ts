@@ -60,6 +60,7 @@ beforeEach(() => {
       { cid: 'cid-a', partNumber: 1, title: '第一讲', durationSeconds: 100 },
       { cid: 'cid-b', partNumber: 2, title: '第二讲', durationSeconds: 200 },
     ],
+    season: null,
   };
   bili = {
     resolveShortUrl: vi.fn(async (): Promise<NormalizedBiliUrl> => ({
@@ -325,6 +326,146 @@ describe('learning resource API', () => {
   });
 });
 
+describe('learning season import API', () => {
+  // 复用模块级 beforeEach/afterEach 的数据库与 B站 mock，仅在用例内替换元数据。
+  const seasonEpisodes = [
+    {
+      bvid: 'BV1ab411c7de',
+      title: '第一集',
+      coverUrl: null,
+      uploaderName: '讲师',
+      durationSeconds: 100,
+      parts: [{ cid: 'cid-a', partNumber: 1, title: '第一集', durationSeconds: 100 }],
+    },
+    {
+      bvid: 'BV1xy411c7fg',
+      title: '第二集',
+      coverUrl: null,
+      uploaderName: '讲师',
+      durationSeconds: 200,
+      parts: [{ cid: 'cid-c', partNumber: 1, title: '第二集', durationSeconds: 200 }],
+    },
+  ];
+
+  function withSeason() {
+    metadata = {
+      ...metadata,
+      season: { seasonId: 636182, title: '合集课程', episodes: seasonEpisodes },
+    };
+  }
+
+  function importSeason(bvid = 'BV1ab411c7de') {
+    return write('post', '/api/v1/learning/resources/season').send({ bvid });
+  }
+
+  it('imports a whole season as one resource with episodes as parts', async () => {
+    withSeason();
+    const result = await importSeason();
+    expect(result.status).toBe(201);
+    expect(result.body.season).toEqual({
+      seasonId: 636182,
+      title: '合集课程',
+      episodeCount: 2,
+      totalDurationSeconds: 300,
+    });
+    // 合集是一个资源：标题取合集名，总时长为各集之和，每集一个分P且带各自的 BV
+    expect(result.body.resource).toMatchObject({
+      externalId: 'BV1ab411c7de',
+      title: '合集课程',
+      biliSeasonId: 636182,
+      durationSeconds: 300,
+    });
+    expect(result.body.resource.parts).toMatchObject([
+      { partNumber: 1, title: '第一集', durationSeconds: 100, episodeBvid: 'BV1ab411c7de' },
+      { partNumber: 2, title: '第二集', durationSeconds: 200, episodeBvid: 'BV1xy411c7fg' },
+    ]);
+
+    const resources = (await read('/api/v1/learning/resources')).body.items;
+    expect(resources).toHaveLength(1);
+    // 合集不再落成学习系列
+    expect((await read('/api/v1/learning/series')).body.items).toHaveLength(0);
+  });
+
+  it('re-imports the same season idempotently as a single card', async () => {
+    withSeason();
+    const first = await importSeason();
+    const second = await importSeason('BV1xy411c7fg');
+    expect(second.status).toBe(201);
+    expect(second.body.resource.id).toBe(first.body.resource.id);
+    const resources = (await read('/api/v1/learning/resources')).body.items;
+    expect(resources).toHaveLength(1);
+    expect(resources[0].parts).toHaveLength(2);
+  });
+
+  it('absorbs standalone episode resources and migrates their progress', async () => {
+    // 先单独导入合集里的第一集，并写入 40 秒观看进度
+    const imported = await importResource();
+    const standaloneId = String(imported.body.resource.id);
+    const service = makeLearningService();
+    const standalone = service.find(standaloneId);
+    service.observe(standaloneId, {
+      revision: standalone.progress.revision,
+      partId: standalone.parts[0]!.id,
+      seconds: 40,
+      observedAt: '2026-09-18T08:00:00.000Z',
+      source: 'sync',
+    });
+
+    withSeason();
+    const result = await importSeason();
+    expect(result.status).toBe(201);
+
+    // 独立资源被移除，只剩合集一张卡片；40 秒进度并入第一集分P
+    const resources = (await read('/api/v1/learning/resources')).body.items;
+    expect(resources).toHaveLength(1);
+    expect(resources[0].id).toBe(result.body.resource.id);
+    expect(result.body.resource.progress.furthestSeconds).toBe(40);
+    expect(result.body.resource.parts[0].episodeBvid).toBe('BV1ab411c7de');
+  });
+
+  it('keeps the season card intact when its entry video is imported standalone later', async () => {
+    withSeason();
+    await importSeason();
+    // 再导入入口视频（已无 season 提示之外的副作用）：命中合集占用的 external_id，不覆盖合集结构
+    metadata = { ...metadata, season: null };
+    const result = await importResource();
+    expect(result.status).toBe(201);
+    const resources = (await read('/api/v1/learning/resources')).body.items;
+    expect(resources).toHaveLength(1);
+    expect(resources[0].biliSeasonId).toBe(636182);
+    expect(resources[0].parts).toHaveLength(2);
+  });
+
+  it('rejects videos outside any season and malformed bvids', async () => {
+    const noSeason = await importSeason();
+    expect(noSeason.status).toBe(400);
+    expect(noSeason.body.error.code).toBe('VALIDATION_ERROR');
+    expect(
+      (await write('post', '/api/v1/learning/resources/season').send({ bvid: 'av472095826' }))
+        .status,
+    ).toBe(400);
+    expect((await read('/api/v1/learning/resources')).body.items).toHaveLength(0);
+  });
+
+  it('attaches a season preview when importing a single video from a season', async () => {
+    withSeason();
+    const result = await importResource();
+    expect(result.status).toBe(201);
+    expect(result.body.season).toEqual({
+      seasonId: 636182,
+      title: '合集课程',
+      episodeCount: 2,
+      totalDurationSeconds: 300,
+    });
+  });
+
+  it('reports a null season for standalone videos', async () => {
+    const result = await importResource();
+    expect(result.status).toBe(201);
+    expect(result.body.season).toBeNull();
+  });
+});
+
 describe('learning resource rename API', () => {
   // 复用模块级 beforeEach/afterEach 的数据库与 B站 mock，仅在用例内替换元数据。
 
@@ -337,6 +478,7 @@ describe('learning resource rename API', () => {
       uploaderName: '讲师',
       durationSeconds: 300,
       parts: [{ cid: 'cid-a', partNumber: 1, title: '第一讲', durationSeconds: 300 }],
+      season: null,
     };
     const resource = (await importResource()).body.resource;
     const path = `/api/v1/learning/resources/${resource.id}/title`;

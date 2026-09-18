@@ -30,6 +30,60 @@ describe('BiliHttpClient fixtures', () => {
     expect(multiple.parts.map(({ cid }) => cid)).toEqual(['201', '200']);
   });
 
+  it('parses ugc_season episodes with arc durations and per-episode parts', async () => {
+    const video = await clientWith(new Response(fixture('season.json'))).getVideo('BV1ab411c7de');
+    expect(video.season).toMatchObject({
+      seasonId: 636182,
+      title: '合集课程',
+      episodes: [
+        {
+          bvid: 'BV1ab411c7de',
+          title: '00 - 学前必看 ｜合集课程',
+          coverUrl: 'https://i0.hdslb.com/bfs/archive/cover-0.jpg',
+          uploaderName: '讲师',
+          durationSeconds: 67,
+          parts: [{ cid: '101', partNumber: 1, durationSeconds: 67 }],
+        },
+        {
+          bvid: 'BV1xy411c7fg',
+          durationSeconds: 204,
+          parts: [{ cid: '102', partNumber: 1, durationSeconds: 204 }],
+        },
+        {
+          bvid: 'BV1em411c7ty',
+          durationSeconds: 180,
+          parts: [
+            { cid: '103', partNumber: 1, durationSeconds: 90 },
+            { cid: '104', partNumber: 2, durationSeconds: 90 },
+          ],
+        },
+      ],
+    });
+  });
+
+  it('treats a missing, malformed or empty season as null without blocking import', async () => {
+    const missing = structuredClone(JSON.parse(fixture('single-part.json')));
+    const result = await clientWith(new Response(JSON.stringify(missing))).getVideo('BV1ab411c7de');
+    expect(result.season).toBeNull();
+
+    const malformed = structuredClone(JSON.parse(fixture('season.json')));
+    malformed.data.ugc_season = { id: 'not-a-number', sections: [] };
+    const tolerated = await clientWith(new Response(JSON.stringify(malformed))).getVideo(
+      'BV1ab411c7de',
+    );
+    expect(tolerated.season).toBeNull();
+    expect(tolerated.bvid).toBe('BV1ab411c7de');
+
+    const brokenEpisodes = structuredClone(JSON.parse(fixture('season.json')));
+    brokenEpisodes.data.ugc_season.sections[0].episodes[1].pages = [];
+    brokenEpisodes.data.ugc_season.sections[0].episodes[2].arc = { duration: -1 };
+    const partial = await clientWith(new Response(JSON.stringify(brokenEpisodes))).getVideo(
+      'BV1ab411c7de',
+    );
+    // 单集畸形只丢弃该集，其余分集仍可导入
+    expect(partial.season?.episodes.map(({ bvid }) => bvid)).toEqual(['BV1ab411c7de']);
+  });
+
   it('rejects mismatched or duplicate metadata and drops unsafe cover URLs', async () => {
     const base = JSON.parse(fixture('single-part.json'));
     const mismatch = structuredClone(base);

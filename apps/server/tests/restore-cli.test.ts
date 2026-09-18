@@ -60,7 +60,7 @@ describe('stopped-service restore CLI', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).not.toContain(root);
     expect(result.stdout).not.toContain(backup.path);
-    expect(JSON.parse(result.stdout)).toMatchObject({ status: 'restored', schemaVersion: 6 });
+    expect(JSON.parse(result.stdout)).toMatchObject({ status: 'restored', schemaVersion: 8 });
     const restored = openWorkbenchDatabase({ dataDirectory: root });
     try {
       expect(restored.connection.prepare('SELECT id FROM tasks ORDER BY id').all()).toEqual([

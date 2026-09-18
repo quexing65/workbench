@@ -19,6 +19,7 @@ const resource = {
   coverUrl: null,
   uploaderName: null,
   durationSeconds: 60,
+  biliSeasonId: null,
   parts: [
     {
       id: '22222222-2222-4222-8222-222222222222',
@@ -26,6 +27,7 @@ const resource = {
       partNumber: 1,
       title: '第一节',
       durationSeconds: 60,
+      episodeBvid: null,
       progress: null,
       revision: 1,
     },
