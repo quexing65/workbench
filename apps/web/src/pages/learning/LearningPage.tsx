@@ -20,6 +20,7 @@ import {
 } from './learning-filters';
 import { LearningResourceCard } from './LearningResourceCard';
 import { LearningSeriesPanel } from './LearningSeriesPanel';
+import { LearningSyncAll } from './LearningSyncAll';
 import { BiliSyncPanel } from './BiliSyncPanel';
 
 const RESOURCE_BATCH_SIZE = 20;
@@ -146,6 +147,7 @@ export function LearningPage() {
           >
             {showSeries ? '收起学习系列' : '学习系列'}
           </button>
+          <LearningSyncAll />
         </div>
       </header>
 

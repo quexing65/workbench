@@ -17,6 +17,7 @@ export {
   learningSyncRunSchema,
   learningSyncStartResponseSchema,
   saveBiliCredentialSchema,
+  startLearningSyncAllSchema,
   startLearningSyncSchema,
 } from './contracts/bili-sync.js';
 export type {
@@ -29,6 +30,7 @@ export type {
   LearningSyncRun,
   LearningSyncStartResponse,
   SaveBiliCredentialInput,
+  StartLearningSyncAllInput,
   StartLearningSyncInput,
 } from './contracts/bili-sync.js';
 export {

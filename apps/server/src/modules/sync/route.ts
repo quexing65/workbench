@@ -1,4 +1,4 @@
-import { startLearningSyncSchema } from '@workbench/shared';
+import { startLearningSyncAllSchema, startLearningSyncSchema } from '@workbench/shared';
 import { Router } from 'express';
 
 import { parseInput, parseUuidParameter } from '../../http/validation.js';
@@ -9,6 +9,10 @@ export function createLearningSyncRouter(service: LearningSyncService): Router {
   router.post('/', async (request, response) => {
     const input = parseInput(startLearningSyncSchema, request.body);
     response.status(202).json({ runId: await service.start(input.resourceId, input.pages) });
+  });
+  router.post('/all', async (request, response) => {
+    const input = parseInput(startLearningSyncAllSchema, request.body);
+    response.status(202).json({ runId: await service.startAll(input.pages) });
   });
   router.get('/:id', (request, response) => {
     response.json(service.find(parseUuidParameter(request)));

@@ -58,6 +58,13 @@ export function startLearningSync(resourceId: string, pages = 3) {
   });
 }
 
+export function startLearningSyncAll(pages = 3) {
+  return apiRequest('/api/v1/learning/sync/all', learningSyncStartResponseSchema, {
+    method: 'POST',
+    body: { pages },
+  });
+}
+
 export function getLearningSyncRun(runId: string, signal?: AbortSignal) {
   return apiRequest(`/api/v1/learning/sync/${runId}`, learningSyncRunSchema, {
     ...(signal === undefined ? {} : { signal }),

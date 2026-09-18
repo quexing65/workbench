@@ -44,19 +44,27 @@ export class LearningSyncService {
       if (resource === undefined) {
         throw new ResourceNotFoundError('LEARNING_RESOURCE_NOT_FOUND', '学习资源不存在');
       }
-      // 续期要发生在读取凭据之前：换发后旧 SESSDATA 会被作废，先读拿到的是即将失效的值。
-      await this.ensureFresh();
-      const record = decodeRecord(await this.credentials.read());
-      const sessdata = record?.sessdata;
-      if (sessdata === undefined) {
-        throw new DomainConflictError('BILI_CREDENTIAL_REQUIRED', '请先连接 B站登录态');
-      }
-      if (!isSafeCredential(sessdata)) {
-        throw new ExternalServiceError('BILI_CREDENTIAL_INVALID', 'B站登录态格式无效', 401);
-      }
+      const sessdata = await this.readCredential();
       const id = this.createId();
       this.runs.create(id, pages, this.now());
       this.schedule(() => void this.execute(id, pages, sessdata, resource.id));
+      return id;
+    } catch (error) {
+      this.active = false;
+      throw error;
+    }
+  }
+
+  public async startAll(pages: number): Promise<string> {
+    if (this.active) {
+      throw new DomainConflictError('SYNC_ALREADY_RUNNING', '已有 B站同步正在运行');
+    }
+    this.active = true;
+    try {
+      const sessdata = await this.readCredential();
+      const id = this.createId();
+      this.runs.create(id, pages, this.now());
+      this.schedule(() => void this.executeAll(id, pages, sessdata));
       return id;
     } catch (error) {
       this.active = false;
@@ -68,6 +76,20 @@ export class LearningSyncService {
     const run = this.runs.find(id);
     if (run === undefined) throw new ResourceNotFoundError('SYNC_RUN_NOT_FOUND', '同步记录不存在');
     return run;
+  }
+
+  private async readCredential(): Promise<string> {
+    // 续期要发生在读取凭据之前：换发后旧 SESSDATA 会被作废，先读拿到的是即将失效的值。
+    await this.ensureFresh();
+    const record = decodeRecord(await this.credentials.read());
+    const sessdata = record?.sessdata;
+    if (sessdata === undefined) {
+      throw new DomainConflictError('BILI_CREDENTIAL_REQUIRED', '请先连接 B站登录态');
+    }
+    if (!isSafeCredential(sessdata)) {
+      throw new ExternalServiceError('BILI_CREDENTIAL_INVALID', 'B站登录态格式无效', 401);
+    }
+    return sessdata;
   }
 
   private async execute(
@@ -97,6 +119,41 @@ export class LearningSyncService {
       let updated = 0;
       for (const observation of matchingHistory) updated += this.apply(resourceId, observation);
       this.runs.succeed(id, matchingHistory.length, updated, this.now());
+    } catch (error) {
+      try {
+        this.runs.fail(id, safeCode(error), this.now());
+      } catch {
+        // The database may already be closed during process shutdown.
+      }
+    } finally {
+      this.active = false;
+    }
+  }
+
+  private async executeAll(
+    id: string,
+    pages: number,
+    sessdata: string,
+  ): Promise<void> {
+    try {
+      this.runs.markRunning(id, this.now());
+      const history = await this.bili.getHistory(sessdata, pages);
+      const allResources = this.resources.list();
+      let totalUpdated = 0;
+      for (const resource of allResources) {
+        const matching =
+          resource.biliSeasonId === null
+            ? history.filter(
+                (obs) => obs.bvid.toLowerCase() === resource.externalId.toLowerCase(),
+              )
+            : history.filter((obs) =>
+                resource.parts.some(
+                  (part) => part.episodeBvid?.toLowerCase() === obs.bvid.toLowerCase(),
+                ),
+              );
+        for (const observation of matching) totalUpdated += this.apply(resource.id, observation);
+      }
+      this.runs.succeed(id, history.length, totalUpdated, this.now());
     } catch (error) {
       try {
         this.runs.fail(id, safeCode(error), this.now());

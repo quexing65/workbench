@@ -46,6 +46,17 @@
   white-space: nowrap;
 }
 
+.learning-tools-menu .learning-sync-all__status {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted);
+}
+
+.learning-tools-menu .form-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 .bili-sync-panel__header {
   display: flex;
   padding-bottom: 1rem;

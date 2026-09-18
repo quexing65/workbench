@@ -65,6 +65,13 @@ export const startLearningSyncSchema = z
   .strict();
 export type StartLearningSyncInput = z.infer<typeof startLearningSyncSchema>;
 
+export const startLearningSyncAllSchema = z
+  .object({
+    pages: z.number().int().min(1).max(5).default(3),
+  })
+  .strict();
+export type StartLearningSyncAllInput = z.infer<typeof startLearningSyncAllSchema>;
+
 export const learningSyncStartResponseSchema = z.object({ runId: z.string().uuid() }).strict();
 export type LearningSyncStartResponse = z.infer<typeof learningSyncStartResponseSchema>;
 
