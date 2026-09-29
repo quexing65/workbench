@@ -3,6 +3,11 @@
   margin: 0 auto;
 }
 
+/* 总览只有一条主线，用窄栏收敛视线。 */
+.page--day {
+  width: min(100%, 52rem);
+}
+
 /* 列表与区块统一的加载/失败状态（见 shared/ui/QueryState.tsx）。 */
 .query-state {
   padding: 2.5rem 1rem;
@@ -49,14 +54,6 @@
   max-width: 48rem;
 }
 
-.page-header--overview {
-  display: flex;
-  max-width: none;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 2rem;
-}
-
 .eyebrow {
   margin: 0 0 0.75rem;
   color: var(--accent-ink);
@@ -80,105 +77,6 @@ h1 {
   color: var(--muted);
   font-size: clamp(1rem, 1.5vw, 1.18rem);
   line-height: 1.75;
-}
-
-.date-card {
-  display: grid;
-  min-width: 8.5rem;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--frost);
-  text-align: center;
-  flex: 0 0 auto;
-}
-
-.date-card span,
-.date-card small {
-  color: var(--muted);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-}
-
-.date-card strong {
-  margin: -0.1rem 0;
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 2.75rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.overview-grid {
-  display: grid;
-  margin-top: clamp(2.5rem, 6vw, 5rem);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-/* 今日焦点与贡献轨迹横贯全宽，是页面的两块主视觉。 */
-.overview-grid > .surface--primary,
-.overview-grid > .overview-heatmap {
-  grid-column: 1 / -1;
-}
-
-.surface {
-  min-height: 13.5rem;
-  padding: clamp(1.4rem, 3vw, 2.4rem);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--paper);
-  box-shadow: var(--shadow-sm);
-}
-
-.surface--primary {
-  display: flex;
-  min-height: 20rem;
-  color: white;
-  background:
-    radial-gradient(circle at 85% 15%, rgb(255 255 255 / 9%), transparent 32%), var(--accent-strong);
-  flex-direction: column;
-}
-
-.surface__label {
-  margin: 0 0 2rem;
-  color: var(--accent);
-  font-size: 0.76rem;
-  font-weight: 750;
-  letter-spacing: 0.1em;
-}
-
-.surface--primary .surface__label {
-  color: rgb(255 255 255 / 75%);
-}
-
-.surface h2 {
-  margin-bottom: 0.8rem;
-  font-size: clamp(1.45rem, 2.5vw, 2.1rem);
-}
-
-.surface--primary h2 {
-  max-width: 10em;
-  color: white;
-  font-size: clamp(2.1rem, 4vw, 3.7rem);
-}
-
-.surface p:not(.surface__label) {
-  max-width: 34rem;
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.7;
-}
-
-.surface--primary p:not(.surface__label) {
-  color: rgb(255 255 255 / 78%);
-}
-
-.surface__meta {
-  margin-top: auto;
-  padding-top: 2rem;
-  color: rgb(255 255 255 / 62%);
-  font-size: 0.78rem;
 }
 
 .placeholder-card {

@@ -12,29 +12,6 @@
   }
 }
 
-@media (max-width: 899px) {
-  .page-header--overview {
-    align-items: flex-start;
-  }
-
-  .date-card {
-    min-width: 5.5rem;
-    padding: 0.7rem;
-  }
-
-  .date-card strong {
-    font-size: 2rem;
-  }
-
-  .overview-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .surface--primary {
-    min-height: 22rem;
-  }
-}
-
 /* 窄档（<=640px）：侧栏已收进屏外抽屉，顶部保留品牌与连接状态。 */
 @media (max-width: 640px) {
   .mobile-header {
@@ -90,14 +67,6 @@
     font-size: 1rem;
   }
 
-  .page-header--overview {
-    display: block;
-  }
-
-  .date-card {
-    display: none;
-  }
-
   h1 {
     font-size: clamp(1.85rem, 9vw, 2.5rem);
   }
@@ -122,9 +91,7 @@
 
 @media (forced-colors: active) {
   .nav-link--active,
-  .surface,
-  .placeholder-card,
-  .date-card {
+  .placeholder-card {
     border: 2px solid CanvasText;
   }
 

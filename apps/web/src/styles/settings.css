@@ -230,65 +230,6 @@
   }
 }
 
-/* —— 总览：近 7 天完成率趋势（主视觉深绿卡内） —— */
-.week-trend {
-  margin-top: 1.6rem;
-}
-
-.week-trend__caption {
-  margin: 0 0 0.45rem;
-  color: rgb(255 255 255 / 62%);
-  font-size: 0.72rem;
-  font-weight: 650;
-  letter-spacing: 0.08em;
-}
-
-.week-trend__bars {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.45rem;
-}
-
-.week-trend__col {
-  display: grid;
-  gap: 0.3rem;
-  justify-items: center;
-}
-
-.week-trend__track {
-  display: flex;
-  width: 100%;
-  max-width: 2.6rem;
-  height: 2.6rem;
-  border-radius: var(--radius-sm);
-  background: rgb(255 255 255 / 14%);
-  align-items: flex-end;
-  overflow: hidden;
-}
-
-.week-trend__fill {
-  width: 100%;
-  min-height: 2px;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  background: var(--progress-fill);
-  transition: height 300ms ease;
-}
-
-.week-trend__col.is-today .week-trend__track {
-  outline: 1px solid rgb(255 255 255 / 45%);
-  outline-offset: 1px;
-}
-
-.week-trend__col small {
-  color: rgb(255 255 255 / 62%);
-  font-size: 0.68rem;
-}
-
-.week-trend__col.is-today small {
-  color: #fff;
-  font-weight: 700;
-}
-
 /* —— 任务页日期导航 —— */
 .date-navigator {
   display: flex;
@@ -428,9 +369,5 @@
   .learning-toolbar label,
   .learning-toolbar select {
     width: 100%;
-  }
-
-  .week-trend__bars {
-    gap: 0.3rem;
   }
 }

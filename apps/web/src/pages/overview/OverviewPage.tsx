@@ -1,30 +1,28 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { addBusinessDays, type OverviewResponse } from '@workbench/shared';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getOverview, getReview } from '../../shared/api/insights';
+import { getOverview } from '../../shared/api/insights';
 import { businessToday } from '../../shared/api/business-time';
 import { queryKeys } from '../../shared/api/query-keys';
 import { createTask, updateTask } from '../../shared/api/tasks';
-import { ContributionHeatmap } from '../../shared/ui/ContributionHeatmap';
 import { QueryError, QueryLoading } from '../../shared/ui/QueryState';
 import { useToast } from '../../shared/ui/Toast';
-import { WeekTrend } from '../../shared/ui/WeekTrend';
 
 const OVERDUE_BATCH_SIZE = 20;
-/** 总览贡献图回看的周数；窗口按周日对齐，本周始终完整呈现。 */
-export const HEATMAP_WEEKS = 26;
 
-function currentYear(): number {
-  return Number(businessToday().slice(0, 4));
-}
-
-/** 贡献图窗口：以本周六为终点、26 周前的周日为起点，恰好 26 列 × 7 行的完整矩形。 */
-export function heatmapRange(date: string): { from: string; to: string } {
-  const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
-  const to = addBusinessDays(date, (6 - weekday + 7) % 7);
-  return { from: addBusinessDays(to, -(HEATMAP_WEEKS * 7 - 1)), to };
+/**
+ * 业务日 → 「2026 年 9 月 29 日 星期二」。按 UTC 解析业务日，
+ * 避免本机时区把日期挪到前一天。
+ */
+function longDate(date: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T00:00:00Z`));
 }
 
 function resumePositionLabel(seconds: number): string {
@@ -35,87 +33,21 @@ function resumePositionLabel(seconds: number): string {
   return `${position}处`;
 }
 
-interface BlockProps {
-  readonly title: string;
-  readonly label: string;
-  readonly pending: boolean;
-  readonly error: boolean;
-  readonly retry: () => void;
-  readonly children: ReactNode;
-  readonly primary?: boolean;
-  readonly className?: string;
-}
-
-function Block({
+/** 今天之后的三节跟进内容共用：一个标题 + 一组行。 */
+function FollowUp({
   title,
-  label,
-  pending,
-  error,
-  retry,
+  titleId,
   children,
-  primary = false,
-  className,
-}: BlockProps) {
+}: {
+  readonly title: string;
+  readonly titleId: string;
+  readonly children: ReactNode;
+}) {
   return (
-    <article
-      className={`surface insight-block${primary ? ' surface--primary' : ''}${
-        className === undefined ? '' : ` ${className}`
-      }`}
-    >
-      <p className="surface__label">{label}</p>
-      <h2>{title}</h2>
-      {pending ? <QueryLoading /> : null}
-      {error ? <QueryError message="这部分暂时没有加载成功。" onRetry={retry} /> : children}
-    </article>
-  );
-}
-
-function Summary({ data }: { data: OverviewResponse }) {
-  const focus = data.today.items.find((item) => item.status === 'active');
-  const rate = data.today.planned === 0 ? null : data.today.completed / data.today.planned;
-  const progress = rate === null ? 0 : Math.round(rate * 100);
-  return (
-    <>
-      {focus ? (
-        <div className="focus-task">
-          <span className="status-pill">最重要的下一件事</span>
-          <h3>{focus.title}</h3>
-          {focus.description ? <p>{focus.description}</p> : null}
-        </div>
-      ) : (
-        <p className="empty-state">今天没有等待完成的任务，给自己留一点余白吧。</p>
-      )}
-      <div
-        className="today-progress"
-        role="progressbar"
-        aria-label="今日完成进度"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={progress}
-        aria-valuetext={rate === null ? '今天还没有计划' : `已完成 ${progress}%`}
-      >
-        <span style={{ width: `${progress}%` }} />
-      </div>
-      <WeekTrend days={data.last7Days} />
-      <dl className="summary-stats">
-        <div>
-          <dt>完成率</dt>
-          <dd>{rate === null ? '—' : `${progress}%`}</dd>
-        </div>
-        <div>
-          <dt>计划</dt>
-          <dd>{data.today.planned}</dd>
-        </div>
-        <div>
-          <dt>完成</dt>
-          <dd>{data.today.completed}</dd>
-        </div>
-        <div>
-          <dt>待办</dt>
-          <dd>{data.today.active}</dd>
-        </div>
-      </dl>
-    </>
+    <section className="day-followup" aria-labelledby={titleId}>
+      <h2 id={titleId}>{title}</h2>
+      {children}
+    </section>
   );
 }
 
@@ -129,13 +61,6 @@ export function OverviewPage() {
     queryKey: queryKeys.overview(date),
     queryFn: ({ signal }) => getOverview(date, signal),
   });
-  // 与回顾页共享同一份数据缓存；窗口裁剪在贡献图组件内完成。
-  const reviewFrom = `${currentYear()}-01-01`;
-  const review = useQuery({
-    queryKey: queryKeys.review(reviewFrom, date),
-    queryFn: ({ signal }) => getReview(reviewFrom, date, signal),
-  });
-  const heatmap = heatmapRange(date);
   const refresh = async () => {
     await Promise.all([
       client.invalidateQueries({ queryKey: queryKeys.overview(date) }),
@@ -163,10 +88,15 @@ export function OverviewPage() {
   const retry = () => {
     void overview.refetch();
   };
-  const common = { pending: overview.isPending, error: overview.isError, retry };
-  const overdueTasks = overview.data?.overdueTasks ?? [];
+
+  const data = overview.data;
+  const today = data?.today;
+  const overdueTasks = data?.overdueTasks ?? [];
   const visibleOverdueTasks = overdueTasks.slice(0, visibleOverdueCount);
   const remainingOverdueTasks = overdueTasks.length - visibleOverdueTasks.length;
+  const focus = today?.items.find((item) => item.status === 'active') ?? null;
+  const rate = today === undefined || today.planned === 0 ? null : today.completed / today.planned;
+  const progress = rate === null ? 0 : Math.round(rate * 100);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -174,156 +104,155 @@ export function OverviewPage() {
   }
 
   return (
-    <section className="page overview" aria-labelledby="overview-title">
-      <header className="page-header page-header--overview">
-        <div>
-          <p className="eyebrow">今天 · 本机工作台</p>
-          <h1 id="overview-title">把今天，安稳地放在眼前。</h1>
-          <p className="page-lead">任务、小记与学习进度，来自本机唯一数据源。</p>
-        </div>
-        <time className="date-card" dateTime={date}>
-          <span>
-            {new Intl.DateTimeFormat('zh-CN', { month: 'long', timeZone: 'Asia/Shanghai' }).format(
-              new Date(),
-            )}
-          </span>
-          <strong>{date.slice(-2)}</strong>
-          <small>
-            {new Intl.DateTimeFormat('zh-CN', {
-              weekday: 'long',
-              timeZone: 'Asia/Shanghai',
-            }).format(new Date())}
-          </small>
-        </time>
+    <section className="page page--day" aria-labelledby="overview-title">
+      <header className="day-header">
+        <h1 id="overview-title">把今天，安稳地放在眼前。</h1>
+        <p className="day-header__meta">
+          <time dateTime={date}>{longDate(date)}</time>
+        </p>
       </header>
 
-      <form className="quick-add" onSubmit={submit}>
-        <label htmlFor="quick-task">快速添加今天的任务</label>
-        <div>
-          <input
-            id="quick-task"
-            required
-            data-shortcut="new"
-            maxLength={500}
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="现在最值得完成的是什么？"
-          />
-          <button disabled={quickAdd.isPending}>{quickAdd.isPending ? '添加中…' : '添加'}</button>
-        </div>
-        {quickAdd.error ? (
-          <p role="alert" className="form-error">
-            {quickAdd.error.message}
-          </p>
-        ) : null}
-      </form>
+      {overview.isPending ? <QueryLoading message="正在读取今天的数据…" /> : null}
+      {overview.isError ? <QueryError message="今天的概览没有加载成功。" onRetry={retry} /> : null}
 
-      <div className="overview-grid" aria-label="今日总览">
-        <Block title="今日焦点" label="任务摘要" primary {...common}>
-          {overview.data ? <Summary data={overview.data} /> : null}
-        </Block>
+      {data !== undefined ? (
+        <>
+          <section className="day-card" aria-labelledby="today-title">
+            <h2 id="today-title">今天</h2>
 
-        <Block
-          title="贡献轨迹"
-          label="近半年回望"
-          className="overview-heatmap"
-          pending={review.isPending}
-          error={review.isError}
-          retry={() => void review.refetch()}
-        >
-          {review.data ? (
-            <ContributionHeatmap
-              days={review.data.days}
-              from={heatmap.from}
-              to={heatmap.to}
-              label="近半年每日任务完成贡献图"
+            <div
+              className="day-progress"
+              role="progressbar"
+              aria-label="今日完成进度"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progress}
+              aria-valuetext={rate === null ? '今天还没有计划' : `已完成 ${progress}%`}
             >
-              <Link className="text-link" to="/review">
-                查看完整回顾 →
-              </Link>
-            </ContributionHeatmap>
-          ) : null}
-        </Block>
-
-        <Block
-          title={overdueTasks.length > 0 ? `过期待办 · ${overdueTasks.length}` : '过期待办'}
-          label="移回今天"
-          {...common}
-        >
-          {overview.data?.overdueTasks.length === 0 ? (
-            <p className="empty-state">没有逾期任务。</p>
-          ) : null}
-          <ul className="compact-list">
-            {visibleOverdueTasks.map((task) => (
-              <li key={task.id}>
-                <div>
-                  <strong>{task.title}</strong>
-                  <small>{task.date}</small>
-                </div>
-                <button
-                  className="button-secondary"
-                  disabled={move.isPending}
-                  onClick={() => move.mutate(task)}
-                >
-                  移到今天
-                </button>
-              </li>
-            ))}
-          </ul>
-          {remainingOverdueTasks > 0 ? (
-            <button
-              className="button-secondary"
-              onClick={() => setVisibleOverdueCount((count) => count + OVERDUE_BATCH_SIZE)}
-            >
-              再显示 {Math.min(OVERDUE_BATCH_SIZE, remainingOverdueTasks)} 条（剩余{' '}
-              {remainingOverdueTasks} 条）
-            </button>
-          ) : null}
-          {overdueTasks.length > 0 ? (
-            <p className="overdue-link-row">
-              <Link className="text-link" to="/overdue">
-                处理全部逾期任务 →
-              </Link>
-            </p>
-          ) : null}
-          {move.error ? (
-            <p role="alert" className="form-error">
-              移动失败，请刷新后重试。
-            </p>
-          ) : null}
-        </Block>
-
-        <Block title="继续学习" label="续接进度" {...common}>
-          {overview.data?.nextLearning ? (
-            <div className="learning-resume">
-              <h3>{overview.data.nextLearning.title}</h3>
-              <p>
-                {overview.data.nextLearning.resumePartTitle} ·{' '}
-                {resumePositionLabel(overview.data.nextLearning.resumeSeconds)}
-              </p>
-              <Link className="text-link" to="/learning">
-                打开学习页
-              </Link>
+              <span style={{ width: `${progress}%` }} />
             </div>
-          ) : (
-            <p className="empty-state">还没有可续接的学习进度。</p>
-          )}
-        </Block>
+            <p className="day-progress__counts">
+              {today === undefined || today.planned === 0
+                ? '今天还没有计划，因此不计算完成率。'
+                : `完成 ${today.completed} / 计划 ${today.planned} · 待办 ${today.active}${
+                    today.cancelled > 0 ? ` · 取消 ${today.cancelled}` : ''
+                  }`}
+            </p>
 
-        <Block title="最近小记" label="刚刚记下" {...common}>
-          {overview.data?.recentNotes.length === 0 ? (
-            <p className="empty-state">还没有小记。</p>
-          ) : null}
-          <ul className="note-snippets">
-            {overview.data?.recentNotes.map((note) => (
-              <li key={note.id}>{note.content}</li>
-            ))}
-          </ul>
-          <Link className="text-link" to="/notes">
-            查看全部小记
-          </Link>
-        </Block>
-      </div>
+            {focus !== null ? (
+              <div className="day-focus">
+                <h3>{focus.title}</h3>
+                {focus.description ? <p>{focus.description}</p> : null}
+              </div>
+            ) : (
+              <p className="empty-state">今天没有等待完成的任务，给自己留一点余白吧。</p>
+            )}
+
+            <form className="quick-add" onSubmit={submit}>
+              <label htmlFor="quick-task">快速添加今天的任务</label>
+              <div>
+                <input
+                  id="quick-task"
+                  required
+                  data-shortcut="new"
+                  maxLength={500}
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="现在最值得完成的是什么？"
+                />
+                <button disabled={quickAdd.isPending}>
+                  {quickAdd.isPending ? '添加中…' : '添加'}
+                </button>
+              </div>
+              {quickAdd.error ? (
+                <p role="alert" className="form-error">
+                  {quickAdd.error.message}
+                </p>
+              ) : null}
+            </form>
+          </section>
+
+          <FollowUp
+            title={overdueTasks.length > 0 ? `过期待办 · ${overdueTasks.length}` : '过期待办'}
+            titleId="overdue-title"
+          >
+            {overdueTasks.length === 0 ? <p className="empty-state">没有逾期任务。</p> : null}
+            <ul className="day-rows">
+              {visibleOverdueTasks.map((task) => (
+                <li className="day-row" key={task.id}>
+                  <div className="day-row__main">
+                    <strong>{task.title}</strong>
+                    <small>{task.date}</small>
+                  </div>
+                  <button
+                    className="button-secondary"
+                    disabled={move.isPending}
+                    onClick={() => move.mutate(task)}
+                  >
+                    移到今天
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {remainingOverdueTasks > 0 ? (
+              <button
+                className="button-secondary"
+                onClick={() => setVisibleOverdueCount((count) => count + OVERDUE_BATCH_SIZE)}
+              >
+                再显示 {Math.min(OVERDUE_BATCH_SIZE, remainingOverdueTasks)} 条（剩余{' '}
+                {remainingOverdueTasks} 条）
+              </button>
+            ) : null}
+            {overdueTasks.length > 0 ? (
+              <p className="day-followup__link">
+                <Link className="text-link" to="/overdue">
+                  处理全部逾期任务 →
+                </Link>
+              </p>
+            ) : null}
+            {move.error ? (
+              <p role="alert" className="form-error">
+                移动失败，请刷新后重试。
+              </p>
+            ) : null}
+          </FollowUp>
+
+          <FollowUp title="继续学习" titleId="learning-title">
+            {data.nextLearning !== null ? (
+              <div className="day-row">
+                <div className="day-row__main">
+                  <h3>{data.nextLearning.title}</h3>
+                  <small>
+                    {data.nextLearning.resumePartTitle} ·{' '}
+                    {resumePositionLabel(data.nextLearning.resumeSeconds)}
+                  </small>
+                </div>
+                <Link className="text-link" to="/learning">
+                  打开学习页
+                </Link>
+              </div>
+            ) : (
+              <p className="empty-state">还没有可续接的学习进度。</p>
+            )}
+          </FollowUp>
+
+          <FollowUp title="最近小记" titleId="notes-title">
+            {data.recentNotes.length === 0 ? <p className="empty-state">还没有小记。</p> : null}
+            <ul className="day-rows day-notes">
+              {data.recentNotes.map((note) => (
+                <li className="day-row" key={note.id}>
+                  {note.content}
+                </li>
+              ))}
+            </ul>
+            <p className="day-followup__link">
+              <Link className="text-link" to="/notes">
+                查看全部小记 →
+              </Link>
+            </p>
+          </FollowUp>
+        </>
+      ) : null}
     </section>
   );
 }

@@ -26,109 +26,176 @@
   flex: 1;
 }
 
-.overview-grid .insight-block {
-  min-width: 0;
-  min-height: 15rem;
+/* ===== 总览：单列「今天」主线 ===== */
+
+.day-header {
+  margin-bottom: clamp(1.5rem, 4vw, 2.25rem);
 }
 
-.overview-heatmap {
-  min-width: 0;
-  min-height: 0;
+.day-header h1 {
+  max-width: 22em;
 }
 
-.insight-block h3 {
-  margin: 1rem 0 0.5rem;
-  font-size: 1.3rem;
+.day-header__meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
-.surface--primary .status-pill {
-  color: var(--accent-ink);
-  background: var(--chip-on-primary-bg);
+/* 四节的标题统一为一个安静的标签，且每节只此一个：
+   页面层级由「卡片 vs 画布」承担，标题字号不再与内容争主次。 */
+.day-card h2,
+.day-followup h2 {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
 }
 
-.today-progress {
+.day-card {
+  padding: clamp(1.2rem, 3vw, 1.6rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
+}
+
+.day-card h2 {
+  margin-bottom: 0.1rem;
+}
+
+/* 总览里的空态是一条安静的行，不再各撑一个虚线框。 */
+.day-followup .empty-state {
+  padding: 0;
+  border: 0;
+  text-align: left;
+}
+
+/* 没有焦点任务时，与有焦点时的 .day-focus 用同一条发丝线分隔计数行。 */
+.day-card .empty-state {
+  margin: 1.2rem 0 0;
+  padding: 1.1rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  /* 全局 .empty-state 带圆角，这里必须清零，否则那条线会弯成半个框。 */
+  border-radius: 0;
+  text-align: left;
+}
+
+.day-progress {
   overflow: hidden;
-  height: 0.55rem;
-  margin-top: 2rem;
+  height: 0.42rem;
+  margin-top: 0.9rem;
   border-radius: var(--radius-full);
-  background: rgb(255 255 255 / 18%);
+  background: var(--line);
 }
 
-.today-progress span {
+.day-progress span {
   display: block;
   height: 100%;
   min-width: 2px;
   border-radius: var(--radius-full);
-  background: var(--progress-fill);
+  background: var(--accent);
   transition: width 300ms ease;
 }
 
-.summary-stats {
-  display: grid;
-  margin: auto 0 0;
-  padding-top: 2rem;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
+.day-progress__counts {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
-.summary-stats div {
-  padding-top: 0.75rem;
-  border-top: 1px solid rgb(255 255 255 / 25%);
+.day-focus {
+  margin-top: 1.2rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
 }
 
-.summary-stats dt {
-  color: inherit;
-  font-size: 0.76rem;
-  opacity: 0.72;
+/* 焦点任务是这块卡片真正的内容，字号高于第 2 层标题。 */
+.day-focus h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1.3rem;
 }
 
-.summary-stats dd {
-  margin: 0.2rem 0 0;
-  font-family: var(--font-mono);
-  font-size: 2rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.compact-list,
-.note-snippets {
-  display: grid;
-  margin: 0 0 1rem;
-  padding: 0;
-  list-style: none;
-  gap: 0.65rem;
-}
-
-.compact-list li {
-  display: flex;
-  padding-bottom: 0.65rem;
-  border-bottom: 1px solid var(--line);
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.compact-list div,
-.compact-list small {
-  display: block;
-}
-
-.compact-list small {
-  margin-top: 0.2rem;
+.day-focus p {
+  margin: 0;
   color: var(--muted);
 }
 
-.compact-list button {
+.day-card .quick-add {
+  margin-top: 1.3rem;
+}
+
+/* 今天之后的三节：发丝线分隔的行，不再各自成卡。 */
+.day-followup {
+  margin-top: 1.9rem;
+}
+
+.day-followup__link {
+  margin: 0.9rem 0 0;
+}
+
+.day-rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.day-row {
+  display: flex;
+  min-width: 0;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.day-row:first-child {
+  border-top: 1px solid var(--line);
+}
+
+.day-row__main {
+  min-width: 0;
+}
+
+.day-row__main strong,
+.day-row__main small {
+  display: block;
+}
+
+.day-row__main small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.day-row__main h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.day-row button,
+.day-row a {
   flex: 0 0 auto;
 }
 
-.note-snippets li {
+.day-notes li {
   display: -webkit-box;
   overflow: hidden;
   color: var(--muted);
   white-space: pre-wrap;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+@media (max-width: 480px) {
+  .day-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 }
 
 .text-link {
@@ -608,14 +675,6 @@
 }
 
 @media (max-width: 760px) {
-  .summary-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .summary-stats dd {
-    font-size: 1.6rem;
-  }
-
   .review-header {
     display: block;
   }
@@ -655,11 +714,6 @@
   }
 
   .quick-add > div {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .compact-list li {
     align-items: stretch;
     flex-direction: column;
   }

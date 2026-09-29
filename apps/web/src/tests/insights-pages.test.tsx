@@ -150,8 +150,6 @@ describe('overview page', () => {
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         calls.push([input, init]);
-        const url = String(input);
-        if (url.includes('/api/v1/review')) return json(reviewPayload('2026-01-01', date));
         if (init?.method === 'POST') return json(overview.today.items[0], 201);
         if (init?.method === 'PATCH')
           return json({ ...overview.overdueTasks[0], date, revision: 3 });
@@ -168,16 +166,8 @@ describe('overview page', () => {
     expect(progress).toHaveAttribute('aria-valuenow', '0');
     expect(progress).toHaveAttribute('aria-valuetext', '已完成 0%');
 
-    // 近 7 天趋势：服务端 last7Days 聚合终于有了呈现。
-    expect(screen.getByRole('img', { name: /近 7 天完成趋势/ })).toBeInTheDocument();
-
-    // 贡献轨迹：26 周滚动窗口是完整矩形，本周未到的日子渲染为空格子。
-    // 窗口为 2026-02-15（周日）至 2026-08-15（周六），数据到 8 月 13 日。
-    const heatmap = screen.getByRole('group', { name: '近半年每日任务完成贡献图' });
-    expect(heatmap.querySelectorAll('.contribution-cell')).toHaveLength(26 * 7);
-    expect(within(heatmap).getAllByRole('img')).toHaveLength(180);
-    expect(screen.getByText('完成 180 项 · 有贡献 180 天 · 最长连续 180 天')).toBeInTheDocument();
-
+    // 总览只保留一条「今天」主线：近 7 天趋势与贡献图已随之移除，
+    // 后者的完整版只在回顾页呈现。
     expect(screen.getByRole('heading', { name: '过期待办 · 1' })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('快速添加今天的任务'), {
@@ -192,29 +182,6 @@ describe('overview page', () => {
   });
 
   it('shows retry and truthful empty states', async () => {
-    const emptyReview = {
-      from: '2026-01-01',
-      to: date,
-      // schema 要求 days 至少一天；全零的一天代表真实空态。
-      days: [
-        {
-          ...day,
-          planned: 0,
-          completed: 0,
-          cancelled: 0,
-          completionRate: null,
-          learningActivities: 0,
-        },
-      ],
-      totals: {
-        planned: 0,
-        completed: 0,
-        cancelled: 0,
-        completionRate: null,
-        learningActivities: 0,
-      },
-      learningDuration: { totalSeconds: 0, bySeries: [] },
-    };
     const emptyOverview = {
       ...overview,
       today: { ...overview.today, items: [], planned: 0, active: 0 },
@@ -222,15 +189,13 @@ describe('overview page', () => {
       recentNotes: [],
       nextLearning: null,
     };
-    // 页面并发请求 overview 与 review；首次任意失败后重试，都应回到真实空态。
+    // 首次失败后重试，应回到真实空态。
     vi.stubGlobal(
       'fetch',
       vi
         .fn()
         .mockResolvedValueOnce(json({ error: { code: 'FAIL', message: '失败', details: [] } }, 500))
-        .mockImplementation(async (input: RequestInfo | URL) =>
-          json(String(input).includes('/api/v1/review') ? emptyReview : emptyOverview),
-        ),
+        .mockImplementation(async () => json(emptyOverview)),
     );
     renderPage(<OverviewPage />);
     const retries = await screen.findAllByRole('button', { name: '重试' });
@@ -238,8 +203,6 @@ describe('overview page', () => {
     expect(await screen.findByText('没有逾期任务。')).toBeInTheDocument();
     expect(screen.getByText('还没有可续接的学习进度。')).toBeInTheDocument();
     expect(screen.getByText('今天没有等待完成的任务，给自己留一点余白吧。')).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: '近半年每日任务完成贡献图' })).toBeInTheDocument();
-    expect(screen.getByText('完成 0 项 · 有贡献 0 天 · 最长连续 0 天')).toBeInTheDocument();
   });
 
   it('keeps a large overdue list available without rendering it all at once', async () => {

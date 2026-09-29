@@ -293,10 +293,6 @@ button:disabled {
   font-weight: 650;
 }
 
-.overdue-link-row {
-  margin: 0.9rem 0 0;
-}
-
 /* ===== 清单卡片通用风格（任务 / 逾期 / 固定任务 / 小记共用） ===== */
 
 /* 卡片本体：左侧状态条 + 悬停浮起 */
