@@ -313,4 +313,52 @@ describe('overview and review API', () => {
     expect(accepted.status).toBe(200);
     expect(accepted.body.last7Days[0]).toMatchObject({ date: '0001-01-01' });
   });
+
+  it('drops series whose learning position is still zero', async () => {
+    // 回归：HAVING 里裸写别名 duration_seconds 会被解析成 learning_resources.duration_seconds，
+    // 于是「位置合计 0、但资源时长 > 0」的系列会带着 durationSeconds: 0 一起返回，
+    // 违反契约的 positive() 约束，让回顾页整页显示「回顾加载失败」。
+    const at = Date.UTC(2026, 7, 13, 4);
+    const resourceId = '10000000-0000-4000-8000-0000000000b1';
+    const partId = '20000000-0000-4000-8000-0000000000b1';
+    const seriesId = '30000000-0000-4000-8000-0000000000b1';
+    database.connection
+      .prepare(
+        `INSERT INTO learning_resources
+         (id, platform, source_url, title, duration_seconds, created_at_ms, updated_at_ms)
+         VALUES (?, 'bilibili', 'https://www.bilibili.com/video/BV1zero', '零进度课程', 600, ?, ?)`,
+      )
+      .run(resourceId, at, at);
+    database.connection
+      .prepare(
+        `INSERT INTO learning_parts
+         (id, resource_id, part_number, title, duration_seconds, created_at_ms, updated_at_ms)
+         VALUES (?, ?, 1, '第一讲', 600, ?, ?)`,
+      )
+      .run(partId, resourceId, at, at);
+    // 续播分P就是第一讲且 resume 为 0，位置合计恰好为 0。
+    database.connection
+      .prepare(
+        `INSERT INTO learning_resource_progress
+         (resource_id, resume_part_id, resume_seconds, last_observed_at_ms, updated_at_ms)
+         VALUES (?, ?, 0, ?, ?)`,
+      )
+      .run(resourceId, partId, at, at);
+    database.connection
+      .prepare(
+        `INSERT INTO learning_series (id, name, created_at_ms, updated_at_ms)
+         VALUES (?, '零进度系列', ?, ?)`,
+      )
+      .run(seriesId, at, at);
+    database.connection
+      .prepare(
+        `INSERT INTO learning_series_items (series_id, resource_id, position, created_at_ms)
+         VALUES (?, ?, 0, ?)`,
+      )
+      .run(seriesId, resourceId, at);
+
+    const review = await read('/api/v1/review?from=2026-08-13&to=2026-08-13');
+    expect(review.status).toBe(200);
+    expect(review.body.learningDuration).toEqual({ totalSeconds: 0, bySeries: [] });
+  });
 });

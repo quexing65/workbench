@@ -170,8 +170,10 @@ export class InsightRepository {
          LEFT JOIN ranked_series ranked ON ranked.resource_id = position.resource_id
            AND ranked.rank = 1
          GROUP BY ranked.series_id, ranked.series_name
-         HAVING duration_seconds > 0
-         ORDER BY duration_seconds DESC, series_name`,
+         -- 必须写聚合表达式：裸写别名 duration_seconds 会被解析成同名的
+         -- learning_resources.duration_seconds，位置合计为 0 的系列会漏过筛选。
+         HAVING SUM(position.position_seconds) > 0
+         ORDER BY SUM(position.position_seconds) DESC, series_name`,
       )
       .all() as unknown as SeriesLearningPositionRow[];
     return rows.map((row) => ({
