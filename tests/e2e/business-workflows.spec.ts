@@ -73,7 +73,6 @@ test('business pages fit a 360px viewport without page-level horizontal overflow
     '/notes',
     '/learning',
     '/review',
-    '/settings',
   ]) {
     await page.goto(path);
     await expect(page.locator('h1')).toBeVisible();

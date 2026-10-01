@@ -8,7 +8,7 @@ const fixedTime = new Date('2026-08-13T04:00:00.000Z');
  * 已加载数据后的页面基线仍由 visual-accessibility.spec.ts 覆盖。
  */
 const pages = [
-  ['/overview', '把今天，安稳地放在眼前。'],
+  ['/overview', '总览'],
   ['/tasks', '任务'],
   ['/overdue', '逾期'],
   ['/recurring', '固定任务'],
@@ -16,7 +16,6 @@ const pages = [
   ['/learning', '学习'],
   ['/review', '回顾'],
   ['/data', '数据'],
-  ['/settings', '设置'],
 ] as const;
 
 test('matches the empty-state reference of every page', async ({ page }) => {

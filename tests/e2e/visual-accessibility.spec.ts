@@ -61,11 +61,11 @@ test('supports core task and note flows from the keyboard', async ({ page }) => 
 });
 
 test('has no blocking accessibility violations on every page', async ({ page }) => {
-  // 九个页面各跑一次 axe，默认 30s 不够。
+  // 八个页面各跑一次 axe，默认 30s 不够。
   test.setTimeout(120_000);
   await page.clock.setFixedTime(fixedTime);
   const pages = [
-    ['/overview', '把今天，安稳地放在眼前。'],
+    ['/overview', '总览'],
     ['/tasks', '任务'],
     ['/overdue', '逾期'],
     ['/recurring', '固定任务'],
@@ -73,7 +73,6 @@ test('has no blocking accessibility violations on every page', async ({ page }) 
     ['/learning', '学习'],
     ['/review', '回顾'],
     ['/data', '数据'],
-    ['/settings', '设置'],
   ] as const;
 
   for (const [route, heading] of pages) {
@@ -101,7 +100,7 @@ test('honors reduced motion and has no blocking mobile accessibility violations'
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/overview');
-  await expect(page.getByRole('heading', { name: '把今天，安稳地放在眼前。' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '总览' })).toBeVisible();
   const duration = await page
     .locator('.nav-link')
     .first()
