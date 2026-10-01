@@ -51,32 +51,14 @@
 }
 
 .page-header {
-  max-width: 48rem;
-}
-
-.eyebrow {
-  margin: 0 0 0.75rem;
-  color: var(--accent-ink);
-  font-size: 0.78rem;
-  font-weight: 750;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
+  margin-bottom: clamp(1.25rem, 3vw, 2rem);
 }
 
 h1 {
-  max-width: 14em;
-  margin-bottom: 0.75rem;
-  font-size: clamp(1.9rem, 3.2vw, 3rem);
-  line-height: 1.12;
-  letter-spacing: -0.025em;
-}
-
-.page-lead {
-  max-width: 38rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: clamp(1rem, 1.5vw, 1.18rem);
-  line-height: 1.75;
+  margin-bottom: 0;
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .placeholder-card {
@@ -84,7 +66,7 @@ h1 {
   display: flex;
   min-height: 18rem;
   margin-top: clamp(3rem, 8vw, 7rem);
-  padding: clamp(1.5rem, 4vw, 3rem);
+  padding: clamp(var(--space-5), 3vw, var(--space-7));
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -118,5 +100,5 @@ h1 {
 .placeholder-card p {
   margin: 0;
   color: var(--muted);
-  line-height: 1.7;
+  line-height: 1.6;
 }

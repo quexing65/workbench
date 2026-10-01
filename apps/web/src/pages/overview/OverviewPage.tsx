@@ -106,7 +106,7 @@ export function OverviewPage() {
   return (
     <section className="page page--day" aria-labelledby="overview-title">
       <header className="day-header">
-        <h1 id="overview-title">把今天，安稳地放在眼前。</h1>
+        <h1 id="overview-title">总览</h1>
         <p className="day-header__meta">
           <time dateTime={date}>{longDate(date)}</time>
         </p>
@@ -172,85 +172,87 @@ export function OverviewPage() {
             </form>
           </section>
 
-          <FollowUp
-            title={overdueTasks.length > 0 ? `过期待办 · ${overdueTasks.length}` : '过期待办'}
-            titleId="overdue-title"
-          >
-            {overdueTasks.length === 0 ? <p className="empty-state">没有逾期任务。</p> : null}
-            <ul className="day-rows">
-              {visibleOverdueTasks.map((task) => (
-                <li className="day-row" key={task.id}>
+          <div className="day-grid">
+            <FollowUp
+              title={overdueTasks.length > 0 ? `过期待办 · ${overdueTasks.length}` : '过期待办'}
+              titleId="overdue-title"
+            >
+              {overdueTasks.length === 0 ? <p className="empty-state">没有逾期任务。</p> : null}
+              <ul className="day-rows">
+                {visibleOverdueTasks.map((task) => (
+                  <li className="day-row" key={task.id}>
+                    <div className="day-row__main">
+                      <strong>{task.title}</strong>
+                      <small>{task.date}</small>
+                    </div>
+                    <button
+                      className="button-secondary"
+                      disabled={move.isPending}
+                      onClick={() => move.mutate(task)}
+                    >
+                      移到今天
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {remainingOverdueTasks > 0 ? (
+                <button
+                  className="button-secondary"
+                  onClick={() => setVisibleOverdueCount((count) => count + OVERDUE_BATCH_SIZE)}
+                >
+                  再显示 {Math.min(OVERDUE_BATCH_SIZE, remainingOverdueTasks)} 条（剩余{' '}
+                  {remainingOverdueTasks} 条）
+                </button>
+              ) : null}
+              {overdueTasks.length > 0 ? (
+                <p className="day-followup__link">
+                  <Link className="text-link" to="/overdue">
+                    处理全部逾期任务 →
+                  </Link>
+                </p>
+              ) : null}
+              {move.error ? (
+                <p role="alert" className="form-error">
+                  移动失败，请刷新后重试。
+                </p>
+              ) : null}
+            </FollowUp>
+
+            <FollowUp title="继续学习" titleId="learning-title">
+              {data.nextLearning !== null ? (
+                <div className="day-row">
                   <div className="day-row__main">
-                    <strong>{task.title}</strong>
-                    <small>{task.date}</small>
+                    <h3>{data.nextLearning.title}</h3>
+                    <small>
+                      {data.nextLearning.resumePartTitle} ·{' '}
+                      {resumePositionLabel(data.nextLearning.resumeSeconds)}
+                    </small>
                   </div>
-                  <button
-                    className="button-secondary"
-                    disabled={move.isPending}
-                    onClick={() => move.mutate(task)}
-                  >
-                    移到今天
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {remainingOverdueTasks > 0 ? (
-              <button
-                className="button-secondary"
-                onClick={() => setVisibleOverdueCount((count) => count + OVERDUE_BATCH_SIZE)}
-              >
-                再显示 {Math.min(OVERDUE_BATCH_SIZE, remainingOverdueTasks)} 条（剩余{' '}
-                {remainingOverdueTasks} 条）
-              </button>
-            ) : null}
-            {overdueTasks.length > 0 ? (
-              <p className="day-followup__link">
-                <Link className="text-link" to="/overdue">
-                  处理全部逾期任务 →
-                </Link>
-              </p>
-            ) : null}
-            {move.error ? (
-              <p role="alert" className="form-error">
-                移动失败，请刷新后重试。
-              </p>
-            ) : null}
-          </FollowUp>
-
-          <FollowUp title="继续学习" titleId="learning-title">
-            {data.nextLearning !== null ? (
-              <div className="day-row">
-                <div className="day-row__main">
-                  <h3>{data.nextLearning.title}</h3>
-                  <small>
-                    {data.nextLearning.resumePartTitle} ·{' '}
-                    {resumePositionLabel(data.nextLearning.resumeSeconds)}
-                  </small>
+                  <Link className="text-link" to="/learning">
+                    打开学习页
+                  </Link>
                 </div>
-                <Link className="text-link" to="/learning">
-                  打开学习页
-                </Link>
-              </div>
-            ) : (
-              <p className="empty-state">还没有可续接的学习进度。</p>
-            )}
-          </FollowUp>
+              ) : (
+                <p className="empty-state">还没有可续接的学习进度。</p>
+              )}
+            </FollowUp>
 
-          <FollowUp title="最近小记" titleId="notes-title">
-            {data.recentNotes.length === 0 ? <p className="empty-state">还没有小记。</p> : null}
-            <ul className="day-rows day-notes">
-              {data.recentNotes.map((note) => (
-                <li className="day-row" key={note.id}>
-                  {note.content}
-                </li>
-              ))}
-            </ul>
-            <p className="day-followup__link">
-              <Link className="text-link" to="/notes">
-                查看全部小记 →
-              </Link>
-            </p>
-          </FollowUp>
+            <FollowUp title="最近小记" titleId="notes-title">
+              {data.recentNotes.length === 0 ? <p className="empty-state">还没有小记。</p> : null}
+              <ul className="day-rows day-notes">
+                {data.recentNotes.map((note) => (
+                  <li className="day-row" key={note.id}>
+                    {note.content}
+                  </li>
+                ))}
+              </ul>
+              <p className="day-followup__link">
+                <Link className="text-link" to="/notes">
+                  查看全部小记 →
+                </Link>
+              </p>
+            </FollowUp>
+          </div>
         </>
       ) : null}
     </section>

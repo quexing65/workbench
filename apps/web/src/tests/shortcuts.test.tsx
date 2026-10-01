@@ -54,7 +54,7 @@ describe('global shortcuts', () => {
 
   it('navigates with the g prefix and ignores unknown follow-up keys', async () => {
     renderApp('/');
-    await screen.findByRole('heading', { name: '把今天，安稳地放在眼前。' });
+    await screen.findByRole('heading', { name: '总览' });
 
     fireEvent.keyDown(window, { key: 'g' });
     fireEvent.keyDown(window, { key: 'x' });
@@ -78,7 +78,7 @@ describe('global shortcuts', () => {
 
   it('opens the shortcut sheet with ? and closes it with Escape or ?', async () => {
     renderApp('/');
-    await screen.findByRole('heading', { name: '把今天，安稳地放在眼前。' });
+    await screen.findByRole('heading', { name: '总览' });
 
     fireEvent.keyDown(window, { key: '?' });
     const dialog = await screen.findByRole('dialog');

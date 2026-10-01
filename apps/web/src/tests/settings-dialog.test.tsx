@@ -1,10 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { setThemeMode } from '../app/preferences';
-import { SettingsPage } from '../pages/settings/SettingsPage';
+import { AppRouter } from '../app/router';
 
 function stubHealthFetch() {
   vi.stubGlobal(
@@ -24,19 +23,23 @@ function stubHealthFetch() {
   );
 }
 
-function renderPage() {
+function renderApp() {
+  window.history.replaceState({}, '', '/overview');
   return render(
-    <BrowserRouter>
-      <QueryClientProvider
-        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-      >
-        <SettingsPage />
-      </QueryClientProvider>
-    </BrowserRouter>,
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <AppRouter />
+    </QueryClientProvider>,
   );
 }
 
-describe('settings page', () => {
+async function openSettings() {
+  fireEvent.click((await screen.findAllByRole('button', { name: '设置' }))[0]!);
+  return screen.findByRole('dialog');
+}
+
+describe('settings dialog', () => {
   beforeEach(() => {
     setThemeMode('light');
     stubHealthFetch();
@@ -49,22 +52,22 @@ describe('settings page', () => {
     delete document.documentElement.dataset['theme'];
   });
 
-  it('renders theme options, the shortcut reference and the local version', async () => {
-    renderPage();
+  it('opens from the sidebar button and shows theme options and the local version', async () => {
+    renderApp();
 
-    expect(await screen.findByRole('heading', { name: '设置', level: 1 })).toBeInTheDocument();
+    const dialog = await openSettings();
+    expect(dialog).toHaveTextContent('设置');
     expect(screen.getByRole('radio', { name: '浅色' })).toBeChecked();
     expect(screen.getByRole('radio', { name: '深色' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: '跟随系统' })).toBeInTheDocument();
-    expect(screen.getByText('打开 / 关闭本速查表')).toBeInTheDocument();
-    expect(screen.getAllByText('G').length).toBeGreaterThan(0);
-    expect(screen.getByText('总览')).toBeInTheDocument();
-    expect(await screen.findByText('v1.6.0')).toBeInTheDocument();
+    expect(await within(dialog).findByText('v1.6.0')).toBeInTheDocument();
+    // 快捷键速查归 ? 浮层，弹窗内不再重复。
+    expect(dialog).not.toHaveTextContent('键盘快捷键');
   });
 
   it('applies the dark theme immediately when chosen', async () => {
-    renderPage();
-    await screen.findByRole('heading', { name: '设置', level: 1 });
+    renderApp();
+    await openSettings();
 
     fireEvent.click(screen.getByRole('radio', { name: '深色' }));
     expect(document.documentElement.dataset['theme']).toBe('dark');
@@ -73,12 +76,28 @@ describe('settings page', () => {
   });
 
   it('follows the system scheme when asked to', async () => {
-    renderPage();
-    await screen.findByRole('heading', { name: '设置', level: 1 });
+    renderApp();
+    await openSettings();
 
     // jsdom 的 matchMedia 固定 matches:false，即系统为浅色。
     fireEvent.click(screen.getByRole('radio', { name: '跟随系统' }));
     expect(document.documentElement.dataset['theme']).toBe('light');
     expect(window.localStorage.getItem('workbench-theme')).toBe('system');
+  });
+
+  it('closes with Escape, the close button, or the backdrop', async () => {
+    renderApp();
+    await openSettings();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    await openSettings();
+    fireEvent.click(screen.getByRole('button', { name: '关闭' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    const dialog = await openSettings();
+    fireEvent.mouseDown(dialog.parentElement!);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 });

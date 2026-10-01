@@ -3,21 +3,45 @@ import {
   ChartLineUp,
   ClockCountdown,
   Database,
-  Gear,
   ListChecks,
   MonitorPlay,
   NotePencil,
   SquaresFour,
 } from '@phosphor-icons/react';
+import type { Icon } from '@phosphor-icons/react';
 
-export const navigationItems = [
-  { to: '/overview', label: '总览', shortLabel: '总览', icon: SquaresFour },
-  { to: '/tasks', label: '任务', shortLabel: '任务', icon: ListChecks },
-  { to: '/overdue', label: '逾期', shortLabel: '逾期', icon: ClockCountdown },
-  { to: '/recurring', label: '固定任务', shortLabel: '固定', icon: ArrowsClockwise },
-  { to: '/notes', label: '小记', shortLabel: '小记', icon: NotePencil },
-  { to: '/learning', label: '学习', shortLabel: '学习', icon: MonitorPlay },
-  { to: '/review', label: '回顾', shortLabel: '回顾', icon: ChartLineUp },
-  { to: '/data', label: '数据', shortLabel: '数据', icon: Database },
-  { to: '/settings', label: '设置', shortLabel: '设置', icon: Gear },
-] as const;
+export interface NavigationItem {
+  to: string;
+  label: string;
+  icon: Icon;
+}
+
+export interface NavigationGroup {
+  id: string;
+  label: string;
+  items: readonly NavigationItem[];
+}
+
+/** 侧栏导航按使用频率分组：日常是高频动线，管理是低频入口；设置以按钮形式固定在侧栏底部。 */
+export const navigationGroups: readonly NavigationGroup[] = [
+  {
+    id: 'daily',
+    label: '日常',
+    items: [
+      { to: '/overview', label: '总览', icon: SquaresFour },
+      { to: '/tasks', label: '任务', icon: ListChecks },
+      { to: '/notes', label: '小记', icon: NotePencil },
+      { to: '/learning', label: '学习', icon: MonitorPlay },
+      { to: '/review', label: '回顾', icon: ChartLineUp },
+    ],
+  },
+  {
+    id: 'manage',
+    label: '管理',
+    items: [
+      { to: '/overdue', label: '逾期', icon: ClockCountdown },
+      { to: '/recurring', label: '固定任务', icon: ArrowsClockwise },
+      { to: '/data', label: '数据', icon: Database },
+    ],
+  },
+];

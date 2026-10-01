@@ -17,7 +17,7 @@
 .bili-sync-panel {
   display: grid;
   margin-top: clamp(2rem, 5vw, 4rem);
-  padding: clamp(1.2rem, 3vw, 2rem);
+  padding: clamp(var(--space-4), 2vw, var(--space-5));
   gap: 1.25rem;
 }
 
@@ -249,7 +249,7 @@
 .learning-import {
   display: grid;
   margin-top: clamp(2rem, 5vw, 4rem);
-  padding: clamp(1.2rem, 3vw, 2rem);
+  padding: clamp(var(--space-4), 2vw, var(--space-5));
   grid-template-columns: minmax(15rem, 1.8fr) minmax(12rem, 1fr) auto;
   gap: 1rem;
   align-items: end;
@@ -316,7 +316,7 @@ select {
 
 .learning-library,
 .series-panel {
-  padding: clamp(1.2rem, 3vw, 2rem);
+  padding: clamp(var(--space-4), 2vw, var(--space-5));
 }
 
 .learning-list,

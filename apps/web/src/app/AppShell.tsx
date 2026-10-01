@@ -1,11 +1,13 @@
-import { ArrowLineLeft, ArrowLineRight, SidebarSimple } from '@phosphor-icons/react';
+import { ArrowLineLeft, ArrowLineRight, Gear, SidebarSimple } from '@phosphor-icons/react';
 import { MotionConfig, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { HealthStatus } from '../shared/ui/HealthStatus';
+import { SettingsDialog } from '../shared/ui/SettingsDialog';
 import { ShortcutSheet } from '../shared/ui/ShortcutSheet';
 import { ToastProvider } from '../shared/ui/Toast';
-import { navigationItems } from './navigation';
+import { navigationGroups } from './navigation';
+import type { NavigationItem } from './navigation';
 import { useGlobalShortcuts } from './useGlobalShortcuts';
 
 /** 三档侧栏的断点，与 shell.css 中 .app-shell--rail / .app-shell--drawer 样式对应：
@@ -32,42 +34,79 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-function Navigation({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
+function NavItemLink({
+  item,
+  onNavigate,
+}: {
+  item: NavigationItem;
+  onNavigate?: (() => void) | undefined;
+}) {
+  const Glyph = item.icon;
+  return (
+    <NavLink
+      className={({ isActive }) => (isActive ? 'nav-link nav-link--active' : 'nav-link')}
+      end
+      to={item.to}
+      viewTransition
+      onClick={onNavigate}
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <motion.span
+              aria-hidden="true"
+              className="side-nav__glider"
+              layoutId="side-nav-glider"
+              transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.9 }}
+            />
+          )}
+          <span className="nav-link__icon" aria-hidden="true">
+            <Glyph className="nav-link__glyph nav-link__glyph--outline" weight="regular" />
+            <Glyph className="nav-link__glyph nav-link__glyph--fill" weight="fill" />
+          </span>
+          <span className="nav-link__label-wrap">
+            <span className="nav-link__label">{item.label}</span>
+          </span>
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+function Navigation({
+  onNavigate,
+  onOpenSettings,
+}: {
+  onNavigate?: (() => void) | undefined;
+  onOpenSettings: () => void;
+}) {
   return (
     <nav className="side-nav" aria-label="主要导航">
-      {navigationItems.map((item) => {
-        const Glyph = item.icon;
-        return (
-          <NavLink
-            className={({ isActive }) => (isActive ? 'nav-link nav-link--active' : 'nav-link')}
-            end
-            key={item.to}
-            to={item.to}
-            viewTransition
-            onClick={onNavigate}
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <motion.span
-                    aria-hidden="true"
-                    className="side-nav__glider"
-                    layoutId="side-nav-glider"
-                    transition={{ type: 'spring', stiffness: 420, damping: 34, mass: 0.9 }}
-                  />
-                )}
-                <span className="nav-link__icon" aria-hidden="true">
-                  <Glyph className="nav-link__glyph nav-link__glyph--outline" weight="regular" />
-                  <Glyph className="nav-link__glyph nav-link__glyph--fill" weight="fill" />
-                </span>
-                <span className="nav-link__label-wrap">
-                  <span className="nav-link__label">{item.label}</span>
-                </span>
-              </>
-            )}
-          </NavLink>
-        );
-      })}
+      {navigationGroups.map((group) => (
+        <div className="side-nav__section" key={group.id}>
+          <p className="side-nav__heading">{group.label}</p>
+          {group.items.map((item) => (
+            <NavItemLink item={item} key={item.to} onNavigate={onNavigate} />
+          ))}
+        </div>
+      ))}
+      <div className="side-nav__section side-nav__section--pin-end">
+        <button
+          type="button"
+          className="nav-link"
+          onClick={() => {
+            onNavigate?.();
+            onOpenSettings();
+          }}
+        >
+          <span className="nav-link__icon" aria-hidden="true">
+            <Gear className="nav-link__glyph" weight="regular" />
+          </span>
+          <span className="nav-link__label-wrap">
+            <span className="nav-link__label">设置</span>
+          </span>
+        </button>
+      </div>
     </nav>
   );
 }
@@ -82,6 +121,7 @@ export function AppShell() {
   });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   useGlobalShortcuts(() => setHelpOpen((current) => !current));
   const isRail = useMediaQuery(RAIL_QUERY);
   const isDrawer = useMediaQuery(DRAWER_QUERY);
@@ -166,7 +206,10 @@ export function AppShell() {
                 <strong>Workbench</strong>
               </span>
             </div>
-            <Navigation onNavigate={isDrawer ? () => setDrawerOpen(false) : undefined} />
+            <Navigation
+              onNavigate={isDrawer ? () => setDrawerOpen(false) : undefined}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
             <div className="sidebar__footer">
               <HealthStatus />
               <p>数据仅保存在这台设备</p>
@@ -214,6 +257,7 @@ export function AppShell() {
           ) : null}
         </div>
         <ShortcutSheet open={helpOpen} onClose={() => setHelpOpen(false)} />
+        <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       </ToastProvider>
     </MotionConfig>
   );

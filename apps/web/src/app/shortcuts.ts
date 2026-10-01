@@ -1,4 +1,4 @@
-/** 快捷键的单一数据源：全局 hook、设置页与 ? 浮层都从这里渲染，避免文案漂移。 */
+/** 快捷键的单一数据源：全局 hook 与 ? 浮层都从这里渲染，避免文案漂移。 */
 export interface ShortcutItem {
   readonly keys: string;
   readonly label: string;
@@ -19,7 +19,6 @@ export const NAV_KEY_ROUTES: Readonly<Record<string, string>> = {
   l: '/learning',
   v: '/review',
   b: '/data',
-  s: '/settings',
 };
 
 export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
@@ -34,7 +33,6 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       { keys: 'G L', label: '学习' },
       { keys: 'G V', label: '回顾' },
       { keys: 'G B', label: '数据' },
-      { keys: 'G S', label: '设置' },
     ],
   },
   {

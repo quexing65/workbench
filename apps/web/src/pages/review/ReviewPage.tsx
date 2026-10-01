@@ -45,7 +45,7 @@ function percent(value: number | null): string {
   return value === null ? '—' : `${Math.round(value * 100)}%`;
 }
 
-const PIE_COLORS = ['#315f50', '#c96a42', '#7a7d78', '#a2865f', '#74658d', '#5f8b75'];
+const PIE_COLORS = ['#5e6ad2', '#d97b4f', '#7d8590', '#8f7ab8', '#4f9d8f', '#c2a256'];
 
 function durationLabel(seconds: number): string {
   if (seconds < 60) return `${seconds} 秒`;
@@ -102,7 +102,6 @@ function StudyDurationPie({ data }: { data: ReviewResponse['learningDuration'] }
     <section className="review-study-card" aria-labelledby="study-duration-title">
       <div className="review-study-card__header">
         <div>
-          <p className="eyebrow">学习投入</p>
           <h2 id="study-duration-title">观看进度</h2>
         </div>
         <p>按合集统计当前观看时刻距合集开头的时长；回看回退、跳过的内容按位置直接计。</p>
@@ -187,7 +186,6 @@ function ActivityRhythm({ days }: { days: DayStats[] }) {
     >
       <div className="review-study-card__header">
         <div>
-          <p className="eyebrow">学习节奏</p>
           <h2 id="activity-rhythm-title">活跃概览</h2>
         </div>
         <p>统计所选年份的学习活动：每天最后观测到的学习进度记为一次活动。</p>
@@ -235,10 +233,7 @@ function DailySection({
   return (
     <section className="review-detail-card" aria-labelledby="daily-review-title">
       <div className="review-section-header">
-        <div>
-          <p className="eyebrow">按年查看</p>
-          <h2 id="daily-review-title">年度贡献</h2>
-        </div>
+        <h2 id="daily-review-title">年度贡献</h2>
         <p className="day-chart-readout" aria-live="polite">
           {activeDay === null ? (
             <span>悬停或聚焦方格查看当天明细，共 {days.length} 天。</span>
@@ -318,11 +313,7 @@ export function ReviewPage() {
   return (
     <section className="page business-page" aria-labelledby="review-title">
       <header className="page-header review-header">
-        <div>
-          <p className="eyebrow">回望轨迹</p>
-          <h1 id="review-title">回顾</h1>
-          <p className="page-lead">从真实记录里看见完成与积累；没有计划时，不虚构完成率。</p>
-        </div>
+        <h1 id="review-title">回顾</h1>
       </header>
       {review.isPending ? <QueryLoading message="正在整理回顾…" /> : null}
       {review.isError ? (

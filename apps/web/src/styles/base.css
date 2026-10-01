@@ -11,49 +11,56 @@
     BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
 
-  --ink: #191b18;
-  --muted: #5c605a;
+  --ink: #1a1d23;
+  --muted: #5d6470;
   --paper: #ffffff;
-  --canvas: #f6f6f3;
-  --line: #e6e5e0;
-  --line-strong: #d8d6cf;
-  --surface-muted: #fbfbf9;
-  --accent: #315f50;
-  --accent-strong: #23493e;
-  --accent-soft: #e4efe9;
-  --accent-ink: #23493e;
-  --warm: #c96a42;
-  --error: #b0413d;
-  --success: #326b48;
-  --warm-ink: #9c4a26;
-  --danger-bg: #f9eae9;
-  --pinned-bg: #fff9ed;
-  --expired-bg: #fdeee6;
-  --strike: rgb(92 96 90 / 45%);
-  --status-ok: #77ba8d;
+  --canvas: #f6f7f9;
+  --line: #e5e7eb;
+  --line-strong: #d3d7de;
+  --surface-muted: #fafbfc;
+  --accent: #5e6ad2;
+  --accent-strong: #4653c6;
+  --accent-soft: #eceefc;
+  --accent-ink: #3d47a8;
+  /* accent 底色上的文字色：浅色主题用白，深色主题用深灰，保证两侧对比度达标 */
+  --accent-on: #ffffff;
+  --warm: #d97b4f;
+  --error: #c4453c;
+  --success: #2f7d5b;
+  --warm-ink: #9a4e28;
+  --danger-bg: #fbeceb;
+  --pinned-bg: #fdf6ea;
+  --expired-bg: #fdf0e9;
+  --strike: rgb(93 100 112 / 45%);
+  --status-ok: #6fb587;
   --status-warn: #d6a151;
   --status-error: #d97870;
 
-  --sidebar-bg: #1f2e29;
-  --sidebar-ink: #f2f4f1;
-  --sidebar-muted: #9fb3a9;
+  --sidebar-bg: #1c1f27;
+  --sidebar-ink: #f2f3f7;
+  --sidebar-muted: #9aa1b5;
   --sidebar-hover: rgb(255 255 255 / 6%);
   --sidebar-glider: rgb(255 255 255 / 10%);
   --sidebar-line: rgb(255 255 255 / 8%);
 
-  /* 主视觉深绿卡上的浅绿元素与磨砂玻璃面 */
-  --progress-fill: #e4efe9;
-  --chip-on-primary-bg: #e4efe9;
-  --frost: rgb(255 255 255 / 55%);
-  --header-frost: rgb(246 246 243 / 92%);
+  --header-frost: rgb(246 247 249 / 92%);
   --handle-bg: rgb(255 255 255 / 62%);
   --handle-line: rgb(255 255 255 / 55%);
-  --scrollbar-thumb: rgb(28 31 26 / 22%);
+  --scrollbar-thumb: rgb(26 29 35 / 22%);
 
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-full: 999px;
+
+  /* 4pt 间距阶梯：组件内距、卡片留白、网格间距统一从这里取值 */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
 
   --shadow-sm: 0 1px 2px rgb(20 23 18 / 5%);
   --shadow: 0 8px 24px rgb(20 23 18 / 7%);
@@ -64,40 +71,38 @@
 }
 
 /* 深色主题：preferences.ts 在 <html> 上落 data-theme，首帧前生效。
-   只覆盖 token，不重复布局规则；白字所在的深绿表面（按钮/主视觉卡）
-   保持深绿，文字型绿色统一走 --accent-ink。 */
+   只覆盖 token，不重复布局规则；accent 底色上的文字统一走 --accent-on，
+   文字型链接色走 --accent-ink。 */
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --ink: #e9ebe6;
-  --muted: #a2a89f;
-  --paper: #222620;
-  --canvas: #171a16;
-  --line: #343833;
-  --line-strong: #4a4f47;
-  --surface-muted: #1d211c;
-  --accent: #357a5c;
-  --accent-strong: #204438;
-  --accent-soft: #2a4a39;
-  --accent-ink: #bfe0cd;
-  --warm: #d98a5f;
+  --ink: #e8eaf0;
+  --muted: #9ba2b0;
+  --paper: #1d2027;
+  --canvas: #14161b;
+  --line: #2e323d;
+  --line-strong: #434958;
+  --surface-muted: #191c22;
+  --accent: #7c86e8;
+  --accent-strong: #5563d8;
+  --accent-soft: #2c3157;
+  --accent-ink: #aab1f2;
+  --accent-on: #1a1d23;
+  --warm: #e09a70;
   --error: #e08a86;
   --success: #8fcaa4;
   --warm-ink: #eba87f;
   --danger-bg: #3d2724;
   --pinned-bg: #37311e;
   --expired-bg: #3a2a21;
-  --strike: rgb(162 168 159 / 45%);
+  --strike: rgb(155 162 176 / 45%);
 
-  --sidebar-bg: #1a2723;
+  --sidebar-bg: #171a21;
 
-  --progress-fill: #8fd3ae;
-  --chip-on-primary-bg: rgb(255 255 255 / 16%);
-  --frost: rgb(255 255 255 / 4%);
-  --header-frost: rgb(23 26 22 / 92%);
-  --handle-bg: rgb(34 38 31 / 78%);
+  --header-frost: rgb(20 22 27 / 92%);
+  --handle-bg: rgb(29 32 39 / 78%);
   --handle-line: rgb(255 255 255 / 16%);
-  --scrollbar-thumb: rgb(233 235 230 / 16%);
+  --scrollbar-thumb: rgb(232 234 240 / 16%);
 
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 30%);
   --shadow: 0 8px 24px rgb(0 0 0 / 36%);
@@ -150,7 +155,7 @@ a {
   left: 0.75rem;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-sm);
-  color: white;
+  color: var(--accent-on);
   background: var(--accent-strong);
   transform: translateY(-160%);
   transition: transform var(--motion-fast) ease;

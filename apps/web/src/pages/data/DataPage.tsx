@@ -8,19 +8,12 @@ export function DataPage() {
   return (
     <section className="page business-page data-page" aria-labelledby="page-title">
       <header className="page-header">
-        <p className="eyebrow">本机优先 · 受控备份</p>
         <h1 id="page-title">数据</h1>
-        <p className="page-lead">
-          下载受控 <code>.pwbk</code> 整库快照用于归档与迁移；登录凭据永不进入备份。
-        </p>
       </header>
 
       <section className="editor-card data-action-card backup-card" aria-labelledby="backup-title">
         <div className="data-action-card__heading">
-          <div>
-            <p className="eyebrow">导出 · 一致快照</p>
-            <h2 id="backup-title">创建普通备份</h2>
-          </div>
+          <h2 id="backup-title">创建普通备份</h2>
         </div>
         <p className="data-action-card__description">
           下载受控 <code>.pwbk</code>，仅含 manifest 和一致 SQLite 快照；登录凭据不进入备份。

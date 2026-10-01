@@ -44,10 +44,7 @@ export function BiliSyncPanel() {
   return (
     <section className="bili-sync-panel" aria-labelledby="bili-connection-title">
       <div className="bili-sync-panel__header">
-        <div>
-          <p className="eyebrow">仅存于本机</p>
-          <h2 id="bili-connection-title">B站连接</h2>
-        </div>
+        <h2 id="bili-connection-title">B站连接</h2>
         <p className={`connection-state ${credential.data?.valid ? 'is-connected' : ''}`}>
           {credential.isPending ? '正在检查…' : (credential.data?.userLabel ?? '状态不可用')}
         </p>

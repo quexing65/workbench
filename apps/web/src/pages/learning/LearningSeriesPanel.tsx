@@ -210,7 +210,6 @@ export function LearningSeriesPanel({
   return (
     <section className="series-panel" aria-labelledby="series-title">
       <div className="series-panel__header">
-        <p className="eyebrow">有序学习</p>
         <h2 id="series-title">学习系列</h2>
       </div>
       <form className="series-create-form" onSubmit={submit}>

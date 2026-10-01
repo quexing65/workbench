@@ -218,9 +218,7 @@ export function TasksPage() {
   return (
     <section className="page business-page tasks-page">
       <header className="page-header">
-        <p className="eyebrow">每日安排</p>
         <h1>任务</h1>
-        <p className="page-lead">把每天的任务与固定任务放在一张清单里。</p>
       </header>
       <div className="business-layout business-layout--wide-editor">
         <form className="editor-card" onSubmit={submit}>

@@ -14,10 +14,6 @@
   gap: 1rem;
 }
 
-.data-action-card__heading .eyebrow {
-  margin-bottom: 0.45rem;
-}
-
 .data-action-card__heading h2 {
   font-size: clamp(1.35rem, 2vw, 1.7rem);
 }

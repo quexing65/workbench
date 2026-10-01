@@ -251,11 +251,7 @@ export function OverduePage() {
     <section className="page business-page" aria-labelledby="overdue-title">
       <header className="page-header overdue-header">
         <div>
-          <p className="eyebrow">清理积压</p>
           <h1 id="overdue-title">逾期</h1>
-          <p className="page-lead">
-            过去日期里的任务都在这里：移回今天、直接完成，或干脆取消；误标完成的可以改回未完成。
-          </p>
         </div>
         {all.length > 0 ? (
           <div className="overdue-header__meta">

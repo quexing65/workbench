@@ -152,9 +152,7 @@ export function RecurringPage() {
   return (
     <section className="page business-page">
       <header className="page-header">
-        <p className="eyebrow">每日重复</p>
         <h1>固定任务</h1>
-        <p className="page-lead">只保存规则；某天改变状态时，才记录那一天。</p>
       </header>
       <div className="business-layout business-layout--wide-editor">
         <form className="editor-card" onSubmit={submit}>

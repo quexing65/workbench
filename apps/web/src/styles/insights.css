@@ -34,6 +34,7 @@
 
 .day-header h1 {
   max-width: 22em;
+  margin-bottom: 0.35rem;
 }
 
 .day-header__meta {
@@ -54,7 +55,7 @@
 }
 
 .day-card {
-  padding: clamp(1.2rem, 3vw, 1.6rem);
+  padding: clamp(var(--space-4), 2vw, var(--space-5));
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--paper);
@@ -127,9 +128,21 @@
   margin-top: 1.3rem;
 }
 
-/* 今天之后的三节：发丝线分隔的行，不再各自成卡。 */
+/* 今天之后的三节：auto-fit 网格里的轻量卡片，窄屏自动落回单列。 */
+.day-grid {
+  display: grid;
+  margin-top: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17.5rem), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
 .day-followup {
-  margin-top: 1.9rem;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
 }
 
 .day-followup__link {
@@ -243,7 +256,7 @@
 .review-stat__delta {
   min-height: 1rem;
   margin-top: 0.5rem;
-  line-height: 1.7;
+  line-height: 1.6;
   font-size: 0.72rem;
   font-weight: 650;
 }
@@ -451,8 +464,8 @@
   gap: 1.5rem;
 }
 
-.review-section-header .eyebrow {
-  margin-bottom: 0.35rem;
+.review-section-header h2 {
+  margin-bottom: 0;
 }
 
 .day-chart-readout {

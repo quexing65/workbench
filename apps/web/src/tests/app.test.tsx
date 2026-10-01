@@ -50,24 +50,15 @@ describe('Personal Workbench application shell', () => {
   it('redirects the root route to the overview and renders every destination', async () => {
     renderApp();
 
-    expect(
-      await screen.findByRole('heading', { name: '把今天，安稳地放在眼前。' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '总览' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/overview');
 
-    for (const label of [
-      '总览',
-      '任务',
-      '逾期',
-      '固定任务',
-      '小记',
-      '学习',
-      '回顾',
-      '数据',
-      '设置',
-    ]) {
+    for (const label of ['总览', '任务', '逾期', '固定任务', '小记', '学习', '回顾', '数据']) {
       expect(screen.getAllByRole('link', { name: label }).length).toBeGreaterThan(0);
     }
+    // 设置是侧栏底部的弹窗按钮，不是路由链接。
+    expect(screen.getAllByRole('button', { name: '设置' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('link', { name: '设置' })).not.toBeInTheDocument();
   });
 
   it('shows validated service health from the shared contract', async () => {
@@ -83,14 +74,13 @@ describe('Personal Workbench application shell', () => {
   });
 
   it.each([
-    ['/overview', '把今天，安稳地放在眼前。'],
+    ['/overview', '总览'],
     ['/tasks', '任务'],
     ['/recurring', '固定任务'],
     ['/notes', '小记'],
     ['/learning', '学习'],
     ['/review', '回顾'],
     ['/data', '数据'],
-    ['/settings', '设置'],
   ])('renders the fixed route %s', async (path, heading) => {
     window.history.replaceState({}, '', path);
     renderApp();
@@ -143,9 +133,7 @@ describe('responsive sidebar tiers', () => {
     stubMatchMedia(() => false);
     renderApp();
 
-    expect(
-      await screen.findByRole('heading', { name: '把今天，安稳地放在眼前。' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '总览' })).toBeInTheDocument();
     const shell = shellElement();
     expect(shell).not.toHaveClass('app-shell--sidebar-collapsed');
     expect(shell).not.toHaveClass('app-shell--rail');
@@ -157,9 +145,7 @@ describe('responsive sidebar tiers', () => {
     stubMatchMedia((query) => query === '(min-width: 641px) and (max-width: 1100px)');
     renderApp();
 
-    expect(
-      await screen.findByRole('heading', { name: '把今天，安稳地放在眼前。' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '总览' })).toBeInTheDocument();
     const shell = shellElement();
     expect(shell).toHaveClass('app-shell--sidebar-collapsed');
     expect(shell).toHaveClass('app-shell--rail');

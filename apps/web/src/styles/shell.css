@@ -93,10 +93,29 @@
   --nav-item-gap: 0.4rem;
   position: relative;
   display: flex;
-  margin-top: 3rem;
-  gap: var(--nav-item-gap);
+  margin-top: 2rem;
+  gap: 1.25rem;
   flex: 1;
   flex-direction: column;
+}
+
+.side-nav__section {
+  display: flex;
+  gap: var(--nav-item-gap);
+  flex-direction: column;
+}
+
+.side-nav__section--pin-end {
+  margin-top: auto;
+}
+
+.side-nav__heading {
+  margin: 0 0 0.2rem;
+  padding-inline: 0.6rem;
+  color: var(--sidebar-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
 }
 
 .side-nav__glider {
@@ -129,6 +148,14 @@
 
 .side-nav .nav-link {
   width: 100%;
+}
+
+/* 设置项是按钮而非链接：清掉按钮默认外观，复用 .nav-link 的排版与态。 */
+button.nav-link {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 
 .nav-link:hover {
@@ -288,6 +315,11 @@
 
 .app-shell--sidebar-collapsed .side-nav {
   align-items: center;
+}
+
+/* 图标栏里没有放组标题的空间，靠组间距表达分组。 */
+.app-shell--sidebar-collapsed .side-nav__heading {
+  display: none;
 }
 
 .app-shell--sidebar-collapsed .side-nav .nav-link {

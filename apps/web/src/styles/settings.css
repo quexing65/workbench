@@ -1,31 +1,23 @@
-/* ===== 设置页 / 快捷键速查 / toast / 新增页面组件 ===== */
+/* ===== 设置弹窗 / 快捷键速查 / toast / 新增页面组件 ===== */
 
-/* —— 设置页 —— */
-.settings-page {
+/* —— 设置弹窗 —— */
+.settings-dialog__section {
   display: grid;
-  gap: 1.25rem;
+  margin-top: 1.1rem;
+  gap: 0.65rem;
   align-content: start;
 }
 
-.settings-page .editor-card {
-  position: static;
+.settings-dialog__section h3 {
+  margin: 0;
+  font-size: 1rem;
 }
 
-.setting-card {
-  display: grid;
-  gap: 0.9rem;
-  align-content: start;
-}
-
-.setting-card h2 {
-  margin-bottom: 0;
-  font-size: 1.15rem;
-}
-
-.setting-card__note {
+.settings-dialog__note {
   margin: 0;
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
 }
 
 .setting-choice {
@@ -88,7 +80,7 @@
   font-family: var(--font-sans);
 }
 
-/* —— 快捷键速查表（设置页与 ? 浮层共用） —— */
+/* —— 快捷键速查表（? 浮层使用） —— */
 .shortcut-table {
   display: grid;
   gap: 1.1rem;
@@ -210,17 +202,12 @@
   max-width: min(90vw, 26rem);
   padding: 0.55rem 1rem;
   border-radius: var(--radius-full);
-  background: rgb(25 27 24 / 92%);
+  background: var(--ink);
   box-shadow: var(--shadow);
-  color: #f2f4f1;
+  color: var(--paper);
   font-size: 0.85rem;
   font-weight: 600;
   animation: toast-in 220ms var(--ease-out) both;
-}
-
-[data-theme='dark'] .toast {
-  background: rgb(233 235 230 / 94%);
-  color: #191b18;
 }
 
 @keyframes toast-in {
